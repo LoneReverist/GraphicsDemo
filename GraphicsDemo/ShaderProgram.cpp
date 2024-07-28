@@ -52,10 +52,10 @@ void ShaderProgram::Activate() const
 	glUseProgram(m_program_id);
 }
 
-void ShaderProgram::SetWorldTransform(glm::mat4 const & transform) const
+void ShaderProgram::SetMat4(std::string const & uniform_label, glm::mat4 const & uniform) const
 {
-	unsigned int uniform_loc = glGetUniformLocation(m_program_id, "world_transform");
-	glUniformMatrix4fv(uniform_loc, 1, GL_FALSE, glm::value_ptr(transform));
+	unsigned int uniform_loc = glGetUniformLocation(m_program_id, uniform_label.c_str());
+	glUniformMatrix4fv(uniform_loc, 1, GL_FALSE, glm::value_ptr(uniform));
 }
 
 unsigned int ShaderProgram::load_shader(int type, std::filesystem::path const & shader_path) const

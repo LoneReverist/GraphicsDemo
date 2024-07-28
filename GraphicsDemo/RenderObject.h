@@ -25,7 +25,10 @@ public:
 	void SetShaderProgram(std::shared_ptr<ShaderProgram> shader_program) { m_shader_program = shader_program; }
 	void SetDrawWireframe(bool wireframe = true) { m_draw_wireframe = wireframe; }
 
+	std::shared_ptr<ShaderProgram> GetShaderProgram() const { return m_shader_program; }
+
 	glm::mat4 & ModifyWorldTransform() { return m_world_transform; }
+	glm::mat4 const & GetWorldTransform() const { return m_world_transform; }
 
 private:
 	void load_mesh();

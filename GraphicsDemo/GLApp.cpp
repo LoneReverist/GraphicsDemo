@@ -75,7 +75,7 @@ void GLApp::Run()
 	}
 }
 
-void GLApp::OnWindowResize(int width, int height) const
+void GLApp::OnWindowResize(int width, int height)
 {
 	m_renderer.ResizeViewport(width, height);
 }

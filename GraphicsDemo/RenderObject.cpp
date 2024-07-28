@@ -58,11 +58,6 @@ void RenderObject::Render() const
 		std::cout << "Mesh::Render() vertex array object not initialized" << std::endl;
 		return;
 	}
-	if (!m_shader_program)
-	{
-		std::cout << "Mesh::Render() using invalid shader program" << std::endl;
-		return;
-	}
 
 	glBindVertexArray(m_vao_id);
 
@@ -70,9 +65,6 @@ void RenderObject::Render() const
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	else
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-	m_shader_program->Activate();
-	m_shader_program->SetWorldTransform(m_world_transform);
 
 	GLsizei num_elements = static_cast<GLsizei>(m_indices.size());
 	glDrawElements(GL_TRIANGLES, num_elements, GL_UNSIGNED_INT, nullptr);
