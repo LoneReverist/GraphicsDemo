@@ -79,11 +79,11 @@ void RenderObject::Render() const
 
 void RenderObject::load_mesh()
 {
-	m_verts = { // x, y, z, r, g, b
-		{  0.5f,  0.5f,  0.0f, 1.0f, 0.0f, 0.0f },
-		{  0.5f, -0.5f,  0.0f, 0.0f, 1.0f, 0.0f },
-		{ -0.5f, -0.5f,  0.0f, 0.0f, 0.0f, 1.0f },
-		{ -0.5f,  0.5f,  0.0f, 1.0f, 0.0f, 1.0f }
+	m_verts = { // { { x, y, z }, { r, g, b } }
+		{ {  0.5f,  0.5f,  0.0f }, { 1.0f, 0.0f, 0.0f } },
+		{ {  0.5f, -0.5f,  0.0f }, { 0.0f, 1.0f, 0.0f } },
+		{ { -0.5f, -0.5f,  0.0f }, { 0.0f, 0.0f, 1.0f } },
+		{ { -0.5f,  0.5f,  0.0f }, { 1.0f, 0.0f, 1.0f } }
 	};
 	m_indices = {
 		0, 1, 3,

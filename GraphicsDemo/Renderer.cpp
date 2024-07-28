@@ -20,14 +20,14 @@ void Renderer::Init()
 
 void Renderer::Update(float time)
 {
-	m_bg_color[0] = sin(time) / 2.0f + 0.5f;
-	m_bg_color[1] = cos(time) / 2.0f + 0.5f;
-	m_bg_color[2] = tan(time) / 2.0f + 0.5f;
+	m_bg_color.r = sin(time) / 2.0f + 0.5f;
+	m_bg_color.g = cos(time) / 2.0f + 0.5f;
+	m_bg_color.b = tan(time) / 2.0f + 0.5f;
 }
 
 void Renderer::Render() const
 {
-	glClearColor(m_bg_color[0], m_bg_color[1], m_bg_color[2], 1.0);
+	glClearColor(m_bg_color.r, m_bg_color.g, m_bg_color.b, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	m_render_object.Render();

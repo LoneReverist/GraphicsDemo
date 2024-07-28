@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <glm/vec3.hpp>
+
 #include "RenderObject.h"
 
 class ShaderProgram;
@@ -16,7 +18,7 @@ public:
 	void ResizeViewport(int width, int height) const;
 
 private:
-	std::array<float, 3> m_bg_color;
+	glm::vec3 m_bg_color;
 	std::shared_ptr<ShaderProgram> m_shader_program;
 	RenderObject m_render_object;
 };

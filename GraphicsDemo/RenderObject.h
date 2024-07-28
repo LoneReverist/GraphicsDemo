@@ -2,15 +2,17 @@
 
 #pragma once
 
+#include <glm/vec3.hpp>
+
 class ShaderProgram;
 
 class RenderObject
 {
 private:
 	struct Vertex {
-		float m_pos[3];
-		//float m_normal[3];
-		float m_color[3];
+		glm::vec3 m_pos;
+		//glm::vec3 m_normal;
+		glm::vec3 m_color;
 	};
 
 public:
