@@ -12,7 +12,7 @@ class Renderer
 {
 public:
 	void Init();
-	void Update(float time);
+	void Update(double delta_time);
 	void Render() const;
 
 	void ResizeViewport(int width, int height) const;

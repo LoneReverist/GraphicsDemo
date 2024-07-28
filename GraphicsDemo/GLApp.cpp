@@ -62,8 +62,10 @@ void GLApp::Run()
 	{
 		process_input();
 
-		float time = static_cast<float>(glfwGetTime());
-		m_renderer.Update(time);
+		double cur_time = glfwGetTime();
+		double delta_time = cur_time - m_time;
+		m_time = cur_time;
+		m_renderer.Update(delta_time);
 
 		m_renderer.Render();
 

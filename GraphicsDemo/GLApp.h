@@ -26,4 +26,6 @@ private:
 	bool m_intialized{ false };
 	GLFWwindow * m_window{ nullptr };
 	Renderer m_renderer;
+
+	double m_time{ 0.0 };
 };
