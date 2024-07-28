@@ -8,22 +8,12 @@
 
 #include <glad/glad.h>
 
-namespace
-{
-	void error_callback(int error, const char * description)
-	{
-		std::cout << "GLFW Error: " << error << " " << description;
-	}
-
-	void framebuffer_size_callback(GLFWwindow * window, int width, int height)
-	{
-		glViewport(0, 0, width, height);
-	}
-}
-
 GLApp::GLApp(int window_width, int window_height, std::string title)
 {
-	glfwSetErrorCallback(error_callback);
+	glfwSetErrorCallback([](int error, const char * description)
+		{
+			std::cout << "GLFW Error: " << error << " " << description;
+		});
 
 	if (!glfwInit())
 		return;
@@ -46,10 +36,15 @@ GLApp::GLApp(int window_width, int window_height, std::string title)
 		return;
 	}
 
-	glfwSetFramebufferSizeCallback(m_window, framebuffer_size_callback);
-	glViewport(0, 0, window_width, window_height);
+	glfwSetWindowUserPointer(m_window, this);
+	glfwSetFramebufferSizeCallback(m_window, [](GLFWwindow * window, int width, int height)
+		{
+			GLApp * app = static_cast<GLApp *>(glfwGetWindowUserPointer(window));
+			app->OnWindowResize(width, height);
+		});
 
 	m_renderer.Init();
+	m_renderer.ResizeViewport(window_width, window_height);
 }
 
 GLApp::~GLApp()
@@ -78,7 +73,12 @@ void GLApp::Run()
 	}
 }
 
-void GLApp::process_input()
+void GLApp::OnWindowResize(int width, int height) const
+{
+	m_renderer.ResizeViewport(width, height);
+}
+
+void GLApp::process_input() const
 {
 	if (glfwGetKey(m_window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(m_window, true);

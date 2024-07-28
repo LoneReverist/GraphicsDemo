@@ -17,8 +17,10 @@ public:
 	bool IsInitialized() const { return m_intialized; }
 	bool HasWindow() const { return m_window != nullptr; }
 
+	void OnWindowResize(int width, int height) const;
+
 private:
-	void process_input();
+	void process_input() const;
 
 private:
 	bool m_intialized{ false };

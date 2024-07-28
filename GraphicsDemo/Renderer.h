@@ -11,7 +11,9 @@ class Renderer
 public:
 	void Init();
 	void Update(float time);
-	void Render();
+	void Render() const;
+
+	void ResizeViewport(int width, int height) const;
 
 private:
 	std::array<float, 3> m_bg_color;

@@ -25,10 +25,15 @@ void Renderer::Update(float time)
 	m_bg_color[2] = tan(time) / 2.0f + 0.5f;
 }
 
-void Renderer::Render()
+void Renderer::Render() const
 {
 	glClearColor(m_bg_color[0], m_bg_color[1], m_bg_color[2], 1.0);
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	m_render_object.Render();
+}
+
+void Renderer::ResizeViewport(int width, int height) const
+{
+	glViewport(0, 0, width, height);
 }
