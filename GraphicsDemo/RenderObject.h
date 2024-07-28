@@ -3,6 +3,7 @@
 #pragma once
 
 #include <glm/vec3.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 class ShaderProgram;
 
@@ -24,6 +25,8 @@ public:
 	void SetShaderProgram(std::shared_ptr<ShaderProgram> shader_program) { m_shader_program = shader_program; }
 	void SetDrawWireframe(bool wireframe = true) { m_draw_wireframe = wireframe; }
 
+	glm::mat4 & ModifyWorldTransform() { return m_world_transform; }
+
 private:
 	void load_mesh();
 
@@ -38,4 +41,6 @@ private:
 	std::shared_ptr<ShaderProgram> m_shader_program;
 
 	bool m_draw_wireframe{ false };
+
+	glm::mat4 m_world_transform{ glm::mat4(1.0) };
 };

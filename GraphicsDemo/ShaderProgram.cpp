@@ -5,25 +5,7 @@
 
 #include <glad/glad.h>
 
-constexpr const char * VERT_SHADER_SOURCE =
-"#version 330 core\n"
-"layout (location = 0) in vec3 aPos;\n"
-"layout (location = 1) in vec3 aColor;\n"
-"out vec3 color;"
-"void main()\n"
-"{\n"
-"    gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
-"    color = aColor;"
-"}\0";
-
-constexpr const char * FRAG_SHADER_SOURCE =
-"#version 330 core\n"
-"in vec3 color;"
-"out vec4 FragColor;\n"
-"void main()\n"
-"{\n"
-"   FragColor = vec4(color, 1.0);\n"
-"}\0";
+#include <glm/gtc/type_ptr.hpp>
 
 ShaderProgram::~ShaderProgram()
 {
@@ -68,6 +50,12 @@ void ShaderProgram::Activate() const
 	}
 
 	glUseProgram(m_program_id);
+}
+
+void ShaderProgram::SetWorldTransform(glm::mat4 const & transform) const
+{
+	unsigned int uniform_loc = glGetUniformLocation(m_program_id, "world_transform");
+	glUniformMatrix4fv(uniform_loc, 1, GL_FALSE, glm::value_ptr(transform));
 }
 
 unsigned int ShaderProgram::load_shader(int type, std::filesystem::path const & shader_path) const

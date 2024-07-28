@@ -72,6 +72,7 @@ void RenderObject::Render() const
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 	m_shader_program->Activate();
+	m_shader_program->SetWorldTransform(m_world_transform);
 
 	GLsizei num_elements = static_cast<GLsizei>(m_indices.size());
 	glDrawElements(GL_TRIANGLES, num_elements, GL_UNSIGNED_INT, nullptr);

@@ -23,6 +23,9 @@ void Renderer::Update(float time)
 	m_bg_color.r = sin(time) / 2.0f + 0.5f;
 	m_bg_color.g = cos(time) / 2.0f + 0.5f;
 	m_bg_color.b = tan(time) / 2.0f + 0.5f;
+
+	glm::mat4 & transform = m_render_object.ModifyWorldTransform();
+	transform = glm::rotate(glm::mat4(1.0), time, glm::vec3(0.0, 0.0, 1.0));
 }
 
 void Renderer::Render() const
