@@ -9,17 +9,16 @@ class ShaderProgram;
 
 class RenderObject
 {
-private:
+public:
 	struct Vertex {
 		glm::vec3 m_pos;
-		//glm::vec3 m_normal;
+		glm::vec3 m_normal;
 		glm::vec3 m_color;
 	};
 
-public:
 	~RenderObject();
 
-	void Init();
+	void InitBuffers();
 	void Render() const;
 
 	void SetShaderProgram(std::shared_ptr<ShaderProgram> shader_program) { m_shader_program = shader_program; }
@@ -30,8 +29,10 @@ public:
 	glm::mat4 & ModifyWorldTransform() { return m_world_transform; }
 	glm::mat4 const & GetWorldTransform() const { return m_world_transform; }
 
-private:
-	void load_mesh();
+	void SetVerts(std::vector<Vertex> && verts) { m_verts = verts; }
+	void SetIndices(std::vector<unsigned int> && indices) { m_indices = indices; }
+
+	void LoadSquare();
 
 private:
 	std::vector<Vertex> m_verts;

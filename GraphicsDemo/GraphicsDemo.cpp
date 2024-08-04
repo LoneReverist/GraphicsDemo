@@ -4,11 +4,14 @@
 
 #include "GLApp.h"
 
+constexpr int WINDOW_WIDTH = 1920;
+constexpr int WINDOW_HEIGHT = 1080;
+
 int main()
 {
     std::cout << "Initializing glfw..." << std::endl;
 
-    GLApp app(640 /*window_width*/, 480 /*window_height*/, "Graphics Demo");
+    GLApp app(WINDOW_WIDTH, WINDOW_HEIGHT, "Graphics Demo");
     if (!app.IsInitialized() || !app.HasWindow())
         return -1;
 

@@ -1,8 +1,9 @@
 // ShaderProgram.h
 
+#pragma once
+
 #include <glm/gtc/matrix_transform.hpp>
 
-#pragma once
 class ShaderProgram
 {
 public:

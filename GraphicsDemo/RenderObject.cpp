@@ -14,11 +14,18 @@ RenderObject::~RenderObject()
 	glDeleteBuffers(1, &m_ebo_id);
 }
 
-void RenderObject::Init()
+void RenderObject::InitBuffers()
 {
-	load_mesh();
 	if (m_verts.empty())
+	{
+		std::cout << "RenderObject::Init() verts empty" << std::endl;
 		return;
+	}
+	if (m_indices.empty())
+	{
+		std::cout << "RenderObject::Init() indices empty" << std::endl;
+		return;
+	}
 
 	glGenBuffers(1, &m_vbo_id);
 	glGenBuffers(1, &m_ebo_id);
@@ -46,7 +53,7 @@ void RenderObject::Init()
 		pos_offset);	// offset
 	glEnableVertexAttribArray(0);
 
-	void * color_offset = reinterpret_cast<void *>(sizeof(float) * 3);
+	void * color_offset = reinterpret_cast<void *>(sizeof(float) * 6);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, color_offset);
 	glEnableVertexAttribArray(1);
 }
@@ -55,7 +62,7 @@ void RenderObject::Render() const
 {
 	if (m_vao_id == 0)
 	{
-		std::cout << "Mesh::Render() vertex array object not initialized" << std::endl;
+		std::cout << "RenderObject::Render() vertex array object not initialized" << std::endl;
 		return;
 	}
 
@@ -70,13 +77,13 @@ void RenderObject::Render() const
 	glDrawElements(GL_TRIANGLES, num_elements, GL_UNSIGNED_INT, nullptr);
 }
 
-void RenderObject::load_mesh()
+void RenderObject::LoadSquare()
 {
-	m_verts = { // { { x, y, z }, { r, g, b } }
-		{ {  0.5f,  0.5f,  0.0f }, { 1.0f, 0.0f, 0.0f } },
-		{ {  0.5f, -0.5f,  0.0f }, { 0.0f, 1.0f, 0.0f } },
-		{ { -0.5f, -0.5f,  0.0f }, { 0.0f, 0.0f, 1.0f } },
-		{ { -0.5f,  0.5f,  0.0f }, { 1.0f, 0.0f, 1.0f } }
+	m_verts = { // { { pos x, y, z }, { normal x, y, z }, { color r, g, b } }
+		{ {  0.5f,  0.5f,  0.0f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f } },
+		{ {  0.5f, -0.5f,  0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f, 0.0f } },
+		{ { -0.5f, -0.5f,  0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f } },
+		{ { -0.5f,  0.5f,  0.0f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 1.0f } }
 	};
 	m_indices = {
 		0, 1, 3,

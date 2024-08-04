@@ -7,6 +7,7 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "ObjLoader.h"
 #include "ShaderProgram.h"
 
 void Renderer::Init()
@@ -21,8 +22,15 @@ void Renderer::Init()
 		"../resources/shaders/color_vs.txt",
 		"../resources/shaders/color_fs.txt");
 
-	m_render_object.Init();
-	m_render_object.SetShaderProgram(m_shader_program);
+	if (ObjLoader::LoadObjFile("../resources/GameObjects/skullsword.obj", m_render_object))
+	{
+		m_render_object.InitBuffers();
+		m_render_object.SetShaderProgram(m_shader_program);
+	}
+	else
+	{
+		std::cout << "Renderer::Init() error loading skullsword.obj" << std::endl;
+	}
 
 	glEnable(GL_DEPTH_TEST);
 }
@@ -45,7 +53,7 @@ void Renderer::Render() const
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	std::shared_ptr<ShaderProgram> shader_program = m_render_object.GetShaderProgram();
-	if (!m_shader_program)
+	if (!shader_program)
 	{
 		std::cout << "Renderer::Render() render object has invalid shader program" << std::endl;
 		return;
