@@ -3,9 +3,7 @@
 #pragma once
 
 #include <glm/vec3.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-
-class ShaderProgram;
+#include <glm/ext/matrix_float4x4.hpp>
 
 class RenderObject
 {
@@ -21,10 +19,10 @@ public:
 	void InitBuffers();
 	void Render() const;
 
-	void SetShaderProgram(std::shared_ptr<ShaderProgram> shader_program) { m_shader_program = shader_program; }
+	void SetShaderId(size_t shader_id) { m_shader_id = shader_id; }
 	void SetDrawWireframe(bool wireframe = true) { m_draw_wireframe = wireframe; }
 
-	std::shared_ptr<ShaderProgram> GetShaderProgram() const { return m_shader_program; }
+	size_t GetShaderId() const { return m_shader_id; }
 
 	glm::mat4 & ModifyWorldTransform() { return m_world_transform; }
 	glm::mat4 const & GetWorldTransform() const { return m_world_transform; }
@@ -42,7 +40,7 @@ private:
 	unsigned int m_ebo_id{ 0 }; // element buffer object
 	unsigned int m_vao_id{ 0 }; // vertex array object
 
-	std::shared_ptr<ShaderProgram> m_shader_program;
+	size_t m_shader_id{ 0 };
 
 	bool m_draw_wireframe{ false };
 

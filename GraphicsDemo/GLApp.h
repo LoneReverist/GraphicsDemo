@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Renderer.h"
+#include "Scene.h"
 
 struct GLFWwindow;
 
@@ -26,6 +27,7 @@ private:
 	bool m_intialized{ false };
 	GLFWwindow * m_window{ nullptr };
 	Renderer m_renderer;
+	Scene m_scene;
 
-	double m_time{ 0.0 };
+	double m_last_update_time{ 0.0 };
 };

@@ -6,5 +6,5 @@
 
 namespace ObjLoader
 {
-	bool LoadObjFile(std::filesystem::path filepath, RenderObject & render_object);
+	bool LoadObjFile(std::filesystem::path const & filepath, RenderObject & render_object);
 }

@@ -81,7 +81,7 @@ namespace ObjLoader
 		return true;
 	}
 
-	bool LoadObjFile(std::filesystem::path filepath, RenderObject & render_object)
+	bool LoadObjFile(std::filesystem::path const & filepath, RenderObject & render_object)
 	{
 		std::vector<std::array<float, 3>> positions;
 		std::vector<std::array<float, 3>> normals;
@@ -106,7 +106,7 @@ namespace ObjLoader
 				out_vertices.push_back(RenderObject::Vertex{
 					{ pos[0], pos[1], pos[2] },
 					{ norm[0], norm[1], norm[2] },
-					{ 0.0f, 0.0f, 0.0f } // color
+					{ (rand() % 10) / 10.0f, (rand() % 10) / 10.0f, (rand() % 10) / 10.0f} // color
 					});
 
 				return static_cast<unsigned int>(out_vertices.size() - 1);

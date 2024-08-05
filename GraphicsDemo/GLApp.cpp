@@ -9,6 +9,7 @@
 #include <glad/glad.h>
 
 GLApp::GLApp(int window_width, int window_height, std::string title)
+	: m_scene(m_renderer)
 {
 	glfwSetErrorCallback([](int error, const char * description)
 		{
@@ -45,6 +46,8 @@ GLApp::GLApp(int window_width, int window_height, std::string title)
 
 	m_renderer.Init();
 	m_renderer.ResizeViewport(window_width, window_height);
+
+	m_scene.Init();
 }
 
 GLApp::~GLApp()
@@ -58,14 +61,17 @@ void GLApp::Run()
 	if (!IsInitialized() || !HasWindow())
 		return;
 
+	m_last_update_time = glfwGetTime();
+
 	while (!glfwWindowShouldClose(m_window))
 	{
 		process_input();
 
 		double cur_time = glfwGetTime();
-		double delta_time = cur_time - m_time;
-		m_time = cur_time;
-		m_renderer.Update(delta_time);
+		double delta_time = cur_time - m_last_update_time;
+		m_last_update_time = cur_time;
+
+		m_scene.Update(delta_time);
 
 		m_renderer.Render();
 
