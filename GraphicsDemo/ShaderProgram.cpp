@@ -7,12 +7,7 @@
 
 #include <glm/gtc/type_ptr.hpp>
 
-ShaderProgram::~ShaderProgram()
-{
-	glDeleteProgram(m_program_id);
-}
-
-void ShaderProgram::LoadShaders(std::filesystem::path const & vert_shader_path, std::filesystem::path const & frag_shader_path)
+bool ShaderProgram::LoadShaders(std::filesystem::path const & vert_shader_path, std::filesystem::path const & frag_shader_path)
 {
 	unsigned int vert_shader_id = load_shader(GL_VERTEX_SHADER, vert_shader_path);
 	unsigned int frag_shader_id = load_shader(GL_FRAGMENT_SHADER, frag_shader_path);
@@ -20,7 +15,7 @@ void ShaderProgram::LoadShaders(std::filesystem::path const & vert_shader_path, 
 	{
 		glDeleteShader(vert_shader_id); // TODO: a scope_guard class would be handy
 		glDeleteShader(frag_shader_id);
-		return;
+		return false;
 	}
 
 	m_program_id = glCreateProgram();
@@ -39,6 +34,12 @@ void ShaderProgram::LoadShaders(std::filesystem::path const & vert_shader_path, 
 
 	glDeleteShader(vert_shader_id);
 	glDeleteShader(frag_shader_id);
+	return success;
+}
+
+void ShaderProgram::DeleteShaders()
+{
+	glDeleteProgram(m_program_id);
 }
 
 void ShaderProgram::Activate() const
@@ -66,7 +67,7 @@ unsigned int ShaderProgram::load_shader(int type, std::filesystem::path const & 
 
 	const char * shader_source = file_data.c_str();
 
-	unsigned int shader_id = glCreateShader(type);
+	unsigned int shader_id = glCreateShader(type); // returns 0 on error
 	glShaderSource(shader_id, 1, &shader_source, nullptr);
 	glCompileShader(shader_id);
 

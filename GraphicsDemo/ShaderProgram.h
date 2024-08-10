@@ -7,11 +7,10 @@
 class ShaderProgram
 {
 public:
-	~ShaderProgram();
+	bool LoadShaders(std::filesystem::path const & vert_shader_path, std::filesystem::path const & frag_shader_path);
+	void DeleteShaders();
 
-	void LoadShaders(std::filesystem::path const & vert_shader_path, std::filesystem::path const & frag_shader_path);
 	void Activate() const;
-
 	void SetMat4(std::string const & uniform_label, glm::mat4 const & uniform) const;
 
 private:

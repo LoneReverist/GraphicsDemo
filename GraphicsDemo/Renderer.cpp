@@ -5,6 +5,16 @@
 
 #include <glad/glad.h>
 
+#include "ObjLoader.h"
+
+Renderer::~Renderer()
+{
+	for (ShaderProgram & shader_program : m_shader_programs)
+		shader_program.DeleteShaders();
+	for (Mesh & mesh : m_meshes)
+		mesh.DeleteBuffers();
+}
+
 void Renderer::Init()
 {
 	m_view_transform = glm::mat4(1.0);
@@ -17,16 +27,25 @@ void Renderer::Render() const
 	glClearColor(m_clear_color.r, m_clear_color.g, m_clear_color.b, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	for (std::shared_ptr<RenderObject> render_object : m_render_objects)
+	for (std::weak_ptr<RenderObject> render_object : m_render_objects)
 	{
-		ShaderProgram const & shader_program = m_shader_programs[render_object->GetShaderId()];
+		std::shared_ptr<RenderObject> obj = render_object.lock();
+		if (!obj)
+			continue;
 
+		int mesh_id = obj->GetMeshId();
+		int shader_id = obj->GetShaderId();
+		if (mesh_id == -1 || shader_id == -1)
+			continue;
+
+		ShaderProgram const & shader_program = m_shader_programs[shader_id];
 		shader_program.Activate();
-		shader_program.SetMat4("world_transform", render_object->GetWorldTransform());
+		shader_program.SetMat4("world_transform", obj->GetWorldTransform());
 		shader_program.SetMat4("view_transform", m_view_transform);
 		shader_program.SetMat4("proj_transform", m_proj_transform);
 
-		render_object->Render();
+		Mesh const & mesh = m_meshes[mesh_id];
+		mesh.Render(obj->GetDrawWireframe());
 	}
 }
 
@@ -41,14 +60,32 @@ void Renderer::ResizeViewport(int width, int height)
 	m_proj_transform = glm::perspective(field_of_view, aspect_ratio, near_plane, far_plane);
 }
 
-size_t Renderer::CreateShaderProgram(std::filesystem::path const & vert_shader_path, std::filesystem::path const & frag_shader_path)
+int Renderer::LoadShaderProgram(std::filesystem::path const & vert_shader_path, std::filesystem::path const & frag_shader_path)
 {
-	ShaderProgram & shader_program = m_shader_programs.emplace_back();
-	shader_program.LoadShaders(vert_shader_path, frag_shader_path);
-	return m_shader_programs.size() - 1;
+	ShaderProgram shader_program;
+	if (!shader_program.LoadShaders(vert_shader_path, frag_shader_path))
+		return -1;
+
+	m_shader_programs.push_back(std::move(shader_program));
+	return static_cast<int>(m_shader_programs.size() - 1);
 }
 
-void Renderer::AddRenderObject(std::shared_ptr<RenderObject> render_object)
+int Renderer::LoadMesh(std::filesystem::path const & mesh_path)
+{
+	Mesh mesh;
+	if (!ObjLoader::LoadObjFile(mesh_path, mesh))
+	{
+		std::cout << "Renderer::LoadMesh() error loading file:" << mesh_path << std::endl;
+		return -1;
+	}
+
+	mesh.InitBuffers();
+
+	m_meshes.push_back(std::move(mesh));
+	return static_cast<int>(m_meshes.size() - 1);
+}
+
+void Renderer::AddRenderObject(std::weak_ptr<RenderObject> render_object)
 {
 	m_render_objects.push_back(render_object);
 }

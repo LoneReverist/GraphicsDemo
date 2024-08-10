@@ -3,6 +3,8 @@
 #include "stdafx.h"
 #include "ObjLoader.h"
 
+#include "Mesh.h"
+
 namespace
 {
 	struct ObjVertex
@@ -81,7 +83,7 @@ namespace ObjLoader
 		return true;
 	}
 
-	bool LoadObjFile(std::filesystem::path const & filepath, RenderObject & render_object)
+	bool LoadObjFile(std::filesystem::path const & filepath, Mesh & mesh)
 	{
 		std::vector<std::array<float, 3>> positions;
 		std::vector<std::array<float, 3>> normals;
@@ -89,7 +91,7 @@ namespace ObjLoader
 		if (!read_obj_file(filepath, positions, normals, face_verts))
 			return false;
 
-		std::vector<RenderObject::Vertex> out_vertices;
+		std::vector<Mesh::Vertex> out_vertices;
 		std::vector<unsigned int> out_indices;
 
 		// Keep track of vertices we've already created so they can be reused.
@@ -103,7 +105,7 @@ namespace ObjLoader
 
 				std::array<float, 3> const & pos = positions[vert.m_position_index - 1];
 				std::array<float, 3> const & norm = normals[vert.m_normal_index - 1];
-				out_vertices.push_back(RenderObject::Vertex{
+				out_vertices.push_back(Mesh::Vertex{
 					{ pos[0], pos[1], pos[2] },
 					{ norm[0], norm[1], norm[2] },
 					{ (rand() % 10) / 10.0f, (rand() % 10) / 10.0f, (rand() % 10) / 10.0f} // color
@@ -126,8 +128,8 @@ namespace ObjLoader
 			}
 		}
 
-		render_object.SetVerts(std::move(out_vertices));
-		render_object.SetIndices(std::move(out_indices));
+		mesh.SetVerts(std::move(out_vertices));
+		mesh.SetIndices(std::move(out_indices));
 		return true;
 	}
 }

@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include "RenderObject.h"
+class Mesh;
 
 namespace ObjLoader
 {
-	bool LoadObjFile(std::filesystem::path const & filepath, RenderObject & render_object);
+	bool LoadObjFile(std::filesystem::path const & filepath, Mesh & mesh);
 }
