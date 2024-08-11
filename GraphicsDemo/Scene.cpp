@@ -116,22 +116,15 @@ void Scene::Init()
 	init_gem_transform(1, m_green_gem->ModifyWorldTransform());
 	init_gem_transform(2, m_blue_gem->ModifyWorldTransform());
 
-	// ambient light
 	m_renderer.SetAmbientLightColor(glm::vec3(0.2, 0.2, 0.2));
 
-//	// point lights
-//	m_tPointLights.redLightPos = m_pGems[0].GetPosition();
-//	m_tPointLights.greenLightPos = m_pGems[2].GetPosition();
-//	m_tPointLights.blueLightPos = m_pGems[1].GetPosition();
-//	m_tPointLights.lightRadius = 10.0f;
-//
-//	// spot lights
-//	m_tSpotLight.position = XMFLOAT3(0.0f, 25.0f, 0.0f);
-//	m_tSpotLight.coneDir = XMFLOAT3(0.0f, -1.0f, 0.0f);
-//	m_tSpotLight.color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-//	m_tSpotLight.radius = 100.0f;
-//	m_tSpotLight.innerRadius = 0.988f;
-//	m_tSpotLight.outerRadius = 0.986f;
+	m_renderer.SetSpotLight({
+		{ 0.0f, 0.0f, 25.0f }, // pos
+		{ 0.0f, 0.0f, -1.0f }, // dir
+		{ 1.0f, 1.0f, 1.0f }, // color
+		0.988f, // inner_radius
+		0.986f // outer_radius
+		});
 
 	m_renderer.SetViewTransform(glm::lookAt(
 		glm::vec3(0.0f, -10.0f, 5.0f), // camera pos
@@ -155,6 +148,25 @@ void Scene::Update(double delta_time)
 	update_gem_transform(m_red_gem->ModifyWorldTransform(), dt);
 	update_gem_transform(m_green_gem->ModifyWorldTransform(), dt);
 	update_gem_transform(m_blue_gem->ModifyWorldTransform(), dt);
+
+	glm::mat4 const & red_gem_transform = m_red_gem->GetWorldTransform();
+	glm::mat4 const & green_gem_transform = m_green_gem->GetWorldTransform();
+	glm::mat4 const & blue_gem_transform = m_blue_gem->GetWorldTransform();
+	m_renderer.SetPointLight1({
+		{ red_gem_transform[3][0], red_gem_transform[3][1], red_gem_transform[3][2] },
+		{ 1.0, 0.0, 0.0 },
+		10.0f
+		});
+	m_renderer.SetPointLight2({
+		{ green_gem_transform[3][0], green_gem_transform[3][1], green_gem_transform[3][2] },
+		{ 0.0, 1.0, 0.0 },
+		10.0f
+		});
+	m_renderer.SetPointLight3({
+		{ blue_gem_transform[3][0], blue_gem_transform[3][1], blue_gem_transform[3][2] },
+		{ 0.0, 0.0, 1.0 },
+		10.0f
+		});
 }
 
 std::shared_ptr<RenderObject> Scene::create_object(int mesh_id, int shader_id) const

@@ -53,6 +53,12 @@ void ShaderProgram::Activate() const
 	glUseProgram(m_program_id);
 }
 
+void ShaderProgram::SetUniform(std::string const & uniform_label, float uniform) const
+{
+	unsigned int uniform_loc = glGetUniformLocation(m_program_id, uniform_label.c_str());
+	glUniform1f(uniform_loc, uniform);
+}
+
 void ShaderProgram::SetUniform(std::string const & uniform_label, glm::vec3 const & uniform) const
 {
 	unsigned int uniform_loc = glGetUniformLocation(m_program_id, uniform_label.c_str());

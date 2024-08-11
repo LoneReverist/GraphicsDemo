@@ -45,6 +45,16 @@ void Mesh::InitBuffers()
 		stride,			// size of vertex
 		pos_offset);	// offset
 	glEnableVertexAttribArray(0);
+
+	void * normal_offset = reinterpret_cast<void *>(sizeof(glm::vec3));
+	glVertexAttribPointer(
+		1,
+		3,
+		GL_FLOAT,
+		GL_FALSE,
+		stride,
+		normal_offset);
+	glEnableVertexAttribArray(1);
 }
 
 void Mesh::DeleteBuffers()

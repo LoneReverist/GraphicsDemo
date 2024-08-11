@@ -1,12 +1,18 @@
 #version 330 core
 
 layout (location = 0) in vec3 vert_pos;
+layout (location = 1) in vec3 vert_normal;
 
 uniform mat4 world_transform;
 uniform mat4 view_transform;
 uniform mat4 proj_transform;
 
+out vec3 pos_world;
+out vec3 normal_world;
+
 void main()
 {
 	gl_Position = proj_transform * view_transform * world_transform * vec4(vert_pos, 1.0);
+	pos_world = vec3(world_transform * vec4(vert_pos, 1.0));
+	normal_world = vec3(world_transform * vec4(vert_normal, 0.0));
 }
