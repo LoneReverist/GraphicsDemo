@@ -116,6 +116,23 @@ void Scene::Init()
 	init_gem_transform(1, m_green_gem->ModifyWorldTransform());
 	init_gem_transform(2, m_blue_gem->ModifyWorldTransform());
 
+	// ambient light
+	m_renderer.SetAmbientLightColor(glm::vec3(0.2, 0.2, 0.2));
+
+//	// point lights
+//	m_tPointLights.redLightPos = m_pGems[0].GetPosition();
+//	m_tPointLights.greenLightPos = m_pGems[2].GetPosition();
+//	m_tPointLights.blueLightPos = m_pGems[1].GetPosition();
+//	m_tPointLights.lightRadius = 10.0f;
+//
+//	// spot lights
+//	m_tSpotLight.position = XMFLOAT3(0.0f, 25.0f, 0.0f);
+//	m_tSpotLight.coneDir = XMFLOAT3(0.0f, -1.0f, 0.0f);
+//	m_tSpotLight.color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+//	m_tSpotLight.radius = 100.0f;
+//	m_tSpotLight.innerRadius = 0.988f;
+//	m_tSpotLight.outerRadius = 0.986f;
+
 	m_renderer.SetViewTransform(glm::lookAt(
 		glm::vec3(0.0f, -10.0f, 5.0f), // camera pos
 		glm::vec3(0.0f, 0.0f, 2.5f), // look at pos

@@ -67,7 +67,7 @@ void Mesh::Render(bool wireframe) const
 	if (wireframe)
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	else
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		glPolygonMode(GL_FRONT, GL_FILL);
 
 	GLsizei num_elements = static_cast<GLsizei>(m_indices.size());
 	glDrawElements(GL_TRIANGLES, num_elements, GL_UNSIGNED_INT, nullptr);

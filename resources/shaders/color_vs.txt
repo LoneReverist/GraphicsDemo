@@ -5,12 +5,8 @@ layout (location = 0) in vec3 vert_pos;
 uniform mat4 world_transform;
 uniform mat4 view_transform;
 uniform mat4 proj_transform;
-uniform vec3 mesh_color;
-
-out vec3 color;
 
 void main()
 {
 	gl_Position = proj_transform * view_transform * world_transform * vec4(vert_pos, 1.0);
-	color = mesh_color;
 }

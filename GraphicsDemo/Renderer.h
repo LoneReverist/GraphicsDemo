@@ -20,6 +20,7 @@ public:
 
 	void SetClearColor(glm::vec3 const & color) { m_clear_color = color; }
 	void SetViewTransform(glm::mat4 const & view_transform) { m_view_transform = view_transform; }
+	void SetAmbientLightColor(glm::vec3 const & color) { m_ambient_light_color = color; }
 
 	int LoadShaderProgram(std::filesystem::path const & vert_shader_path, std::filesystem::path const & frag_shader_path);
 	int LoadMesh(std::filesystem::path const & mesh_path);
@@ -35,4 +36,6 @@ private:
 	std::vector<ShaderProgram> m_shader_programs;
 	std::vector<Mesh> m_meshes;
 	std::vector<std::weak_ptr<RenderObject>> m_render_objects;
+
+	glm::vec3 m_ambient_light_color;
 };
