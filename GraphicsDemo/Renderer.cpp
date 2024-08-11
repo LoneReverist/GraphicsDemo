@@ -85,6 +85,14 @@ int Renderer::LoadMesh(std::filesystem::path const & mesh_path)
 	return static_cast<int>(m_meshes.size() - 1);
 }
 
+int Renderer::AddMesh(Mesh && mesh)
+{
+	mesh.InitBuffers();
+
+	m_meshes.push_back(std::move(mesh));
+	return static_cast<int>(m_meshes.size() - 1);
+}
+
 void Renderer::AddRenderObject(std::weak_ptr<RenderObject> render_object)
 {
 	m_render_objects.push_back(render_object);

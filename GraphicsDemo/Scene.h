@@ -24,6 +24,7 @@ private:
 	std::shared_ptr<RenderObject> m_red_gem;
 	std::shared_ptr<RenderObject> m_green_gem;
 	std::shared_ptr<RenderObject> m_blue_gem;
+	std::shared_ptr<RenderObject> m_ground;
 
 	float m_timer{ 0.0 };
 };

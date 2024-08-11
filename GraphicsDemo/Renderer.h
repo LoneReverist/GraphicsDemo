@@ -23,6 +23,7 @@ public:
 
 	int LoadShaderProgram(std::filesystem::path const & vert_shader_path, std::filesystem::path const & frag_shader_path);
 	int LoadMesh(std::filesystem::path const & mesh_path);
+	int AddMesh(Mesh && mesh);
 	void AddRenderObject(std::weak_ptr<RenderObject> render_object);
 
 private:

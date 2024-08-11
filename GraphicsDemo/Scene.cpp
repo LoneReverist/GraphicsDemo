@@ -5,6 +5,7 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "Mesh.h"
 #include "ObjLoader.h"
 #include "Renderer.h"
 
@@ -58,6 +59,28 @@ namespace
 	{
 		transform = glm::rotate(glm::mat4(1.0), delta_time * 0.5f, glm::vec3(0.0, 0.0, 1.0)) * transform;
 	}
+
+	Mesh create_ground_mesh()
+	{
+		float scale = 30.0f;
+
+		std::vector<Mesh::Vertex> vertices {
+			{ { -scale,  scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.3, 0.3, 0.3 } },
+			{ {  scale,  scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.3, 0.3, 0.3 } },
+			{ { -scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.3, 0.3, 0.3 } },
+			{ {  scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.3, 0.3, 0.3 } },
+		};
+
+		std::vector<unsigned int> indices{
+			0, 1, 2,
+			1, 2, 3
+		};
+
+		Mesh mesh;
+		mesh.SetVerts(std::move(vertices));
+		mesh.SetIndices(std::move(indices));
+		return mesh;
+	}
 }
 
 void Scene::Init()
@@ -71,12 +94,14 @@ void Scene::Init()
 	int red_gem_mesh = m_renderer.LoadMesh("../resources/GameObjects/redgem.obj");
 	int green_gem_mesh = m_renderer.LoadMesh("../resources/GameObjects/greengem.obj");
 	int blue_gem_mesh = m_renderer.LoadMesh("../resources/GameObjects/bluegem.obj");
+	int ground_mesh = m_renderer.AddMesh(std::move(create_ground_mesh()));
 
 	m_sword0 = create_object(sword_mesh, color_shader_id);
 	m_sword1 = create_object(sword_mesh, color_shader_id);
 	m_red_gem = create_object(red_gem_mesh, color_shader_id);
 	m_green_gem = create_object(green_gem_mesh, color_shader_id);
 	m_blue_gem = create_object(blue_gem_mesh, color_shader_id);
+	m_ground = create_object(ground_mesh, color_shader_id);
 
 	m_renderer.SetViewTransform(glm::lookAt(
 		glm::vec3(0.0f, -10.0f, 5.0f), // camera pos
