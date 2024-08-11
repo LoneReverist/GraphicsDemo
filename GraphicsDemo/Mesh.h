@@ -10,7 +10,6 @@ public:
 	struct Vertex {
 		glm::vec3 m_pos;
 		glm::vec3 m_normal;
-		glm::vec3 m_color;
 	};
 
 	void InitBuffers();

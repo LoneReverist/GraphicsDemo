@@ -40,9 +40,10 @@ void Renderer::Render() const
 
 		ShaderProgram const & shader_program = m_shader_programs[shader_id];
 		shader_program.Activate();
-		shader_program.SetMat4("world_transform", obj->GetWorldTransform());
-		shader_program.SetMat4("view_transform", m_view_transform);
-		shader_program.SetMat4("proj_transform", m_proj_transform);
+		shader_program.SetUniform("world_transform", obj->GetWorldTransform());
+		shader_program.SetUniform("view_transform", m_view_transform);
+		shader_program.SetUniform("proj_transform", m_proj_transform);
+		shader_program.SetUniform("mesh_color", obj->GetColor());
 
 		Mesh const & mesh = m_meshes[mesh_id];
 		mesh.Render(obj->GetDrawWireframe());

@@ -11,7 +11,8 @@ public:
 	void DeleteShaders();
 
 	void Activate() const;
-	void SetMat4(std::string const & uniform_label, glm::mat4 const & uniform) const;
+	void SetUniform(std::string const & uniform_label, glm::vec3 const & uniform) const;
+	void SetUniform(std::string const & uniform_label, glm::mat4 const & uniform) const;
 
 private:
 	unsigned int load_shader(int type, std::filesystem::path const & shader_path) const;

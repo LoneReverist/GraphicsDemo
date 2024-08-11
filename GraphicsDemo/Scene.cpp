@@ -65,10 +65,10 @@ namespace
 		float scale = 30.0f;
 
 		std::vector<Mesh::Vertex> vertices {
-			{ { -scale,  scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.3, 0.3, 0.3 } },
-			{ {  scale,  scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.3, 0.3, 0.3 } },
-			{ { -scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.3, 0.3, 0.3 } },
-			{ {  scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.3, 0.3, 0.3 } },
+			{ { -scale,  scale, 0.0 }, { 0.0, 0.0, 1.0 } },
+			{ {  scale,  scale, 0.0 }, { 0.0, 0.0, 1.0 } },
+			{ { -scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 } },
+			{ {  scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 } },
 		};
 
 		std::vector<unsigned int> indices{
@@ -103,16 +103,23 @@ void Scene::Init()
 	m_blue_gem = create_object(blue_gem_mesh, color_shader_id);
 	m_ground = create_object(ground_mesh, color_shader_id);
 
-	m_renderer.SetViewTransform(glm::lookAt(
-		glm::vec3(0.0f, -10.0f, 5.0f), // camera pos
-		glm::vec3(0.0f, 0.0f, 2.5f), // look at pos
-		glm::vec3(0.0, 0.0, 1.0))); // up dir
+	m_sword0->SetColor({ 0.6, 0.6, 0.6 });
+	m_sword1->SetColor({ 0.6, 0.6, 0.6 });
+	m_red_gem->SetColor({ 1.0, 0.0, 0.0 });
+	m_green_gem->SetColor({ 0.0, 1.0, 0.0 });
+	m_blue_gem->SetColor({ 0.0, 0.0, 1.0 });
+	m_ground->SetColor({ 0.3, 0.3, 0.3 });
 
 	init_sword_transform(0, m_sword0->ModifyWorldTransform());
 	init_sword_transform(1, m_sword1->ModifyWorldTransform());
 	init_gem_transform(0, m_red_gem->ModifyWorldTransform());
 	init_gem_transform(1, m_green_gem->ModifyWorldTransform());
 	init_gem_transform(2, m_blue_gem->ModifyWorldTransform());
+
+	m_renderer.SetViewTransform(glm::lookAt(
+		glm::vec3(0.0f, -10.0f, 5.0f), // camera pos
+		glm::vec3(0.0f, 0.0f, 2.5f), // look at pos
+		glm::vec3(0.0, 0.0, 1.0))); // up dir
 }
 
 void Scene::Update(double delta_time)

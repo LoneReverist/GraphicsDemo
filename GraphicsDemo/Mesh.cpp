@@ -45,10 +45,6 @@ void Mesh::InitBuffers()
 		stride,			// size of vertex
 		pos_offset);	// offset
 	glEnableVertexAttribArray(0);
-
-	void * color_offset = reinterpret_cast<void *>(sizeof(float) * 6);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, color_offset);
-	glEnableVertexAttribArray(1);
 }
 
 void Mesh::DeleteBuffers()

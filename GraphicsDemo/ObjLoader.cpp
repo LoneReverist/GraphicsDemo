@@ -107,8 +107,7 @@ namespace ObjLoader
 				std::array<float, 3> const & norm = normals[vert.m_normal_index - 1];
 				out_vertices.push_back(Mesh::Vertex{
 					{ pos[0], pos[1], pos[2] },
-					{ norm[0], norm[1], norm[2] },
-					{ (rand() % 10) / 10.0f, (rand() % 10) / 10.0f, (rand() % 10) / 10.0f} // color
+					{ norm[0], norm[1], norm[2] }
 					});
 
 				return static_cast<unsigned int>(out_vertices.size() - 1);
