@@ -122,6 +122,8 @@
   <ItemGroup>
     <Text Include="..\resources\shaders\color_fs.txt" />
     <Text Include="..\resources\shaders\color_vs.txt" />
+    <Text Include="..\resources\shaders\light_source_fs.txt" />
+    <Text Include="..\resources\shaders\light_source_vs.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

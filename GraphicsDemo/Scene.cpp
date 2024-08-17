@@ -88,6 +88,9 @@ void Scene::Init()
 	int color_shader_id = m_renderer.LoadShaderProgram(
 		"../resources/shaders/color_vs.txt",
 		"../resources/shaders/color_fs.txt");
+	int light_source_shader_id = m_renderer.LoadShaderProgram(
+		"../resources/shaders/light_source_vs.txt",
+		"../resources/shaders/light_source_fs.txt");
 
 	// these meshes were designed for the Y axis being the up direction, but we're using the Z axis, this can be corrected by rotating on the X axis
 	int sword_mesh = m_renderer.LoadMesh("../resources/GameObjects/skullsword.obj");
@@ -98,9 +101,9 @@ void Scene::Init()
 
 	m_sword0 = create_object(sword_mesh, color_shader_id);
 	m_sword1 = create_object(sword_mesh, color_shader_id);
-	m_red_gem = create_object(red_gem_mesh, color_shader_id);
-	m_green_gem = create_object(green_gem_mesh, color_shader_id);
-	m_blue_gem = create_object(blue_gem_mesh, color_shader_id);
+	m_red_gem = create_object(red_gem_mesh, light_source_shader_id);
+	m_green_gem = create_object(green_gem_mesh, light_source_shader_id);
+	m_blue_gem = create_object(blue_gem_mesh, light_source_shader_id);
 	m_ground = create_object(ground_mesh, color_shader_id);
 
 	m_sword0->SetColor({ 0.6, 0.6, 0.6 });
@@ -118,7 +121,7 @@ void Scene::Init()
 
 	m_renderer.SetAmbientLightColor(glm::vec3(0.2, 0.2, 0.2));
 
-	m_renderer.SetSpotLight({
+	m_renderer.SetSpotLight(SpotLight{
 		{ 0.0f, 0.0f, 25.0f }, // pos
 		{ 0.0f, 0.0f, -1.0f }, // dir
 		{ 1.0f, 1.0f, 1.0f }, // color
@@ -126,10 +129,9 @@ void Scene::Init()
 		0.986f // outer_radius
 		});
 
-	m_renderer.SetViewTransform(glm::lookAt(
+	m_renderer.SetCamera(
 		glm::vec3(0.0f, -10.0f, 5.0f), // camera pos
-		glm::vec3(0.0f, 0.0f, 2.5f), // look at pos
-		glm::vec3(0.0, 0.0, 1.0))); // up dir
+		glm::vec3(0.0f, 0.0f, 2.5f)); // look at pos
 }
 
 void Scene::Update(double delta_time)
@@ -152,17 +154,17 @@ void Scene::Update(double delta_time)
 	glm::mat4 const & red_gem_transform = m_red_gem->GetWorldTransform();
 	glm::mat4 const & green_gem_transform = m_green_gem->GetWorldTransform();
 	glm::mat4 const & blue_gem_transform = m_blue_gem->GetWorldTransform();
-	m_renderer.SetPointLight1({
-		{ red_gem_transform[3][0], red_gem_transform[3][1], red_gem_transform[3][2] },
-		{ 1.0, 0.0, 0.0 },
-		10.0f
+	m_renderer.SetPointLight1(PointLight{
+		{ red_gem_transform[3][0], red_gem_transform[3][1], red_gem_transform[3][2] }, // pos
+		{ 1.0, 0.0, 0.0 }, // color
+		10.0f // radius
 		});
-	m_renderer.SetPointLight2({
+	m_renderer.SetPointLight2(PointLight{
 		{ green_gem_transform[3][0], green_gem_transform[3][1], green_gem_transform[3][2] },
 		{ 0.0, 1.0, 0.0 },
 		10.0f
 		});
-	m_renderer.SetPointLight3({
+	m_renderer.SetPointLight3(PointLight{
 		{ blue_gem_transform[3][0], blue_gem_transform[3][1], blue_gem_transform[3][2] },
 		{ 0.0, 0.0, 1.0 },
 		10.0f

@@ -41,11 +41,14 @@ void Renderer::Render() const
 		ShaderProgram const & shader_program = m_shader_programs[shader_id];
 		shader_program.Activate();
 
+		// vertex shader uniforms
 		shader_program.SetUniform("world_transform", obj->GetWorldTransform());
 		shader_program.SetUniform("view_transform", m_view_transform);
 		shader_program.SetUniform("proj_transform", m_proj_transform);
 
+		// fragment shader uniforms
 		shader_program.SetUniform("object_color", obj->GetColor());
+
 		shader_program.SetUniform("ambient_light_color", m_ambient_light_color);
 		shader_program.SetUniform("pointlight_pos_1", m_pointlight_1.pos);
 		shader_program.SetUniform("pointlight_color_1", m_pointlight_1.color);
@@ -61,6 +64,8 @@ void Renderer::Render() const
 		shader_program.SetUniform("spotlight_color", m_spotlight.color);
 		shader_program.SetUniform("spotlight_inner_radius", m_spotlight.inner_radius);
 		shader_program.SetUniform("spotlight_outer_radius", m_spotlight.outer_radius);
+
+		shader_program.SetUniform("camera_pos_world", m_camera_pos);
 
 		Mesh const & mesh = m_meshes[mesh_id];
 		mesh.Render(obj->GetDrawWireframe());
@@ -114,4 +119,10 @@ int Renderer::AddMesh(Mesh && mesh)
 void Renderer::AddRenderObject(std::weak_ptr<RenderObject> render_object)
 {
 	m_render_objects.push_back(render_object);
+}
+
+void Renderer::SetCamera(glm::vec3 const & pos, glm::vec3 const & look_at_pos)
+{
+	m_camera_pos = pos;
+	m_view_transform = glm::lookAt(pos, look_at_pos, glm::vec3(0.0, 0.0, 1.0));
 }

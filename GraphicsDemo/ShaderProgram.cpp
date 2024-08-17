@@ -55,20 +55,23 @@ void ShaderProgram::Activate() const
 
 void ShaderProgram::SetUniform(std::string const & uniform_label, float uniform) const
 {
-	unsigned int uniform_loc = glGetUniformLocation(m_program_id, uniform_label.c_str());
-	glUniform1f(uniform_loc, uniform);
+	GLint uniform_loc = glGetUniformLocation(m_program_id, uniform_label.c_str());
+	if (uniform_loc != -1)
+		glUniform1f(uniform_loc, uniform);
 }
 
 void ShaderProgram::SetUniform(std::string const & uniform_label, glm::vec3 const & uniform) const
 {
-	unsigned int uniform_loc = glGetUniformLocation(m_program_id, uniform_label.c_str());
-	glUniform3fv(uniform_loc, 1, glm::value_ptr(uniform));
+	GLint uniform_loc = glGetUniformLocation(m_program_id, uniform_label.c_str());
+	if (uniform_loc != -1)
+		glUniform3fv(uniform_loc, 1, glm::value_ptr(uniform));
 }
 
 void ShaderProgram::SetUniform(std::string const & uniform_label, glm::mat4 const & uniform) const
 {
-	unsigned int uniform_loc = glGetUniformLocation(m_program_id, uniform_label.c_str());
-	glUniformMatrix4fv(uniform_loc, 1, GL_FALSE, glm::value_ptr(uniform));
+	GLint uniform_loc = glGetUniformLocation(m_program_id, uniform_label.c_str());
+	if (uniform_loc != -1)
+		glUniformMatrix4fv(uniform_loc, 1, GL_FALSE, glm::value_ptr(uniform));
 }
 
 unsigned int ShaderProgram::load_shader(int type, std::filesystem::path const & shader_path) const

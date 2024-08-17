@@ -85,5 +85,11 @@
     <Text Include="..\resources\shaders\color_vs.txt">
       <Filter>Resource Files</Filter>
     </Text>
+    <Text Include="..\resources\shaders\light_source_vs.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="..\resources\shaders\light_source_fs.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
   </ItemGroup>
 </Project>
