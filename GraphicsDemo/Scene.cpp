@@ -93,10 +93,10 @@ void Scene::Init()
 		"../resources/shaders/light_source_fs.txt");
 
 	// these meshes were designed for the Y axis being the up direction, but we're using the Z axis, this can be corrected by rotating on the X axis
-	int sword_mesh = m_renderer.LoadMesh("../resources/GameObjects/skullsword.obj");
-	int red_gem_mesh = m_renderer.LoadMesh("../resources/GameObjects/redgem.obj");
-	int green_gem_mesh = m_renderer.LoadMesh("../resources/GameObjects/greengem.obj");
-	int blue_gem_mesh = m_renderer.LoadMesh("../resources/GameObjects/bluegem.obj");
+	int sword_mesh = m_renderer.LoadMesh("../resources/objects/skullsword.obj");
+	int red_gem_mesh = m_renderer.LoadMesh("../resources/objects/redgem.obj");
+	int green_gem_mesh = m_renderer.LoadMesh("../resources/objects/greengem.obj");
+	int blue_gem_mesh = m_renderer.LoadMesh("../resources/objects/bluegem.obj");
 	int ground_mesh = m_renderer.AddMesh(std::move(create_ground_mesh()));
 
 	m_sword0 = create_object(sword_mesh, color_shader_id);
