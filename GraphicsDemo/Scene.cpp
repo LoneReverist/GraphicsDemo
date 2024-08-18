@@ -71,15 +71,42 @@ namespace
 			{ { -scale,  scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.0, 1.0 } },
 			{ {  scale,  scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 1.0, 1.0 } },
 			{ { -scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.0, 0.0 } },
-			{ {  scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 1.0, 0.0 } }
-		};
+			{ {  scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 1.0, 0.0 } } };
 
 		std::vector<unsigned int> indices{
 			1, 0, 2,
-			1, 2, 3
-		};
+			1, 2, 3 };
 
-		return Mesh(std::move(verts), std::move(indices));
+		return Mesh{ std::move(verts), std::move(indices) };
+	}
+
+	Mesh create_skybox_mesh()
+	{
+		std::vector<PositionVertex> verts {
+			{ { -1.0f,  1.0f, -1.0f } },
+			{ { -1.0f, -1.0f, -1.0f } },
+			{ {  1.0f, -1.0f, -1.0f } },
+			{ {  1.0f,  1.0f, -1.0f } },
+			{ { -1.0f,  1.0f,  1.0f } },
+			{ { -1.0f, -1.0f,  1.0f } },
+			{ {  1.0f, -1.0f,  1.0f } },
+			{ {  1.0f,  1.0f,  1.0f } } };
+
+		std::vector<unsigned int> indices{
+			0, 1, 2,
+			2, 3, 0,
+			5, 1, 0,
+			0, 4, 5,
+			2, 6, 7,
+			7, 3, 2,
+			5, 4, 7,
+			7, 6, 5,
+			0, 3, 7,
+			7, 4, 0,
+			1, 5, 2,
+			2, 5, 6 };
+
+		return Mesh{ std::move(verts), std::move(indices) };
 	}
 }
 
@@ -96,21 +123,35 @@ void Scene::Init()
 	int light_source_shader_id = m_renderer.LoadShaderProgram(
 		resources_path / "shaders" / "light_source_vs.txt",
 		resources_path / "shaders" / "light_source_fs.txt");
+	int skybox_shader_id = m_renderer.LoadShaderProgram(
+		resources_path / "shaders" / "skybox_vs.txt",
+		resources_path / "shaders" / "skybox_fs.txt");
 
-	int sword_mesh = m_renderer.LoadMesh(resources_path / "objects" / "skullsword.obj");
-	int red_gem_mesh = m_renderer.LoadMesh(resources_path / "objects" / "redgem.obj");
-	int green_gem_mesh = m_renderer.LoadMesh(resources_path / "objects" / "greengem.obj");
-	int blue_gem_mesh = m_renderer.LoadMesh(resources_path / "objects" / "bluegem.obj");
-	int ground_mesh = m_renderer.AddMesh(std::move(create_ground_mesh()));
+	int sword_mesh_id = m_renderer.LoadMesh(resources_path / "objects" / "skullsword.obj");
+	int red_gem_mesh_id = m_renderer.LoadMesh(resources_path / "objects" / "redgem.obj");
+	int green_gem_mesh_id = m_renderer.LoadMesh(resources_path / "objects" / "greengem.obj");
+	int blue_gem_mesh_id = m_renderer.LoadMesh(resources_path / "objects" / "bluegem.obj");
+	int ground_mesh_id = m_renderer.AddMesh(std::move(create_ground_mesh()));
+	int skybox_mesh_id = m_renderer.AddMesh(std::move(create_skybox_mesh()));
 
-	int sky_top_tex = m_renderer.LoadTexture(resources_path / "textures" / "skybox" / "top.jpg");
+	int ground_tex_id = m_renderer.LoadTexture(resources_path / "textures" / "skybox" / "top.jpg");
+	int skybox_tex_id = m_renderer.LoadCubeMap(std::array<std::filesystem::path, 6> {
+		resources_path / "textures" / "skybox" / "right.jpg",
+		resources_path / "textures" / "skybox" / "left.jpg",
+		resources_path / "textures" / "skybox" / "front.jpg",
+		resources_path / "textures" / "skybox" / "back.jpg",
+		resources_path / "textures" / "skybox" / "top.jpg",
+		resources_path / "textures" / "skybox" / "bottom.jpg" });
 
-	m_sword0 = create_object(sword_mesh, color_shader_id);
-	m_sword1 = create_object(sword_mesh, color_shader_id);
-	m_red_gem = create_object(red_gem_mesh, light_source_shader_id);
-	m_green_gem = create_object(green_gem_mesh, light_source_shader_id);
-	m_blue_gem = create_object(blue_gem_mesh, light_source_shader_id);
-	m_ground = create_object(ground_mesh, texture_shader_id, sky_top_tex);
+	m_sword0 = create_object(sword_mesh_id, color_shader_id);
+	m_sword1 = create_object(sword_mesh_id, color_shader_id);
+	m_red_gem = create_object(red_gem_mesh_id, light_source_shader_id);
+	m_green_gem = create_object(green_gem_mesh_id, light_source_shader_id);
+	m_blue_gem = create_object(blue_gem_mesh_id, light_source_shader_id);
+	m_ground = create_object(ground_mesh_id, texture_shader_id, ground_tex_id);
+
+	m_skybox = std::make_shared<RenderObject>(skybox_mesh_id, skybox_shader_id, skybox_tex_id);
+	m_renderer.SetSkybox(m_skybox);
 
 	m_sword0->SetColor({ 0.6, 0.6, 0.6 });
 	m_sword1->SetColor({ 0.6, 0.6, 0.6 });

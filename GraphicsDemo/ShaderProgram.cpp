@@ -103,7 +103,7 @@ std::string ShaderProgram::read_file(std::filesystem::path const & path) const
 	std::ifstream file(path.string().c_str());
 	if (!file.is_open())
 	{
-		std::cout << "Failed to open file for reading: " << path;
+		std::cout << "Failed to open file for reading: " << path << std::endl;
 		return "";
 	}
 

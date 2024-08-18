@@ -61,10 +61,43 @@ void Renderer::Init()
 	glDebugMessageCallback(debug_messge_callback, 0);
 }
 
+void Renderer::render_skybox() const
+{
+	std::shared_ptr<RenderObject> skybox = m_skybox.lock();
+	if (!skybox)
+		return;
+
+	int mesh_id = skybox->GetMeshId();
+	int shader_id = skybox->GetShaderId();
+	int tex_id = skybox->GetTextureId();
+	if (mesh_id == -1 || shader_id == -1 || tex_id == -1)
+		return;
+
+	glDepthMask(GL_FALSE);
+
+	ShaderProgram const & shader_program = m_shader_programs[shader_id];
+	shader_program.Activate();
+
+	// vertex shader uniforms
+	glm::mat4 view_transform = glm::mat4(glm::mat3(m_view_transform)); // drop the translation
+	shader_program.SetUniform("view_transform", view_transform);
+	shader_program.SetUniform("proj_transform", m_proj_transform);
+
+	Texture const & texture = m_textures[tex_id];
+	texture.Bind();
+
+	Mesh const & mesh = m_meshes[mesh_id];
+	mesh.Render(skybox->GetDrawWireframe());
+
+	glDepthMask(GL_TRUE);
+}
+
 void Renderer::Render() const
 {
 	glClearColor(m_clear_color.r, m_clear_color.g, m_clear_color.b, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	render_skybox();
 
 	for (std::weak_ptr<RenderObject> render_object : m_render_objects)
 	{
@@ -168,6 +201,16 @@ int Renderer::LoadTexture(std::filesystem::path const & tex_path)
 {
 	Texture texture;
 	if (!texture.LoadTexture(tex_path))
+		return -1;
+
+	m_textures.push_back(std::move(texture));
+	return static_cast<int>(m_textures.size() - 1);
+}
+
+int Renderer::LoadCubeMap(std::array<std::filesystem::path, 6> const & filepaths)
+{
+	Texture texture;
+	if (!texture.LoadCubeMap(filepaths))
 		return -1;
 
 	m_textures.push_back(std::move(texture));

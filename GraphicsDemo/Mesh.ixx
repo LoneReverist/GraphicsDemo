@@ -10,6 +10,10 @@ module;
 
 export module Mesh;
 
+export struct PositionVertex {
+	glm::vec3 m_pos;
+};
+
 export struct BasicVertex {
 	glm::vec3 m_pos;
 	glm::vec3 m_normal;
@@ -22,7 +26,13 @@ export struct TextureVertex {
 };
 
 template <typename T>
-concept VertexConcept = std::same_as<T, BasicVertex> || std::same_as<T, TextureVertex>;
+concept VertexConcept = std::same_as<T, PositionVertex> || std::same_as<T, BasicVertex> || std::same_as<T, TextureVertex>;
+
+template <typename T>
+concept VertexSupportsNormal = std::same_as<T, BasicVertex> || std::same_as<T, TextureVertex>;
+
+template <typename T>
+concept VertexSupportsTexCoord = std::same_as<T, TextureVertex>;
 
 template <VertexConcept Vertex>
 class MeshImpl
@@ -71,7 +81,7 @@ public:
 	}
 
 private:
-	using mesh_variant_t = std::variant<MeshImpl<BasicVertex>, MeshImpl<TextureVertex>>;
+	using mesh_variant_t = std::variant<MeshImpl<PositionVertex>, MeshImpl<BasicVertex>, MeshImpl<TextureVertex>>;
 
 	mesh_variant_t m_mesh_var;
 };
@@ -116,11 +126,14 @@ void MeshImpl<Vertex>::InitBuffers()
 		pos_offset);	// offset
 	glEnableVertexAttribArray(0);
 
-	void * normal_offset = reinterpret_cast<void *>(sizeof(glm::vec3));
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, normal_offset);
-	glEnableVertexAttribArray(1);
+	if constexpr (VertexSupportsNormal<Vertex>)
+	{
+		void * normal_offset = reinterpret_cast<void *>(sizeof(glm::vec3));
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, normal_offset);
+		glEnableVertexAttribArray(1);
+	}
 
-	if constexpr (std::is_same_v<Vertex, TextureVertex>)
+	if constexpr (VertexSupportsTexCoord<Vertex>)
 	{
 		void * tex_offset = reinterpret_cast<void *>(sizeof(glm::vec3) + sizeof(glm::vec3));
 		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride, tex_offset);
