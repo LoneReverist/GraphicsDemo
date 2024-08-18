@@ -22,6 +22,7 @@ namespace
 			pos.y = -pos.y;
 		}
 
+		// the sword mesh was designed for the Y axis being the up direction, but we're using the Z axis, this can be corrected by rotating on the X axis
 		transform = glm::rotate(glm::mat4(1.0), x_rot, glm::vec3(1.0, 0.0, 0.0)) * transform;
 		transform = glm::rotate(glm::mat4(1.0), y_rot, glm::vec3(0.0, 1.0, 0.0)) * transform;
 		transform = glm::translate(glm::mat4(1.0), pos) * transform;
@@ -50,6 +51,7 @@ namespace
 		float z_rot = static_cast<float>(index * std::numbers::pi * 2.0 / 3.0);
 		glm::vec3 pos(0.0f, 4.0f, 2.0f);
 
+		// the gem meshes were designed for the Y axis being the up direction, but we're using the Z axis, this can be corrected by rotating on the X axis
 		transform = glm::rotate(glm::mat4(1.0), x_rot, glm::vec3(1.0, 0.0, 0.0)) * transform;
 		transform = glm::translate(glm::mat4(1.0), pos) * transform;
 		transform = glm::rotate(glm::mat4(1.0), z_rot, glm::vec3(0.0, 0.0, 1.0)) * transform;
@@ -94,7 +96,6 @@ void Scene::Init()
 		resources_path / "shaders" / "light_source_vs.txt",
 		resources_path / "shaders" / "light_source_fs.txt");
 
-	// these meshes were designed for the Y axis being the up direction, but we're using the Z axis, this can be corrected by rotating on the X axis
 	int sword_mesh = m_renderer.LoadMesh(resources_path / "objects" / "skullsword.obj");
 	int red_gem_mesh = m_renderer.LoadMesh(resources_path / "objects" / "redgem.obj");
 	int green_gem_mesh = m_renderer.LoadMesh(resources_path / "objects" / "greengem.obj");
