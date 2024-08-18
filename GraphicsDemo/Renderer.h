@@ -4,10 +4,11 @@
 
 #include <glm/vec3.hpp>
 
-#include "Mesh.h"
 #include "RenderObject.h"
 #include "ShaderProgram.h"
 #include "Texture.h"
+
+import Mesh;
 
 struct PointLight
 {

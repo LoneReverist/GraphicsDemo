@@ -5,9 +5,10 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "Mesh.h"
 #include "ObjLoader.h"
 #include "Renderer.h"
+
+import Mesh;
 
 namespace
 {

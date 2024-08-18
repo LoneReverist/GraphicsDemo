@@ -60,6 +60,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <DisableSpecificWarnings>5201;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -78,6 +79,7 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>5201;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -94,7 +96,7 @@
     </ClCompile>
     <ClCompile Include="GLApp.cpp" />
     <ClCompile Include="GraphicsDemo.cpp" />
-    <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="Mesh.ixx" />
     <ClCompile Include="ObjLoader.cpp" />
     <ClCompile Include="RenderObject.cpp" />
     <ClCompile Include="Renderer.cpp" />
@@ -113,7 +115,6 @@
     <ClInclude Include="..\glad\include\glad\glad.h" />
     <ClInclude Include="..\stbi\include\stb_image.h" />
     <ClInclude Include="GLApp.h" />
-    <ClInclude Include="Mesh.h" />
     <ClInclude Include="ObjLoader.h" />
     <ClInclude Include="RenderObject.h" />
     <ClInclude Include="Renderer.h" />

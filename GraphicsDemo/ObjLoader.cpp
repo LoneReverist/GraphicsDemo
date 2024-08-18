@@ -3,7 +3,7 @@
 #include "stdafx.h"
 #include "ObjLoader.h"
 
-#include "Mesh.h"
+import Mesh;
 
 namespace
 {
