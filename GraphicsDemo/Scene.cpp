@@ -101,14 +101,14 @@ void Scene::Init()
 	int blue_gem_mesh = m_renderer.LoadMesh(resources_path / "objects" / "bluegem.obj");
 	int ground_mesh = m_renderer.AddMesh(std::move(create_ground_mesh()));
 
-	int sky_front_tex = m_renderer.LoadTexture(resources_path / "textures" / "skybox" / "top.jpg");
+	int sky_top_tex = m_renderer.LoadTexture(resources_path / "textures" / "skybox" / "top.jpg");
 
 	m_sword0 = create_object(sword_mesh, color_shader_id);
 	m_sword1 = create_object(sword_mesh, color_shader_id);
 	m_red_gem = create_object(red_gem_mesh, light_source_shader_id);
 	m_green_gem = create_object(green_gem_mesh, light_source_shader_id);
 	m_blue_gem = create_object(blue_gem_mesh, light_source_shader_id);
-	m_ground = create_object(ground_mesh, texture_shader_id, sky_front_tex);
+	m_ground = create_object(ground_mesh, texture_shader_id, sky_top_tex);
 
 	m_sword0->SetColor({ 0.6, 0.6, 0.6 });
 	m_sword1->SetColor({ 0.6, 0.6, 0.6 });
