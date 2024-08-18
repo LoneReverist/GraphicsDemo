@@ -126,11 +126,11 @@ void Scene::Init()
 	m_renderer.SetAmbientLightColor(glm::vec3(0.2, 0.2, 0.2));
 
 	m_renderer.SetSpotLight(SpotLight{
-		{ 0.0f, 0.0f, 25.0f }, // pos
-		{ 0.0f, 0.0f, -1.0f }, // dir
-		{ 1.0f, 1.0f, 1.0f }, // color
-		0.988f, // inner_radius
-		0.986f }); // outer_radius
+		.m_pos{ 0.0f, 0.0f, 25.0f },
+		.m_dir{ 0.0f, 0.0f, -1.0f },
+		.m_color{ 1.0f, 1.0f, 1.0f },
+		.m_inner_radius{ 0.988f },
+		.m_outer_radius{ 0.986f } });
 
 	m_renderer.SetCamera(
 		glm::vec3(0.0f, -10.0f, 5.0f), // camera pos
@@ -156,21 +156,21 @@ void Scene::Update(double delta_time)
 
 	glm::mat4 const & red_gem_transform = m_red_gem->GetWorldTransform();
 	m_renderer.SetPointLight1(PointLight{
-		{ red_gem_transform[3][0], red_gem_transform[3][1], red_gem_transform[3][2] }, // pos
-		{ 1.0, 0.0, 0.0 }, // color
-		10.0f }); // radius
+		.m_pos{ red_gem_transform[3][0], red_gem_transform[3][1], red_gem_transform[3][2] },
+		.m_color{ 1.0, 0.0, 0.0 },
+		.m_radius{ 10.0f } });
 
 	glm::mat4 const & green_gem_transform = m_green_gem->GetWorldTransform();
 	m_renderer.SetPointLight2(PointLight{
-		{ green_gem_transform[3][0], green_gem_transform[3][1], green_gem_transform[3][2] },
-		{ 0.0, 1.0, 0.0 },
-		10.0f });
+		.m_pos{ green_gem_transform[3][0], green_gem_transform[3][1], green_gem_transform[3][2] },
+		.m_color{ 0.0, 1.0, 0.0 },
+		.m_radius{ 10.0f } });
 
 	glm::mat4 const & blue_gem_transform = m_blue_gem->GetWorldTransform();
 	m_renderer.SetPointLight3(PointLight{
-		{ blue_gem_transform[3][0], blue_gem_transform[3][1], blue_gem_transform[3][2] },
-		{ 0.0, 0.0, 1.0 },
-		10.0f });
+		.m_pos{ blue_gem_transform[3][0], blue_gem_transform[3][1], blue_gem_transform[3][2] },
+		.m_color{ 0.0, 0.0, 1.0 },
+		.m_radius{ 10.0f } });
 }
 
 std::shared_ptr<RenderObject> Scene::create_object(int mesh_id, int shader_id, int tex_id /*= -1*/) const

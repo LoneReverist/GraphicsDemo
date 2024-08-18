@@ -11,18 +11,18 @@
 
 struct PointLight
 {
-	glm::vec3 pos{ 0.0, 0.0, 0.0 };
-	glm::vec3 color{ 1.0, 1.0, 1.0 };
-	float radius{ 0.0f };
+	glm::vec3 m_pos{ 0.0, 0.0, 0.0 };
+	glm::vec3 m_color{ 1.0, 1.0, 1.0 };
+	float m_radius{ 0.0f };
 };
 
 struct SpotLight
 {
-	glm::vec3 pos{ 0.0, 0.0, 0.0 };
-	glm::vec3 dir{ 0.0, 0.0, -1.0 };
-	glm::vec3 color{ 1.0, 1.0, 1.0 };
-	float inner_radius{ 0.0 };
-	float outer_radius{ 0.0 };
+	glm::vec3 m_pos{ 0.0, 0.0, 0.0 };
+	glm::vec3 m_dir{ 0.0, 0.0, -1.0 };
+	glm::vec3 m_color{ 1.0, 1.0, 1.0 };
+	float m_inner_radius{ 0.0 };
+	float m_outer_radius{ 0.0 };
 };
 
 class Renderer
