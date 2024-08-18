@@ -36,4 +36,6 @@ bool Texture::LoadTexture(std::filesystem::path filepath)
 void Texture::Bind() const
 {
 	glBindTexture(GL_TEXTURE_2D, m_tex_id);
+	//if (glGetError() != GL_NO_ERROR)
+	//	std::cout << "glBindTexture error";
 }

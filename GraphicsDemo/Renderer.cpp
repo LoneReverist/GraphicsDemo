@@ -7,6 +7,41 @@
 
 #include "ObjLoader.h"
 
+void GLAPIENTRY debug_messge_callback(
+	GLenum source,
+	GLenum type,
+	GLuint id,
+	GLenum severity,
+	GLsizei length,
+	const GLchar * message,
+	const void * userParam)
+{
+	if (id == 131185) // ignore notification about using GL_STATIC_DRAW
+		return;
+
+	std::cout << "message: " << message << std::endl;
+	std::cout << "type: ";
+	switch (type) {
+	case GL_DEBUG_TYPE_ERROR: std::cout << "ERROR"; break;
+	case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: std::cout << "DEPRECATED_BEHAVIOR"; break;
+	case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR: std::cout << "UNDEFINED_BEHAVIOR"; break;
+	case GL_DEBUG_TYPE_PORTABILITY: std::cout << "PORTABILITY"; break;
+	case GL_DEBUG_TYPE_PERFORMANCE: std::cout << "PERFORMANCE"; break;
+	case GL_DEBUG_TYPE_OTHER: std::cout << "OTHER"; break;
+	}
+	std::cout << std::endl;
+
+	std::cout << "id: " << id << std::endl;
+	std::cout << "severity: ";
+	switch (severity) {
+	case GL_DEBUG_SEVERITY_NOTIFICATION: std::cout << "NOTIFICATION"; break;
+	case GL_DEBUG_SEVERITY_LOW: std::cout << "LOW"; break;
+	case GL_DEBUG_SEVERITY_MEDIUM: std::cout << "MEDIUM"; break;
+	case GL_DEBUG_SEVERITY_HIGH: std::cout << "HIGH"; break;
+	}
+	std::cout << std::endl << std::endl;
+}
+
 Renderer::~Renderer()
 {
 	for (ShaderProgram & shader_program : m_shader_programs)
@@ -20,6 +55,10 @@ void Renderer::Init()
 	m_view_transform = glm::mat4(1.0);
 
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE); // cull back facing facets. by default, front facing facets have counter-clockwise vertex windings.
+
+	glEnable(GL_DEBUG_OUTPUT);
+	glDebugMessageCallback(debug_messge_callback, 0);
 }
 
 void Renderer::Render() const
@@ -132,7 +171,7 @@ int Renderer::LoadTexture(std::filesystem::path const & tex_path)
 		return -1;
 
 	m_textures.push_back(std::move(texture));
-	return static_cast<int>(m_textures.size());
+	return static_cast<int>(m_textures.size() - 1);
 }
 
 void Renderer::AddRenderObject(std::weak_ptr<RenderObject> render_object)
