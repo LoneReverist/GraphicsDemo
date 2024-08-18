@@ -7,6 +7,7 @@
 #include "Mesh.h"
 #include "RenderObject.h"
 #include "ShaderProgram.h"
+#include "Texture.h"
 
 struct PointLight
 {
@@ -36,7 +37,8 @@ public:
 
 	int LoadShaderProgram(std::filesystem::path const & vert_shader_path, std::filesystem::path const & frag_shader_path);
 	int LoadMesh(std::filesystem::path const & mesh_path);
-	int AddMesh(Mesh && mesh);
+	int AddMesh(Mesh && mesh_var);
+	int LoadTexture(std::filesystem::path const & tex_path);
 	void AddRenderObject(std::weak_ptr<RenderObject> render_object);
 
 	void SetCamera(glm::vec3 const & pos, glm::vec3 const & look_at_pos);
@@ -52,6 +54,7 @@ public:
 private:
 	std::vector<ShaderProgram> m_shader_programs;
 	std::vector<Mesh> m_meshes;
+	std::vector<Texture> m_textures;
 	std::vector<std::weak_ptr<RenderObject>> m_render_objects;
 
 	glm::vec3 m_camera_pos;

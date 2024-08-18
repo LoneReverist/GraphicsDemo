@@ -67,6 +67,13 @@ void Renderer::Render() const
 
 		shader_program.SetUniform("camera_pos_world", m_camera_pos);
 
+		int tex_id = obj->GetTextureId();
+		if (tex_id != -1)
+		{
+			Texture const & texture = m_textures[tex_id];
+			texture.Bind();
+		}
+
 		Mesh const & mesh = m_meshes[mesh_id];
 		mesh.Render(obj->GetDrawWireframe());
 	}
@@ -95,13 +102,15 @@ int Renderer::LoadShaderProgram(std::filesystem::path const & vert_shader_path, 
 
 int Renderer::LoadMesh(std::filesystem::path const & mesh_path)
 {
-	Mesh mesh;
-	if (!ObjLoader::LoadObjFile(mesh_path, mesh))
+	std::vector<BasicVertex> vertices;
+	std::vector<unsigned int> indices;
+	if (!ObjLoader::LoadObjFile(mesh_path, vertices, indices))
 	{
 		std::cout << "Renderer::LoadMesh() error loading file:" << mesh_path << std::endl;
 		return -1;
 	}
 
+	Mesh mesh{ std::move(vertices), std::move(indices) };
 	mesh.InitBuffers();
 
 	m_meshes.push_back(std::move(mesh));
@@ -114,6 +123,16 @@ int Renderer::AddMesh(Mesh && mesh)
 
 	m_meshes.push_back(std::move(mesh));
 	return static_cast<int>(m_meshes.size() - 1);
+}
+
+int Renderer::LoadTexture(std::filesystem::path const & tex_path)
+{
+	Texture texture;
+	if (!texture.LoadTexture(tex_path))
+		return -1;
+
+	m_textures.push_back(std::move(texture));
+	return static_cast<int>(m_textures.size());
 }
 
 void Renderer::AddRenderObject(std::weak_ptr<RenderObject> render_object)

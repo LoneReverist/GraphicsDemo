@@ -14,7 +14,7 @@ public:
 	void Update(double delta_time);
 
 private:
-	std::shared_ptr<RenderObject> create_object(int mesh_id, int shader_id) const;
+	std::shared_ptr<RenderObject> create_object(int mesh_id, int shader_id, int tex_id = -1) const;
 
 private:
 	Renderer & m_renderer;

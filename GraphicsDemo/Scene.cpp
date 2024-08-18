@@ -64,11 +64,11 @@ namespace
 	{
 		float scale = 30.0f;
 
-		std::vector<Mesh::Vertex> vertices {
-			{ { -scale,  scale, 0.0 }, { 0.0, 0.0, 1.0 } },
-			{ {  scale,  scale, 0.0 }, { 0.0, 0.0, 1.0 } },
-			{ { -scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 } },
-			{ {  scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 } },
+		std::vector<TextureVertex> verts {
+			{ { -scale,  scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.0, 1.0 } },
+			{ {  scale,  scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 1.0, 1.0 } },
+			{ { -scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.0, 0.0 } },
+			{ {  scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 1.0, 0.0 } }
 		};
 
 		std::vector<unsigned int> indices{
@@ -76,42 +76,45 @@ namespace
 			1, 2, 3
 		};
 
-		Mesh mesh;
-		mesh.SetVerts(std::move(vertices));
-		mesh.SetIndices(std::move(indices));
-		return mesh;
+		return Mesh(std::move(verts), std::move(indices));
 	}
 }
 
 void Scene::Init()
 {
+	const std::filesystem::path resources_path = std::filesystem::path("..") / "resources";
+
 	int color_shader_id = m_renderer.LoadShaderProgram(
-		"../resources/shaders/color_vs.txt",
-		"../resources/shaders/color_fs.txt");
+		resources_path / "shaders" / "color_vs.txt",
+		resources_path / "shaders" / "color_fs.txt");
+	int texture_shader_id = m_renderer.LoadShaderProgram(
+		resources_path / "shaders" / "texture_vs.txt",
+		resources_path / "shaders" / "texture_fs.txt");
 	int light_source_shader_id = m_renderer.LoadShaderProgram(
-		"../resources/shaders/light_source_vs.txt",
-		"../resources/shaders/light_source_fs.txt");
+		resources_path / "shaders" / "light_source_vs.txt",
+		resources_path / "shaders" / "light_source_fs.txt");
 
 	// these meshes were designed for the Y axis being the up direction, but we're using the Z axis, this can be corrected by rotating on the X axis
-	int sword_mesh = m_renderer.LoadMesh("../resources/objects/skullsword.obj");
-	int red_gem_mesh = m_renderer.LoadMesh("../resources/objects/redgem.obj");
-	int green_gem_mesh = m_renderer.LoadMesh("../resources/objects/greengem.obj");
-	int blue_gem_mesh = m_renderer.LoadMesh("../resources/objects/bluegem.obj");
+	int sword_mesh = m_renderer.LoadMesh(resources_path / "objects" / "skullsword.obj");
+	int red_gem_mesh = m_renderer.LoadMesh(resources_path / "objects" / "redgem.obj");
+	int green_gem_mesh = m_renderer.LoadMesh(resources_path / "objects" / "greengem.obj");
+	int blue_gem_mesh = m_renderer.LoadMesh(resources_path / "objects" / "bluegem.obj");
 	int ground_mesh = m_renderer.AddMesh(std::move(create_ground_mesh()));
+
+	int sky_front_tex = m_renderer.LoadTexture(resources_path / "textures" / "skybox" / "top.jpg");
 
 	m_sword0 = create_object(sword_mesh, color_shader_id);
 	m_sword1 = create_object(sword_mesh, color_shader_id);
 	m_red_gem = create_object(red_gem_mesh, light_source_shader_id);
 	m_green_gem = create_object(green_gem_mesh, light_source_shader_id);
 	m_blue_gem = create_object(blue_gem_mesh, light_source_shader_id);
-	m_ground = create_object(ground_mesh, color_shader_id);
+	m_ground = create_object(ground_mesh, texture_shader_id, sky_front_tex);
 
 	m_sword0->SetColor({ 0.6, 0.6, 0.6 });
 	m_sword1->SetColor({ 0.6, 0.6, 0.6 });
 	m_red_gem->SetColor({ 1.0, 0.0, 0.0 });
 	m_green_gem->SetColor({ 0.0, 1.0, 0.0 });
 	m_blue_gem->SetColor({ 0.0, 0.0, 1.0 });
-	m_ground->SetColor({ 0.3, 0.3, 0.3 });
 
 	init_sword_transform(0, m_sword0->ModifyWorldTransform());
 	init_sword_transform(1, m_sword1->ModifyWorldTransform());
@@ -126,8 +129,7 @@ void Scene::Init()
 		{ 0.0f, 0.0f, -1.0f }, // dir
 		{ 1.0f, 1.0f, 1.0f }, // color
 		0.988f, // inner_radius
-		0.986f // outer_radius
-		});
+		0.986f }); // outer_radius
 
 	m_renderer.SetCamera(
 		glm::vec3(0.0f, -10.0f, 5.0f), // camera pos
@@ -152,28 +154,27 @@ void Scene::Update(double delta_time)
 	update_gem_transform(m_blue_gem->ModifyWorldTransform(), dt);
 
 	glm::mat4 const & red_gem_transform = m_red_gem->GetWorldTransform();
-	glm::mat4 const & green_gem_transform = m_green_gem->GetWorldTransform();
-	glm::mat4 const & blue_gem_transform = m_blue_gem->GetWorldTransform();
 	m_renderer.SetPointLight1(PointLight{
 		{ red_gem_transform[3][0], red_gem_transform[3][1], red_gem_transform[3][2] }, // pos
 		{ 1.0, 0.0, 0.0 }, // color
-		10.0f // radius
-		});
+		10.0f }); // radius
+
+	glm::mat4 const & green_gem_transform = m_green_gem->GetWorldTransform();
 	m_renderer.SetPointLight2(PointLight{
 		{ green_gem_transform[3][0], green_gem_transform[3][1], green_gem_transform[3][2] },
 		{ 0.0, 1.0, 0.0 },
-		10.0f
-		});
+		10.0f });
+
+	glm::mat4 const & blue_gem_transform = m_blue_gem->GetWorldTransform();
 	m_renderer.SetPointLight3(PointLight{
 		{ blue_gem_transform[3][0], blue_gem_transform[3][1], blue_gem_transform[3][2] },
 		{ 0.0, 0.0, 1.0 },
-		10.0f
-		});
+		10.0f });
 }
 
-std::shared_ptr<RenderObject> Scene::create_object(int mesh_id, int shader_id) const
+std::shared_ptr<RenderObject> Scene::create_object(int mesh_id, int shader_id, int tex_id /*= -1*/) const
 {
-	auto obj = std::make_shared<RenderObject>(mesh_id, shader_id);
+	auto obj = std::make_shared<RenderObject>(mesh_id, shader_id, tex_id);
 	m_renderer.AddRenderObject(obj);
 	return obj;
 }

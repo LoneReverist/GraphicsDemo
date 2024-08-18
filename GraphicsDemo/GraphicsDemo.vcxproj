@@ -44,11 +44,11 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>..\glad\include;$(IncludePath)</IncludePath>
+    <IncludePath>..\glad\include;..\stbi\include;$(IncludePath)</IncludePath>
     <SourcePath>..\glad\src;$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>..\glad\include;$(IncludePath)</IncludePath>
+    <IncludePath>..\glad\include;..\stbi\include;$(IncludePath)</IncludePath>
     <SourcePath>..\glad\src;$(SourcePath)</SourcePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -104,12 +104,14 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\glad\include\glad\glad.h" />
+    <ClInclude Include="..\stbi\include\stb_image.h" />
     <ClInclude Include="GLApp.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="ObjLoader.h" />
@@ -118,12 +120,15 @@
     <ClInclude Include="Scene.h" />
     <ClInclude Include="ShaderProgram.h" />
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="Texture.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\resources\shaders\color_fs.txt" />
     <Text Include="..\resources\shaders\color_vs.txt" />
     <Text Include="..\resources\shaders\light_source_fs.txt" />
     <Text Include="..\resources\shaders\light_source_vs.txt" />
+    <Text Include="..\resources\shaders\texture_fs.txt" />
+    <Text Include="..\resources\shaders\texture_vs.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -2,9 +2,9 @@
 
 #pragma once
 
-class Mesh;
+struct BasicVertex;
 
 namespace ObjLoader
 {
-	bool LoadObjFile(std::filesystem::path const & filepath, Mesh & mesh);
+	bool LoadObjFile(std::filesystem::path const & filepath, std::vector<BasicVertex> & out_vertices, std::vector<unsigned int> & out_indices);
 }
