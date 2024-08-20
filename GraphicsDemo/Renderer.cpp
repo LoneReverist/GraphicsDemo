@@ -7,39 +7,45 @@
 
 #include "ObjLoader.h"
 
-void GLAPIENTRY debug_messge_callback(
-	GLenum source,
-	GLenum type,
-	GLuint id,
-	GLenum severity,
-	GLsizei length,
-	const GLchar * message,
-	const void * userParam)
+namespace
 {
-	if (id == 131185) // ignore notification about using GL_STATIC_DRAW
-		return;
-
-	std::cout << "message: " << message << std::endl;
-	std::cout << "type: ";
-	switch (type) {
-	case GL_DEBUG_TYPE_ERROR: std::cout << "ERROR"; break;
-	case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: std::cout << "DEPRECATED_BEHAVIOR"; break;
-	case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR: std::cout << "UNDEFINED_BEHAVIOR"; break;
-	case GL_DEBUG_TYPE_PORTABILITY: std::cout << "PORTABILITY"; break;
-	case GL_DEBUG_TYPE_PERFORMANCE: std::cout << "PERFORMANCE"; break;
-	case GL_DEBUG_TYPE_OTHER: std::cout << "OTHER"; break;
+	std::string type_to_string(GLenum type)
+	{
+		switch (type) {
+		case GL_DEBUG_TYPE_ERROR: return "ERROR";
+		case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: return "DEPRECATED_BEHAVIOR";
+		case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR: return "UNDEFINED_BEHAVIOR";
+		case GL_DEBUG_TYPE_PORTABILITY: return "PORTABILITY";
+		case GL_DEBUG_TYPE_PERFORMANCE: return "PERFORMANCE";
+		case GL_DEBUG_TYPE_OTHER: return "OTHER";
+		}
 	}
-	std::cout << std::endl;
 
-	std::cout << "id: " << id << std::endl;
-	std::cout << "severity: ";
-	switch (severity) {
-	case GL_DEBUG_SEVERITY_NOTIFICATION: std::cout << "NOTIFICATION"; break;
-	case GL_DEBUG_SEVERITY_LOW: std::cout << "LOW"; break;
-	case GL_DEBUG_SEVERITY_MEDIUM: std::cout << "MEDIUM"; break;
-	case GL_DEBUG_SEVERITY_HIGH: std::cout << "HIGH"; break;
+	std::string severity_to_string(GLenum severity)
+	{
+		switch (severity) {
+		case GL_DEBUG_SEVERITY_NOTIFICATION: return "NOTIFICATION";
+		case GL_DEBUG_SEVERITY_LOW: return "LOW";
+		case GL_DEBUG_SEVERITY_MEDIUM: return "MEDIUM";
+		case GL_DEBUG_SEVERITY_HIGH: return "HIGH";
+		}
 	}
-	std::cout << std::endl << std::endl;
+
+	void GLAPIENTRY debug_messge_callback(
+		GLenum source,
+		GLenum type,
+		GLuint id,
+		GLenum severity,
+		GLsizei length,
+		const GLchar * message,
+		const void * userParam)
+	{
+		if (id == 131185) // ignore notification about using GL_STATIC_DRAW
+			return;
+
+		std::cout << std::format("OpenGL {3}: type - {1}, id - {2}\nMessage: {0}\n\n",
+			message, type_to_string(type), id, severity_to_string(severity));
+	}
 }
 
 Renderer::~Renderer()
