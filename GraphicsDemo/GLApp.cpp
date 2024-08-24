@@ -2,6 +2,8 @@
 
 module;
 
+#include <thread>
+
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
@@ -10,9 +12,12 @@ module;
 module GLApp;
 
 import <iostream>;
+//import <thread>;
 
-GLApp::GLApp(int window_width, int window_height, std::string title)
-	: m_scene(m_renderer)
+import Renderer;
+import Scene;
+
+GLApp::GLApp(WindowSize window_size, std::string title)
 {
 	glfwSetErrorCallback([](int error, const char * description)
 		{
@@ -27,30 +32,18 @@ GLApp::GLApp(int window_width, int window_height, std::string title)
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	m_window = glfwCreateWindow(window_width, window_height, title.c_str(), nullptr, nullptr);
+	m_window = glfwCreateWindow(window_size.m_width, window_size.m_height, title.c_str(), nullptr, nullptr);
 	if (!m_window)
 		return;
-
-	glfwMakeContextCurrent(m_window);
-
-	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-	{
-		std::cout << "Failed to initialize OpenGL context" << std::endl;
-		m_window = nullptr;
-		return;
-	}
 
 	glfwSetWindowUserPointer(m_window, this);
 	glfwSetFramebufferSizeCallback(m_window, [](GLFWwindow * window, int width, int height)
 		{
 			GLApp * app = static_cast<GLApp *>(glfwGetWindowUserPointer(window));
-			app->OnWindowResize(width, height);
+			app->OnWindowResize(WindowSize{ width, height });
 		});
 
-	m_renderer.Init();
-	m_renderer.ResizeViewport(window_width, window_height);
-
-	m_scene.Init();
+	OnWindowResize(window_size);
 }
 
 GLApp::~GLApp()
@@ -64,33 +57,56 @@ void GLApp::Run()
 	if (!IsInitialized() || !HasWindow())
 		return;
 
-	m_last_update_time = glfwGetTime();
+	std::jthread update_render_loop([&window = m_window, &new_window_size = m_new_window_size](std::stop_token s_token)
+		{
+			glfwMakeContextCurrent(window);
+
+			if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+			{
+				std::cout << "Failed to initialize OpenGL context" << std::endl;
+				return;
+			}
+
+			Renderer renderer;
+			renderer.Init();
+			Scene scene(renderer);
+			scene.Init();
+
+			double last_update_time = glfwGetTime();
+
+			while (!s_token.stop_requested())
+			{
+				std::optional<WindowSize> size = new_window_size.exchange(std::nullopt);
+				if (size.has_value())
+					renderer.ResizeViewport(size->m_width, size->m_height);
+
+				double cur_time = glfwGetTime();
+				double delta_time = cur_time - last_update_time;
+				last_update_time = cur_time;
+
+				scene.Update(delta_time);
+
+				renderer.Render();
+
+				glfwSwapBuffers(window);
+			}
+		});
 
 	while (!glfwWindowShouldClose(m_window))
 	{
-		process_input();
+		process_input(); // must only be called from main thread
 
-		double cur_time = glfwGetTime();
-		double delta_time = cur_time - m_last_update_time;
-		m_last_update_time = cur_time;
-
-		m_scene.Update(delta_time);
-
-		m_renderer.Render();
-
-		glfwSwapBuffers(m_window);
-
-		glfwPollEvents();
+		glfwPollEvents(); // must only be called from main thread
 	}
 }
 
-void GLApp::OnWindowResize(int width, int height)
+void GLApp::OnWindowResize(WindowSize size)
 {
-	m_renderer.ResizeViewport(width, height);
+	m_new_window_size.store(size);
 }
 
 void GLApp::process_input() const
 {
-	if (glfwGetKey(m_window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+	if (glfwGetKey(m_window, GLFW_KEY_ESCAPE) == GLFW_PRESS) // must only be called from main thread
 		glfwSetWindowShouldClose(m_window, true);
 }

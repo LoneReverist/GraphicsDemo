@@ -7,15 +7,20 @@ module;
 
 export module GLApp;
 
+import <atomic>;
+import <optional>;
 import <string>;
 
-import Renderer;
-import Scene;
+export struct WindowSize
+{
+	int m_width{ 0 };
+	int m_height{ 0 };
+};
 
 export class GLApp
 {
 public:
-	GLApp(int window_width, int window_height, std::string title);
+	GLApp(WindowSize window_size, std::string title);
 	~GLApp();
 
 	void Run();
@@ -23,7 +28,7 @@ public:
 	bool IsInitialized() const { return m_intialized; }
 	bool HasWindow() const { return m_window != nullptr; }
 
-	void OnWindowResize(int width, int height);
+	void OnWindowResize(WindowSize size);
 
 private:
 	void process_input() const;
@@ -31,8 +36,6 @@ private:
 private:
 	bool m_intialized{ false };
 	GLFWwindow * m_window{ nullptr };
-	Renderer m_renderer;
-	Scene m_scene;
 
-	double m_last_update_time{ 0.0 };
+	std::atomic<std::optional<WindowSize>> m_new_window_size;
 };
