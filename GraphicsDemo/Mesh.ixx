@@ -2,14 +2,17 @@
 
 module;
 
-#include "stdafx.h"
-
 #include <glad/glad.h>
 
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 
 export module Mesh;
+
+import <concepts>;
+import <iostream>;
+import <variant>;
+import <vector>;
 
 export struct PositionVertex {
 	glm::vec3 m_pos;

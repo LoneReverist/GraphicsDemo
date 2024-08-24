@@ -2,7 +2,7 @@
 
 module;
 
-#include "stdafx.h"
+#include <array>
 
 #include <glad/glad.h>
 
@@ -10,6 +10,9 @@ module;
 #include "stb_image.h"
 
 module Texture;
+
+//import <array>;
+import <iostream>;
 
 class ImageData
 {

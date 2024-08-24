@@ -2,12 +2,12 @@
 
 module;
 
-#include "stdafx.h"
-
 #include <glm/vec3.hpp>
 #include <glm/ext/matrix_float4x4.hpp>
 
 export module Renderer;
+
+import <filesystem>;
 
 import Mesh;
 import RenderObject;

@@ -2,12 +2,12 @@
 
 module;
 
-#include "stdafx.h"
-
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
 export module GLApp;
+
+import <string>;
 
 import Renderer;
 import Scene;

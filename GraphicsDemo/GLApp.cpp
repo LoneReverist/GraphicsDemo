@@ -2,14 +2,14 @@
 
 module;
 
-#include "stdafx.h"
-
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
 #include <glad/glad.h>
 
 module GLApp;
+
+import <iostream>;
 
 GLApp::GLApp(int window_width, int window_height, std::string title)
 	: m_scene(m_renderer)

@@ -1,10 +1,8 @@
 // ObjLoader.ixx
 
-module;
-
-#include "stdafx.h"
-
 export module ObjLoader;
+
+import <filesystem>;
 
 import Mesh;
 

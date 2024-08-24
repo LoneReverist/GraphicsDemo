@@ -2,13 +2,16 @@
 
 module;
 
-#include "stdafx.h"
+#include <fstream>
 
 #include <glad/glad.h>
 
 #include <glm/gtc/type_ptr.hpp>
 
 module ShaderProgram;
+
+//import <fstream>;
+import <iostream>;
 
 bool ShaderProgram::LoadShaders(std::filesystem::path const & vert_shader_path, std::filesystem::path const & frag_shader_path)
 {

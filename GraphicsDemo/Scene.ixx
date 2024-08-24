@@ -1,10 +1,8 @@
 // Scene.ixx
 
-module;
-
-#include "stdafx.h"
-
 export module Scene;
+
+import <memory>;
 
 import Renderer;
 import RenderObject;

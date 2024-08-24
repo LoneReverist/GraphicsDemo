@@ -1,6 +1,6 @@
 // GraphicsDemo.cpp
 
-#include "stdafx.h"
+import <iostream>;
 
 import GLApp;
 

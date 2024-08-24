@@ -2,13 +2,13 @@
 
 module;
 
-#include "stdafx.h"
-
 #include <glad/glad.h>
 
 #include <glm/gtc/matrix_transform.hpp>
 
 module Renderer;
+
+import <iostream>;
 
 import ObjLoader;
 

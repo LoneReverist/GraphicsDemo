@@ -1,10 +1,8 @@
 // Texture.ixx
 
-module;
-
-#include "stdafx.h"
-
 export module Texture;
+
+import <filesystem>;
 
 export class Texture
 {

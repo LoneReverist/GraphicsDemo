@@ -2,11 +2,11 @@
 
 module;
 
-#include "stdafx.h"
-
 #include <glm/gtc/matrix_transform.hpp>
 
 export module ShaderProgram;
+
+import <filesystem>;
 
 export class ShaderProgram
 {
