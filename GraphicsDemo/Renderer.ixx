@@ -1,23 +1,27 @@
-// Renderer.h
+// Renderer.ixx
 
-#pragma once
+module;
+
+#include "stdafx.h"
 
 #include <glm/vec3.hpp>
+#include <glm/ext/matrix_float4x4.hpp>
 
-#include "RenderObject.h"
-#include "ShaderProgram.h"
-#include "Texture.h"
+export module Renderer;
 
 import Mesh;
+import RenderObject;
+import ShaderProgram;
+import Texture;
 
-struct PointLight
+export struct PointLight
 {
 	glm::vec3 m_pos{ 0.0, 0.0, 0.0 };
 	glm::vec3 m_color{ 1.0, 1.0, 1.0 };
 	float m_radius{ 0.0f };
 };
 
-struct SpotLight
+export struct SpotLight
 {
 	glm::vec3 m_pos{ 0.0, 0.0, 0.0 };
 	glm::vec3 m_dir{ 0.0, 0.0, -1.0 };
@@ -26,7 +30,7 @@ struct SpotLight
 	float m_outer_radius{ 0.0 };
 };
 
-class Renderer
+export class Renderer
 {
 public:
 	~Renderer();

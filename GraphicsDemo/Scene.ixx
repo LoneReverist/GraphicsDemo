@@ -1,11 +1,15 @@
-// Scene.h
+// Scene.ixx
 
-#pragma once
+module;
 
-class Renderer;
-class RenderObject;
+#include "stdafx.h"
 
-class Scene
+export module Scene;
+
+import Renderer;
+import RenderObject;
+
+export class Scene
 {
 public:
 	Scene(Renderer & renderer) : m_renderer(renderer) {}

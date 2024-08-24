@@ -98,7 +98,6 @@
     <ClCompile Include="GraphicsDemo.cpp" />
     <ClCompile Include="Mesh.ixx" />
     <ClCompile Include="ObjLoader.cpp" />
-    <ClCompile Include="RenderObject.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="ShaderProgram.cpp" />
@@ -114,14 +113,28 @@
   <ItemGroup>
     <ClInclude Include="..\glad\include\glad\glad.h" />
     <ClInclude Include="..\stbi\include\stb_image.h" />
-    <ClInclude Include="GLApp.h" />
-    <ClInclude Include="ObjLoader.h" />
-    <ClInclude Include="RenderObject.h" />
-    <ClInclude Include="Renderer.h" />
-    <ClInclude Include="Scene.h" />
-    <ClInclude Include="ShaderProgram.h" />
+    <ClCompile Include="GLApp.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
+    <ClCompile Include="ObjLoader.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
+    <ClCompile Include="RenderObject.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
+    <ClCompile Include="Renderer.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
+    <ClCompile Include="Scene.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
+    <ClCompile Include="ShaderProgram.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
     <ClInclude Include="stdafx.h" />
-    <ClInclude Include="Texture.h" />
+    <ClCompile Include="Texture.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\resources\shaders\color_fs.txt" />

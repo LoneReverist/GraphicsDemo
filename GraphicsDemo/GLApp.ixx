@@ -1,13 +1,18 @@
-// GLApp.h
+// GLApp.ixx
 
-#pragma once
+module;
 
-#include "Renderer.h"
-#include "Scene.h"
+#include "stdafx.h"
 
-struct GLFWwindow;
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
 
-class GLApp
+export module GLApp;
+
+import Renderer;
+import Scene;
+
+export class GLApp
 {
 public:
 	GLApp(int window_width, int window_height, std::string title);

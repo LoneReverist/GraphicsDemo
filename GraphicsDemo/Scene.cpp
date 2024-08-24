@@ -1,12 +1,12 @@
 // Scene.cpp
 
+module;
+
 #include "stdafx.h"
-#include "Scene.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "ObjLoader.h"
-#include "Renderer.h"
+module Scene;
 
 import Mesh;
 

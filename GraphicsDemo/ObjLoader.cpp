@@ -1,9 +1,10 @@
 // ObjLoader.cpp
 
-#include "stdafx.h"
-#include "ObjLoader.h"
+module;
 
-import Mesh;
+#include "stdafx.h"
+
+module ObjLoader;
 
 namespace
 {

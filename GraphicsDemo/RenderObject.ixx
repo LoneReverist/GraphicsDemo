@@ -1,11 +1,15 @@
-// RenderObject.h
+// RenderObject.ixx
 
-#pragma once
+module;
+
+#include "stdafx.h"
 
 #include <glm/vec3.hpp>
 #include <glm/ext/matrix_float4x4.hpp>
 
-class RenderObject
+export module RenderObject;
+
+export class RenderObject
 {
 public:
 	RenderObject(int mesh_id, int shader_id, int tex_id = -1)

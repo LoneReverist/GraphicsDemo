@@ -1,8 +1,12 @@
-// Texture.h
+// Texture.ixx
 
-#pragma once
+module;
 
-class Texture
+#include "stdafx.h"
+
+export module Texture;
+
+export class Texture
 {
 public:
 	bool LoadTexture(std::filesystem::path const & filepath);

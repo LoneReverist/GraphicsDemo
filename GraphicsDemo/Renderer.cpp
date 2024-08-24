@@ -1,11 +1,16 @@
 // Renderer.cpp
 
+module;
+
 #include "stdafx.h"
-#include "Renderer.h"
 
 #include <glad/glad.h>
 
-#include "ObjLoader.h"
+#include <glm/gtc/matrix_transform.hpp>
+
+module Renderer;
+
+import ObjLoader;
 
 namespace
 {

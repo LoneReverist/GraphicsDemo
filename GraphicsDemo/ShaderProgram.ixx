@@ -1,10 +1,14 @@
-// ShaderProgram.h
+// ShaderProgram.ixx
 
-#pragma once
+module;
+
+#include "stdafx.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 
-class ShaderProgram
+export module ShaderProgram;
+
+export class ShaderProgram
 {
 public:
 	bool LoadShaders(std::filesystem::path const & vert_shader_path, std::filesystem::path const & frag_shader_path);

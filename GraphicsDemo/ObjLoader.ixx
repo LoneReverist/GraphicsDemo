@@ -1,10 +1,14 @@
-// ObjLoader.h
+// ObjLoader.ixx
 
-#pragma once
+module;
 
-struct NormalVertex;
+#include "stdafx.h"
 
-namespace ObjLoader
+export module ObjLoader;
+
+import Mesh;
+
+export namespace ObjLoader
 {
 	bool LoadObjFile(std::filesystem::path const & filepath, std::vector<NormalVertex> & out_vertices, std::vector<unsigned int> & out_indices);
 }
