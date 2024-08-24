@@ -18,6 +18,7 @@ namespace
 		case GL_DEBUG_TYPE_PORTABILITY: return "PORTABILITY";
 		case GL_DEBUG_TYPE_PERFORMANCE: return "PERFORMANCE";
 		case GL_DEBUG_TYPE_OTHER: return "OTHER";
+		default: return "UNKNOWN";
 		}
 	}
 
@@ -28,10 +29,11 @@ namespace
 		case GL_DEBUG_SEVERITY_LOW: return "LOW";
 		case GL_DEBUG_SEVERITY_MEDIUM: return "MEDIUM";
 		case GL_DEBUG_SEVERITY_HIGH: return "HIGH";
+		default: return "UNKNOWN";
 		}
 	}
 
-	void GLAPIENTRY debug_messge_callback(
+	void GLAPIENTRY debug_message_callback(
 		GLenum source,
 		GLenum type,
 		GLuint id,
@@ -64,7 +66,7 @@ void Renderer::Init()
 	glEnable(GL_CULL_FACE); // cull back facing facets. by default, front facing facets have counter-clockwise vertex windings.
 
 	glEnable(GL_DEBUG_OUTPUT);
-	glDebugMessageCallback(debug_messge_callback, 0);
+	glDebugMessageCallback(debug_message_callback, 0);
 }
 
 void Renderer::render_skybox() const
