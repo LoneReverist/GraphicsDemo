@@ -29,10 +29,10 @@ template <typename T>
 concept VertexConcept = std::same_as<T, PositionVertex> || std::same_as<T, BasicVertex> || std::same_as<T, TextureVertex>;
 
 template <typename T>
-concept VertexSupportsNormal = std::same_as<T, BasicVertex> || std::same_as<T, TextureVertex>;
+concept VertexSupportsNormal = VertexConcept<T> && requires(T v) { v.m_normal; };
 
 template <typename T>
-concept VertexSupportsTexCoord = std::same_as<T, TextureVertex>;
+concept VertexSupportsTexCoord = VertexConcept<T> && requires(T v) { v.m_tex_coord; };
 
 template <VertexConcept Vertex>
 class MeshImpl
