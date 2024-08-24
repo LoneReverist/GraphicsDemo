@@ -235,8 +235,8 @@ void Renderer::AddRenderObject(std::weak_ptr<RenderObject> render_object)
 	m_render_objects.push_back(render_object);
 }
 
-void Renderer::SetCamera(glm::vec3 const & pos, glm::vec3 const & look_at_pos)
+void Renderer::SetCamera(glm::vec3 const & pos, glm::vec3 const & dir)
 {
 	m_camera_pos = pos;
-	m_view_transform = glm::lookAt(pos, look_at_pos, glm::vec3(0.0, 0.0, 1.0));
+	m_view_transform = glm::lookAt(pos, pos + dir, glm::vec3(0.0, 0.0, 1.0));
 }

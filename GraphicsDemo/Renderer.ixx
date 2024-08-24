@@ -49,7 +49,7 @@ public:
 	void AddRenderObject(std::weak_ptr<RenderObject> render_object);
 	void SetSkybox(std::weak_ptr<RenderObject> skybox) { m_skybox = skybox; }
 
-	void SetCamera(glm::vec3 const & pos, glm::vec3 const & look_at_pos);
+	void SetCamera(glm::vec3 const & pos, glm::vec3 const & dir);
 
 	void SetClearColor(glm::vec3 const & color) { m_clear_color = color; }
 

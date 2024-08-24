@@ -119,28 +119,28 @@ void Scene::Init()
 {
 	const std::filesystem::path resources_path = std::filesystem::path("..") / "resources";
 
-	int color_shader_id = m_renderer.LoadShaderProgram(
+	const int color_shader_id = m_renderer.LoadShaderProgram(
 		resources_path / "shaders" / "color_vs.txt",
 		resources_path / "shaders" / "color_fs.txt");
-	int texture_shader_id = m_renderer.LoadShaderProgram(
+	const int texture_shader_id = m_renderer.LoadShaderProgram(
 		resources_path / "shaders" / "texture_vs.txt",
 		resources_path / "shaders" / "texture_fs.txt");
-	int light_source_shader_id = m_renderer.LoadShaderProgram(
+	const int light_source_shader_id = m_renderer.LoadShaderProgram(
 		resources_path / "shaders" / "light_source_vs.txt",
 		resources_path / "shaders" / "light_source_fs.txt");
-	int skybox_shader_id = m_renderer.LoadShaderProgram(
+	const int skybox_shader_id = m_renderer.LoadShaderProgram(
 		resources_path / "shaders" / "skybox_vs.txt",
 		resources_path / "shaders" / "skybox_fs.txt");
 
-	int sword_mesh_id = m_renderer.LoadMesh(resources_path / "objects" / "skullsword.obj");
-	int red_gem_mesh_id = m_renderer.LoadMesh(resources_path / "objects" / "redgem.obj");
-	int green_gem_mesh_id = m_renderer.LoadMesh(resources_path / "objects" / "greengem.obj");
-	int blue_gem_mesh_id = m_renderer.LoadMesh(resources_path / "objects" / "bluegem.obj");
-	int ground_mesh_id = m_renderer.AddMesh(std::move(create_ground_mesh()));
-	int skybox_mesh_id = m_renderer.AddMesh(std::move(create_skybox_mesh()));
+	const int sword_mesh_id = m_renderer.LoadMesh(resources_path / "objects" / "skullsword.obj");
+	const int red_gem_mesh_id = m_renderer.LoadMesh(resources_path / "objects" / "redgem.obj");
+	const int green_gem_mesh_id = m_renderer.LoadMesh(resources_path / "objects" / "greengem.obj");
+	const int blue_gem_mesh_id = m_renderer.LoadMesh(resources_path / "objects" / "bluegem.obj");
+	const int ground_mesh_id = m_renderer.AddMesh(std::move(create_ground_mesh()));
+	const int skybox_mesh_id = m_renderer.AddMesh(std::move(create_skybox_mesh()));
 
-	int ground_tex_id = m_renderer.LoadTexture(resources_path / "textures" / "skybox" / "top.jpg");
-	int skybox_tex_id = m_renderer.LoadCubeMap(std::array<std::filesystem::path, 6> {
+	const int ground_tex_id = m_renderer.LoadTexture(resources_path / "textures" / "skybox" / "top.jpg");
+	const int skybox_tex_id = m_renderer.LoadCubeMap(std::array<std::filesystem::path, 6> {
 		resources_path / "textures" / "skybox" / "right.jpg",
 		resources_path / "textures" / "skybox" / "left.jpg",
 		resources_path / "textures" / "skybox" / "front.jpg",
@@ -179,15 +179,17 @@ void Scene::Init()
 		.m_inner_radius{ 0.988f },
 		.m_outer_radius{ 0.986f } });
 
-	m_renderer.SetCamera(
-		glm::vec3(0.0f, -10.0f, 5.0f), // camera pos
-		glm::vec3(0.0f, 0.0f, 2.5f)); // look at pos
+	m_camera_pos = glm::vec3{ 0.0f, -10.0f, 5.0f };
+	m_camera_dir = glm::normalize(glm::vec3{ 0.0f, 0.0f, 2.5f } - m_camera_pos);
+	m_renderer.SetCamera(m_camera_pos, m_camera_dir);
 }
 
-void Scene::Update(double delta_time)
+void Scene::Update(double delta_time, Input const & input)
 {
-	float dt = static_cast<float>(delta_time);
+	const float dt = static_cast<float>(delta_time);
 	m_timer += dt;
+
+	update_camera(dt, input);
 
 	glm::vec3 bg_color;
 	bg_color.r = std::sin(m_timer) / 2.0f + 0.5f;
@@ -225,4 +227,50 @@ std::shared_ptr<RenderObject> Scene::create_object(int mesh_id, int shader_id, i
 	auto obj = std::make_shared<RenderObject>(mesh_id, shader_id, tex_id);
 	m_renderer.AddRenderObject(obj);
 	return obj;
+}
+
+void Scene::update_camera(float dt, Input const & input)
+{
+	glm::vec3 up_dir{ 0.0f, 0.0f, 1.0f };
+	glm::vec3 right_dir = glm::cross(m_camera_dir, up_dir);
+	glm::vec3 forward_dir = glm::cross(up_dir, right_dir);
+
+	glm::vec3 dir_velocity{ 0.0f, 0.0f, 0.0f };
+	if (input.KeyIsPressed(Input::Key::Up))
+		dir_velocity += glm::vec3{ 1.0, 0.0, 0.0 };
+	if (input.KeyIsPressed(Input::Key::Down))
+		dir_velocity += glm::vec3{ -1.0, 0.0, 0.0 };
+	if (input.KeyIsPressed(Input::Key::Right))
+		dir_velocity += glm::vec3{ 0.0, 0.0, -1.0 };
+	if (input.KeyIsPressed(Input::Key::Left))
+		dir_velocity += glm::vec3{ 0.0, 0.0, 1.0 };
+
+	bool rotate = glm::length(dir_velocity) > 0.0;
+	if (rotate)
+	{
+		const float rot_speed = std::numbers::pi_v<float>;
+		dir_velocity = glm::normalize(dir_velocity);
+		m_camera_dir = glm::rotate(glm::mat4(1.0), dir_velocity.x * rot_speed * dt, right_dir) * glm::vec4(m_camera_dir, 0.0);
+		m_camera_dir = glm::rotate(glm::mat4(1.0), dir_velocity.z * rot_speed * dt, up_dir) * glm::vec4(m_camera_dir, 0.0);
+	}
+
+	glm::vec3 velocity{ 0.0f, 0.0f, 0.0f };
+	if (input.KeyIsPressed('W'))
+		velocity += forward_dir;
+	if (input.KeyIsPressed('S'))
+		velocity -= forward_dir;
+	if (input.KeyIsPressed('D'))
+		velocity += right_dir;
+	if (input.KeyIsPressed('A'))
+		velocity -= right_dir;
+
+	bool move = glm::length(velocity) > 0.0;
+	if (move)
+	{
+		const float speed = 10.0f;
+		m_camera_pos += glm::normalize(velocity) * (speed * dt);
+	}
+
+	if (move || rotate)
+		m_renderer.SetCamera(m_camera_pos, m_camera_dir);
 }

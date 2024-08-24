@@ -63,6 +63,9 @@
     <ClCompile Include="GLApp.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Input.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

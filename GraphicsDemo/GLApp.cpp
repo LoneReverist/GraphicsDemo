@@ -42,6 +42,11 @@ GLApp::GLApp(WindowSize window_size, std::string title)
 			GLApp * app = static_cast<GLApp *>(glfwGetWindowUserPointer(window));
 			app->OnWindowResize(WindowSize{ width, height });
 		});
+	glfwSetKeyCallback(m_window, [](GLFWwindow * window, int key, int scan_code, int action, int mods)
+		{
+			GLApp * app = static_cast<GLApp *>(glfwGetWindowUserPointer(window));
+			app->OnKeyEvent(key, scan_code, action, mods);
+		});
 
 	OnWindowResize(window_size);
 }
@@ -57,7 +62,7 @@ void GLApp::Run()
 	if (!IsInitialized() || !HasWindow())
 		return;
 
-	std::jthread update_render_loop([&window = m_window, &new_window_size = m_new_window_size](std::stop_token s_token)
+	std::jthread update_render_loop([&window = m_window, &new_window_size = m_new_window_size, &input = m_input](std::stop_token s_token)
 		{
 			glfwMakeContextCurrent(window);
 
@@ -84,7 +89,7 @@ void GLApp::Run()
 				double delta_time = cur_time - last_update_time;
 				last_update_time = cur_time;
 
-				scene.Update(delta_time);
+				scene.Update(delta_time, input);
 
 				renderer.Render();
 
@@ -93,11 +98,7 @@ void GLApp::Run()
 		});
 
 	while (!glfwWindowShouldClose(m_window))
-	{
-		process_input(); // must only be called from main thread
-
 		glfwPollEvents(); // must only be called from main thread
-	}
 }
 
 void GLApp::OnWindowResize(WindowSize size)
@@ -105,8 +106,13 @@ void GLApp::OnWindowResize(WindowSize size)
 	m_new_window_size.store(size);
 }
 
-void GLApp::process_input() const
+void GLApp::OnKeyEvent(int key, int /*scan_code*/, int action, int /*mods*/)
 {
-	if (glfwGetKey(m_window, GLFW_KEY_ESCAPE) == GLFW_PRESS) // must only be called from main thread
+	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(m_window, true);
+
+	if (action == GLFW_PRESS)
+		m_input.SetKey(key, true /*pressed*/);
+	else if (action == GLFW_RELEASE)
+		m_input.SetKey(key, false /*pressed*/);
 }

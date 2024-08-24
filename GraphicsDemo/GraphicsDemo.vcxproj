@@ -96,6 +96,7 @@
     </ClCompile>
     <ClCompile Include="GLApp.cpp" />
     <ClCompile Include="GraphicsDemo.cpp" />
+    <ClCompile Include="Input.ixx" />
     <ClCompile Include="Mesh.ixx" />
     <ClCompile Include="ObjLoader.cpp" />
     <ClCompile Include="Renderer.cpp" />
