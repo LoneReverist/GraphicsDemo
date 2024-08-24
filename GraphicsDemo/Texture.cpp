@@ -31,7 +31,7 @@ public:
 
 	void LoadImage(std::filesystem::path const & filepath)
 	{
-		stbi_set_flip_vertically_on_load(true);
+		//stbi_set_flip_vertically_on_load(true);
 
 		m_data = stbi_load(filepath.string().c_str(), &m_width, &m_height, &m_nr_channels, 0);
 		if (!IsValid())

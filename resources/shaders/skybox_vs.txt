@@ -7,8 +7,22 @@ uniform mat4 proj_transform;
 
 out vec3 tex_coords;
 
+// returns a 90 degree x-axis rotation matrix
+mat4 get_z_correction_matrix()
+{
+	float s = sin(radians(90.0));
+	float c = cos(radians(90.0));
+	return mat4(
+		1, 0, 0, 0,
+		0, c, s, 0,
+		0, -s, c, 0,
+		0, 0, 0, 1
+	);
+}
+
 void main()
 {
+	// opengl cubemaps expect the Y-axis to be the up direction but we want the Z-axis to be up, so rotate the vertex, but not the texture coordinate
 	tex_coords = vert_pos;
-	gl_Position = proj_transform * view_transform * vec4(vert_pos, 1.0);
+	gl_Position = proj_transform * view_transform * get_z_correction_matrix() * vec4(vert_pos, 1.0);
 }

@@ -143,10 +143,10 @@ void Scene::Init()
 	const int skybox_tex_id = m_renderer.LoadCubeMap(std::array<std::filesystem::path, 6> {
 		resources_path / "textures" / "skybox" / "right.jpg",
 		resources_path / "textures" / "skybox" / "left.jpg",
-		resources_path / "textures" / "skybox" / "front.jpg",
-		resources_path / "textures" / "skybox" / "back.jpg",
 		resources_path / "textures" / "skybox" / "top.jpg",
-		resources_path / "textures" / "skybox" / "bottom.jpg" });
+		resources_path / "textures" / "skybox" / "bottom.jpg",
+		resources_path / "textures" / "skybox" / "front.jpg",
+		resources_path / "textures" / "skybox" / "back.jpg" });
 
 	m_sword0 = create_object(sword_mesh_id, color_shader_id);
 	m_sword1 = create_object(sword_mesh_id, color_shader_id);
