@@ -180,7 +180,7 @@ int Renderer::LoadShaderProgram(std::filesystem::path const & vert_shader_path, 
 
 int Renderer::LoadMesh(std::filesystem::path const & mesh_path)
 {
-	std::vector<BasicVertex> vertices;
+	std::vector<NormalVertex> vertices;
 	std::vector<unsigned int> indices;
 	if (!ObjLoader::LoadObjFile(mesh_path, vertices, indices))
 	{

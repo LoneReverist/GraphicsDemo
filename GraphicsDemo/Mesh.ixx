@@ -14,7 +14,7 @@ export struct PositionVertex {
 	glm::vec3 m_pos;
 };
 
-export struct BasicVertex {
+export struct NormalVertex {
 	glm::vec3 m_pos;
 	glm::vec3 m_normal;
 };
@@ -26,7 +26,7 @@ export struct TextureVertex {
 };
 
 template <typename T>
-concept VertexConcept = std::same_as<T, PositionVertex> || std::same_as<T, BasicVertex> || std::same_as<T, TextureVertex>;
+concept VertexConcept = std::same_as<T, PositionVertex> || std::same_as<T, NormalVertex> || std::same_as<T, TextureVertex>;
 
 template <typename T>
 concept VertexSupportsNormal = VertexConcept<T> && requires(T v) { v.m_normal; };
@@ -81,7 +81,7 @@ public:
 	}
 
 private:
-	using mesh_variant_t = std::variant<MeshImpl<PositionVertex>, MeshImpl<BasicVertex>, MeshImpl<TextureVertex>>;
+	using mesh_variant_t = std::variant<MeshImpl<PositionVertex>, MeshImpl<NormalVertex>, MeshImpl<TextureVertex>>;
 
 	mesh_variant_t m_mesh_var;
 };

@@ -83,7 +83,7 @@ namespace ObjLoader
 		return true;
 	}
 
-	bool LoadObjFile(std::filesystem::path const & filepath, std::vector<BasicVertex> & out_vertices, std::vector<unsigned int> & out_indices)
+	bool LoadObjFile(std::filesystem::path const & filepath, std::vector<NormalVertex> & out_vertices, std::vector<unsigned int> & out_indices)
 	{
 		std::vector<std::array<float, 3>> positions;
 		std::vector<std::array<float, 3>> normals;
@@ -102,7 +102,7 @@ namespace ObjLoader
 
 				std::array<float, 3> const & pos = positions[vert.m_position_index - 1];
 				std::array<float, 3> const & norm = normals[vert.m_normal_index - 1];
-				out_vertices.push_back(BasicVertex{
+				out_vertices.push_back(NormalVertex{
 					{ pos[0], pos[1], pos[2] },
 					{ norm[0], norm[1], norm[2] }
 					});
