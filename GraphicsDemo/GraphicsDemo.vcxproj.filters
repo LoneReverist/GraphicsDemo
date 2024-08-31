@@ -103,5 +103,11 @@
     <Text Include="..\resources\shaders\skybox_vs.txt">
       <Filter>Resource Files</Filter>
     </Text>
+    <Text Include="..\resources\shaders\reflection_vs.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="..\resources\shaders\reflection_fs.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
   </ItemGroup>
 </Project>

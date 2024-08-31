@@ -131,6 +131,9 @@ void Scene::Init()
 	const int skybox_shader_id = m_renderer.LoadShaderProgram(
 		resources_path / "shaders" / "skybox_vs.txt",
 		resources_path / "shaders" / "skybox_fs.txt");
+	const int reflection_shader_id = m_renderer.LoadShaderProgram(
+		resources_path / "shaders" / "reflection_vs.txt",
+		resources_path / "shaders" / "reflection_fs.txt");
 
 	const int sword_mesh_id = m_renderer.LoadMesh(resources_path / "objects" / "skullsword.obj");
 	const int red_gem_mesh_id = m_renderer.LoadMesh(resources_path / "objects" / "redgem.obj");
@@ -148,8 +151,8 @@ void Scene::Init()
 		resources_path / "textures" / "skybox" / "front.jpg",
 		resources_path / "textures" / "skybox" / "back.jpg" });
 
-	m_sword0 = create_object(sword_mesh_id, color_shader_id);
-	m_sword1 = create_object(sword_mesh_id, color_shader_id);
+	m_sword0 = create_object(sword_mesh_id, reflection_shader_id, skybox_tex_id);
+	m_sword1 = create_object(sword_mesh_id, reflection_shader_id, skybox_tex_id);
 	m_red_gem = create_object(red_gem_mesh_id, light_source_shader_id);
 	m_green_gem = create_object(green_gem_mesh_id, light_source_shader_id);
 	m_blue_gem = create_object(blue_gem_mesh_id, light_source_shader_id);
