@@ -33,6 +33,18 @@ in vec3 normal_world;
 
 out vec4 FragColor;
 
+// returns a 90 degree x-axis rotation matrix
+mat3 get_z_correction_matrix()
+{
+	float s = sin(radians(90.0));
+	float c = cos(radians(90.0));
+	return mat3(
+		1, 0, 0,
+		0, c, -s,
+		0, s, c
+	);
+}
+
 vec3 ColorFromPointLight(PointLight light, vec3 normal)
 {
 	vec3 pos_to_light = normalize(light.pos - pos_world);
@@ -65,6 +77,7 @@ void main()
 
 	vec3 camera_to_surface = pos_world - camera_pos_world;
 	vec3 reflect_dir = reflect(camera_to_surface, normal);
+	vec3 sample_dir = get_z_correction_matrix() * reflect_dir;
 
-	FragColor = vec4(light_color, 1.0) * texture(cube_map, reflect_dir);
+	FragColor = vec4(light_color, 1.0) * texture(cube_map, sample_dir);
 }
