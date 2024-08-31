@@ -173,7 +173,7 @@ void Scene::Init()
 	init_gem_transform(1, m_green_gem->ModifyWorldTransform());
 	init_gem_transform(2, m_blue_gem->ModifyWorldTransform());
 
-	m_renderer.SetAmbientLightColor(glm::vec3(0.2, 0.2, 0.2));
+	m_renderer.SetAmbientLightColor(glm::vec3(0.5, 0.5, 0.5));
 
 	m_renderer.SetSpotLight(SpotLight{
 		.m_pos{ 0.0f, 0.0f, 25.0f },
@@ -210,19 +210,19 @@ void Scene::Update(double delta_time, Input const & input)
 	m_renderer.SetPointLight1(PointLight{
 		.m_pos{ red_gem_transform[3][0], red_gem_transform[3][1], red_gem_transform[3][2] },
 		.m_color{ 1.0, 0.0, 0.0 },
-		.m_radius{ 10.0f } });
+		.m_radius{ 20.0f } });
 
 	glm::mat4 const & green_gem_transform = m_green_gem->GetWorldTransform();
 	m_renderer.SetPointLight2(PointLight{
 		.m_pos{ green_gem_transform[3][0], green_gem_transform[3][1], green_gem_transform[3][2] },
 		.m_color{ 0.0, 1.0, 0.0 },
-		.m_radius{ 10.0f } });
+		.m_radius{ 20.0f } });
 
 	glm::mat4 const & blue_gem_transform = m_blue_gem->GetWorldTransform();
 	m_renderer.SetPointLight3(PointLight{
 		.m_pos{ blue_gem_transform[3][0], blue_gem_transform[3][1], blue_gem_transform[3][2] },
 		.m_color{ 0.0, 0.0, 1.0 },
-		.m_radius{ 10.0f } });
+		.m_radius{ 20.0f } });
 }
 
 std::shared_ptr<RenderObject> Scene::create_object(int mesh_id, int shader_id, int tex_id /*= -1*/) const
