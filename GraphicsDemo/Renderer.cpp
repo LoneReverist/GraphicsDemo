@@ -135,20 +135,20 @@ void Renderer::Render() const
 		shader_program.SetUniform("object_color", obj->GetColor());
 
 		shader_program.SetUniform("ambient_light_color", m_ambient_light_color);
-		shader_program.SetUniform("pointlight_pos_1", m_pointlight_1.m_pos);
-		shader_program.SetUniform("pointlight_color_1", m_pointlight_1.m_color);
-		shader_program.SetUniform("pointlight_radius_1", m_pointlight_1.m_radius);
-		shader_program.SetUniform("pointlight_pos_2", m_pointlight_2.m_pos);
-		shader_program.SetUniform("pointlight_color_2", m_pointlight_2.m_color);
-		shader_program.SetUniform("pointlight_radius_2", m_pointlight_2.m_radius);
-		shader_program.SetUniform("pointlight_pos_3", m_pointlight_3.m_pos);
-		shader_program.SetUniform("pointlight_color_3", m_pointlight_3.m_color);
-		shader_program.SetUniform("pointlight_radius_3", m_pointlight_3.m_radius);
-		shader_program.SetUniform("spotlight_pos", m_spotlight.m_pos);
-		shader_program.SetUniform("spotlight_dir", m_spotlight.m_dir);
-		shader_program.SetUniform("spotlight_color", m_spotlight.m_color);
-		shader_program.SetUniform("spotlight_inner_radius", m_spotlight.m_inner_radius);
-		shader_program.SetUniform("spotlight_outer_radius", m_spotlight.m_outer_radius);
+		shader_program.SetUniform("pointlight_1.pos", m_pointlight_1.m_pos);
+		shader_program.SetUniform("pointlight_1.color", m_pointlight_1.m_color);
+		shader_program.SetUniform("pointlight_1.radius", m_pointlight_1.m_radius);
+		shader_program.SetUniform("pointlight_2.pos", m_pointlight_2.m_pos);
+		shader_program.SetUniform("pointlight_2.color", m_pointlight_2.m_color);
+		shader_program.SetUniform("pointlight_2.radius", m_pointlight_2.m_radius);
+		shader_program.SetUniform("pointlight_3.pos", m_pointlight_3.m_pos);
+		shader_program.SetUniform("pointlight_3.color", m_pointlight_3.m_color);
+		shader_program.SetUniform("pointlight_3.radius", m_pointlight_3.m_radius);
+		shader_program.SetUniform("spotlight_1.pos", m_spotlight.m_pos);
+		shader_program.SetUniform("spotlight_1.dir", m_spotlight.m_dir);
+		shader_program.SetUniform("spotlight_1.color", m_spotlight.m_color);
+		shader_program.SetUniform("spotlight_1.inner_radius", m_spotlight.m_inner_radius);
+		shader_program.SetUniform("spotlight_1.outer_radius", m_spotlight.m_outer_radius);
 
 		shader_program.SetUniform("camera_pos_world", m_camera_pos);
 
