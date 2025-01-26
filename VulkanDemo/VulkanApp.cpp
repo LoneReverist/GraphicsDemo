@@ -4,15 +4,20 @@ module;
 
 #include <thread>
 
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
+
 module VulkanApp;
 
 import <iostream>;
 //import <thread>;
 
+import GraphicsApi;
 import Renderer;
 import Scene;
 
 VulkanApp::VulkanApp(WindowSize window_size, std::string title)
+	: m_title(title)
 {
 	glfwSetErrorCallback([](int error, const char * description)
 		{
@@ -23,11 +28,9 @@ VulkanApp::VulkanApp(WindowSize window_size, std::string title)
 		return;
 	m_intialized = true;
 
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-	m_window = glfwCreateWindow(window_size.m_width, window_size.m_height, title.c_str(), nullptr, nullptr);
+	m_window = glfwCreateWindow(window_size.m_width, window_size.m_height, m_title.c_str(), nullptr, nullptr);
 	if (!m_window)
 		return;
 
@@ -57,15 +60,12 @@ void VulkanApp::Run()
 	if (!IsInitialized() || !HasWindow())
 		return;
 
-	std::jthread update_render_loop([&window = m_window, &new_window_size = m_new_window_size, &input = m_input](std::stop_token s_token)
+	std::jthread update_render_loop([this](std::stop_token s_token)
 		{
-			glfwMakeContextCurrent(window);
+			uint32_t extension_count = 0;
+			const char ** extensions = glfwGetRequiredInstanceExtensions(&extension_count);
 
-			/*if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-			{
-				std::cout << "Failed to initialize OpenGL context" << std::endl;
-				return;
-			}*/
+			GraphicsApi graphics_api{ m_title, extension_count, extensions };
 
 			Renderer renderer;
 			renderer.Init();
@@ -76,7 +76,7 @@ void VulkanApp::Run()
 
 			while (!s_token.stop_requested())
 			{
-				std::optional<WindowSize> size = new_window_size.exchange(std::nullopt);
+				std::optional<WindowSize> size = m_new_window_size.exchange(std::nullopt);
 				if (size.has_value())
 					renderer.ResizeViewport(size->m_width, size->m_height);
 
@@ -84,11 +84,11 @@ void VulkanApp::Run()
 				double delta_time = cur_time - last_update_time;
 				last_update_time = cur_time;
 
-				scene.Update(delta_time, input);
+				scene.Update(delta_time, m_input);
 
 				renderer.Render();
 
-				glfwSwapBuffers(window);
+				glfwSwapBuffers(m_window);
 			}
 		});
 

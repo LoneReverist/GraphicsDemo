@@ -2,6 +2,9 @@
 
 module;
 
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
+
 export module VulkanApp;
 
 import <atomic>;
@@ -33,6 +36,7 @@ public:
 private:
 	bool m_intialized{ false };
 	GLFWwindow * m_window{ nullptr };
+	std::string m_title;
 
 	std::atomic<std::optional<WindowSize>> m_new_window_size;
 	Input m_input;
