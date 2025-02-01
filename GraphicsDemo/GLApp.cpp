@@ -7,13 +7,12 @@ module;
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
-#include <glad/glad.h>
-
 module GLApp;
 
 import <iostream>;
 //import <thread>;
 
+import GraphicsApi;
 import Renderer;
 import Scene;
 
@@ -66,11 +65,7 @@ void GLApp::Run()
 		{
 			glfwMakeContextCurrent(window);
 
-			if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-			{
-				std::cout << "Failed to initialize OpenGL context" << std::endl;
-				return;
-			}
+			GraphicsApi graphics_api{ reinterpret_cast<GraphicsApi::LoadProcFn *>(glfwGetProcAddress) };
 
 			Renderer renderer;
 			renderer.Init();

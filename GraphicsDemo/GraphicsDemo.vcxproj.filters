@@ -66,6 +66,12 @@
     <ClCompile Include="Input.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="GraphicsApi.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GraphicApi.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

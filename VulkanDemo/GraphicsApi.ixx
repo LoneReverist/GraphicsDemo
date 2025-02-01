@@ -9,7 +9,7 @@ export module GraphicsApi;
 import <string>;
 import <vector>;
 
-class GraphicsApi
+export class GraphicsApi
 {
 public:
 	GraphicsApi(std::string const & app_title, uint32_t extension_count, char const ** extensions);
