@@ -11,10 +11,10 @@ export module Renderer;
 
 import <filesystem>;
 
-import Mesh;
-import RenderObject;
-import ShaderProgram;
-import Texture;
+//import Mesh;
+//import RenderObject;
+//import ShaderProgram;
+//import Texture;
 
 export struct PointLight
 {
@@ -42,14 +42,14 @@ public:
 
 	void ResizeViewport(int width, int height);
 
-	int LoadShaderProgram(std::filesystem::path const & vert_shader_path, std::filesystem::path const & frag_shader_path);
-	int LoadMesh(std::filesystem::path const & mesh_path);
-	int AddMesh(Mesh && mesh_var);
-	int LoadTexture(std::filesystem::path const & tex_path);
-	int LoadCubeMap(std::array<std::filesystem::path, 6> const & filepaths);
-
-	void AddRenderObject(std::weak_ptr<RenderObject> render_object);
-	void SetSkybox(std::weak_ptr<RenderObject> skybox) { m_skybox = skybox; }
+//	int LoadShaderProgram(std::filesystem::path const & vert_shader_path, std::filesystem::path const & frag_shader_path);
+//	int LoadMesh(std::filesystem::path const & mesh_path);
+//	int AddMesh(Mesh && mesh_var);
+//	int LoadTexture(std::filesystem::path const & tex_path);
+//	int LoadCubeMap(std::array<std::filesystem::path, 6> const & filepaths);
+//
+//	void AddRenderObject(std::weak_ptr<RenderObject> render_object);
+//	void SetSkybox(std::weak_ptr<RenderObject> skybox) { m_skybox = skybox; }
 
 	void SetCamera(glm::vec3 const & pos, glm::vec3 const & dir);
 
@@ -62,15 +62,15 @@ public:
 	void SetSpotLight(SpotLight const & light) { m_spotlight = light; }
 
 private:
-	void render_skybox() const;
+//	void render_skybox() const;
 
 private:
-	std::vector<ShaderProgram> m_shader_programs;
-	std::vector<Mesh> m_meshes;
-	std::vector<Texture> m_textures;
-
-	std::vector<std::weak_ptr<RenderObject>> m_render_objects;
-	std::weak_ptr<RenderObject> m_skybox;
+//	std::vector<ShaderProgram> m_shader_programs;
+//	std::vector<Mesh> m_meshes;
+//	std::vector<Texture> m_textures;
+//
+//	std::vector<std::weak_ptr<RenderObject>> m_render_objects;
+//	std::weak_ptr<RenderObject> m_skybox;
 
 	glm::vec3 m_camera_pos;
 
