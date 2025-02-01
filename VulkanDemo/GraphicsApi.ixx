@@ -18,7 +18,10 @@ public:
 	VkInstance GetInstance() { return m_instance; }
 
 private:
-	VkInstance m_instance;
+	VkInstance m_instance = VK_NULL_HANDLE;
+	VkPhysicalDevice m_physical_device = VK_NULL_HANDLE; // implicitly destroyed when m_instance is destroyed
+	VkDevice m_logical_device = VK_NULL_HANDLE;
+	VkQueue m_graphics_queue = VK_NULL_HANDLE; // implicitly cleaned up when m_logical_device is destroyed
 
 	std::vector<char const *> const m_validation_layers = {
 		"VK_LAYER_KHRONOS_validation"
