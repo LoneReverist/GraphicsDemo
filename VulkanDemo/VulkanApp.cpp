@@ -65,7 +65,7 @@ void VulkanApp::Run()
 			uint32_t extension_count = 0;
 			const char ** extensions = glfwGetRequiredInstanceExtensions(&extension_count);
 
-			GraphicsApi graphics_api{ m_title, extension_count, extensions };
+			GraphicsApi graphics_api{ m_window, m_title, extension_count, extensions };
 
 			Renderer renderer;
 			renderer.Init();
