@@ -28,14 +28,18 @@ public:
 private:
 	VkInstance m_instance = VK_NULL_HANDLE;
 	VkSurfaceKHR m_surface = VK_NULL_HANDLE;
+
 	VkPhysicalDevice m_physical_device = VK_NULL_HANDLE; // Automatically cleaned up when m_instance is destroyed
 	VkDevice m_logical_device = VK_NULL_HANDLE;
 	VkQueue m_graphics_queue = VK_NULL_HANDLE; // Automatically cleaned up when m_logical_device is destroyed
 	VkQueue m_present_queue = VK_NULL_HANDLE; // Automatically cleaned up when m_logical_device is destroyed
+
 	VkSwapchainKHR m_swap_chain = VK_NULL_HANDLE;
 	std::vector<VkImage> m_swap_chain_images; // Automatically cleaned up when m_swap_chain is destroyed
 	VkFormat m_swap_chain_image_format = VK_FORMAT_UNDEFINED;
 	VkExtent2D m_swap_chain_extent{ 0, 0 };
+
+	std::vector<VkImageView> m_swap_chain_image_views;
 
 	std::vector<char const *> const m_validation_layers = {
 		"VK_LAYER_KHRONOS_validation"
