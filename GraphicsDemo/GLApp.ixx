@@ -2,6 +2,9 @@
 
 module;
 
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
+
 export module GLApp;
 
 import <atomic>;
@@ -9,8 +12,6 @@ import <optional>;
 import <string>;
 
 import Input;
-
-class GLFWwindow;
 
 export struct WindowSize
 {
