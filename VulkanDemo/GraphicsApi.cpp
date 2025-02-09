@@ -92,7 +92,7 @@ namespace
 		bool IsComplete() const { return graphics_family.has_value() && present_family.has_value(); }
 	};
 
-	struct PhysicalDeviceAndQueues
+	struct PhysicalDeviceAndQFIs
 	{
 		VkPhysicalDevice device;
 		QueueFamilyIndices qfi;
@@ -125,7 +125,7 @@ namespace
 		return indices;
 	}
 
-	bool device_is_suitable(PhysicalDeviceAndQueues const & phys_dq)
+	bool device_is_suitable(PhysicalDeviceAndQFIs const & phys_dq)
 	{
 		VkPhysicalDeviceProperties device_properties;
 		vkGetPhysicalDeviceProperties(phys_dq.device, &device_properties);
@@ -140,7 +140,7 @@ namespace
 		return true;
 	}
 
-	PhysicalDeviceAndQueues pick_physical_device(VkInstance instance, VkSurfaceKHR surface)
+	PhysicalDeviceAndQFIs pick_physical_device(VkInstance instance, VkSurfaceKHR surface)
 	{
 		uint32_t device_count = 0;
 		vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
@@ -150,12 +150,12 @@ namespace
 		std::vector<VkPhysicalDevice> devices(device_count);
 		vkEnumeratePhysicalDevices(instance, &device_count, devices.data());
 
-		std::vector<PhysicalDeviceAndQueues> phys_dqs(devices.size());
+		std::vector<PhysicalDeviceAndQFIs> phys_dqs(devices.size());
 		std::ranges::transform(devices, phys_dqs.begin(), [surface](VkPhysicalDevice device)
-			{ return PhysicalDeviceAndQueues{ device, find_queue_families(device, surface) }; });
+			{ return PhysicalDeviceAndQFIs{ device, find_queue_families(device, surface) }; });
 
 		auto iter = std::ranges::find_if(phys_dqs,
-			[](PhysicalDeviceAndQueues const & phys_dq) { return device_is_suitable(phys_dq); });
+			[](PhysicalDeviceAndQFIs const & phys_dq) { return device_is_suitable(phys_dq); });
 		if (iter == phys_dqs.end())
 			throw std::runtime_error("Failed to find a suitable GPU!");
 
@@ -163,7 +163,7 @@ namespace
 	}
 
 	VkDevice create_logical_device(
-		PhysicalDeviceAndQueues phys_dq,
+		PhysicalDeviceAndQFIs phys_dq,
 		VkQueue * graphics_queue = nullptr,
 		VkQueue * present_queue = nullptr)
 	{
@@ -226,7 +226,7 @@ GraphicsApi::GraphicsApi(
 	if (m_surface == VK_NULL_HANDLE)
 		return;
 
-	PhysicalDeviceAndQueues phys_dq = pick_physical_device(m_instance, m_surface);
+	PhysicalDeviceAndQFIs phys_dq = pick_physical_device(m_instance, m_surface);
 	m_physical_device = phys_dq.device;
 	if (m_physical_device == VK_NULL_HANDLE)
 		return;
