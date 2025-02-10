@@ -119,6 +119,10 @@ void Scene::Init()
 {
 	const std::filesystem::path resources_path = std::filesystem::path("..") / "resources";
 
+	m_renderer.LoadGraphicsPipeline(
+		resources_path / "shaders" / "test_vert.spv",
+		resources_path / "shaders" / "test_frag.spv");
+
 //	const int color_shader_id = m_renderer.LoadShaderProgram(
 //		resources_path / "shaders" / "color_vs.txt",
 //		resources_path / "shaders" / "color_fs.txt");

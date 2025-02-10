@@ -68,7 +68,7 @@ void VulkanApp::Run()
 
 			GraphicsApi graphics_api{ m_window, m_title, extension_count, extensions };
 
-			Renderer renderer;
+			Renderer renderer{ graphics_api };
 			renderer.Init();
 			Scene scene(renderer);
 			scene.Init();
@@ -89,7 +89,7 @@ void VulkanApp::Run()
 
 				renderer.Render();
 
-				glfwSwapBuffers(m_window);
+				//glfwSwapBuffers(m_window);
 			}
 		});
 

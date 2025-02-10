@@ -11,9 +11,10 @@ export module Renderer;
 
 import <filesystem>;
 
+import GraphicsApi;
+import GraphicsPipeline;
 //import Mesh;
 //import RenderObject;
-//import ShaderProgram;
 //import Texture;
 
 export struct PointLight
@@ -35,12 +36,17 @@ export struct SpotLight
 export class Renderer
 {
 public:
+	Renderer(GraphicsApi const & graphics_api);
 	~Renderer();
 
 	void Init();
 	void Render() const;
 
 	void ResizeViewport(int width, int height);
+
+	void LoadGraphicsPipeline(
+		std::filesystem::path const & vert_shader_path,
+		std::filesystem::path const & frag_shader_path);
 
 //	int LoadShaderProgram(std::filesystem::path const & vert_shader_path, std::filesystem::path const & frag_shader_path);
 //	int LoadMesh(std::filesystem::path const & mesh_path);
@@ -65,6 +71,8 @@ private:
 //	void render_skybox() const;
 
 private:
+	GraphicsApi const & m_graphics_api;
+
 //	std::vector<ShaderProgram> m_shader_programs;
 //	std::vector<Mesh> m_meshes;
 //	std::vector<Texture> m_textures;

@@ -45,8 +45,28 @@
     <ClCompile Include="Scene.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="GraphicsPipeline.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GraphicsPipeline.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="..\resources\shaders\test_frag.spv">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\resources\shaders\test_vert.spv">
+      <Filter>Resource Files</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\resources\shaders\test.vert">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="..\resources\shaders\test.frag">
+      <Filter>Resource Files</Filter>
+    </Text>
   </ItemGroup>
 </Project>

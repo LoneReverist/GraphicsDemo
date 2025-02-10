@@ -23,7 +23,7 @@ public:
 
 	~GraphicsApi();
 
-	VkInstance GetInstance() { return m_instance; }
+	VkDevice GetDevice() const { return m_logical_device; }
 
 private:
 	VkInstance m_instance = VK_NULL_HANDLE;

@@ -14,6 +14,11 @@ module Renderer;
 
 //import ObjLoader;
 
+Renderer::Renderer(GraphicsApi const & graphics_api)
+	: m_graphics_api(graphics_api)
+{
+}
+
 Renderer::~Renderer()
 {
 //	for (ShaderProgram & shader_program : m_shader_programs)
@@ -129,6 +134,14 @@ void Renderer::ResizeViewport(int width, int height)
 //	const float near_plane = 0.1f;
 //	const float far_plane = 100.0f;
 //	m_proj_transform = glm::perspective(field_of_view, aspect_ratio, near_plane, far_plane);
+}
+
+void Renderer::LoadGraphicsPipeline(
+	std::filesystem::path const & vert_shader_path,
+	std::filesystem::path const & frag_shader_path)
+{
+	GraphicsPipeline graphics_pipeline;
+	graphics_pipeline.LoadPipeline(vert_shader_path, frag_shader_path, m_graphics_api.GetDevice());
 }
 
 //int Renderer::LoadShaderProgram(std::filesystem::path const & vert_shader_path, std::filesystem::path const & frag_shader_path)
