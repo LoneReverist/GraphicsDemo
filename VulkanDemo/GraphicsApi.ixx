@@ -41,6 +41,10 @@ private:
 
 	std::vector<VkImageView> m_swap_chain_image_views;
 
+	std::vector<const char *> const m_device_extensions = {
+		VK_KHR_SWAPCHAIN_EXTENSION_NAME
+	};
+
 	std::vector<char const *> const m_validation_layers = {
 		"VK_LAYER_KHRONOS_validation"
 	};

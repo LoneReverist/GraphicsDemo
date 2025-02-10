@@ -443,16 +443,12 @@ GraphicsApi::GraphicsApi(
 	if (m_surface == VK_NULL_HANDLE)
 		return;
 
-	const std::vector<const char *> device_extensions = {
-		VK_KHR_SWAPCHAIN_EXTENSION_NAME
-	};
-
-	PhysicalDeviceInfo phys_device_info = pick_physical_device(m_instance, m_surface, device_extensions);
+	PhysicalDeviceInfo phys_device_info = pick_physical_device(m_instance, m_surface, m_device_extensions);
 	m_physical_device = phys_device_info.device;
 	if (m_physical_device == VK_NULL_HANDLE)
 		return;
 
-	m_logical_device = create_logical_device(phys_device_info, device_extensions, m_graphics_queue, m_present_queue);
+	m_logical_device = create_logical_device(phys_device_info, m_device_extensions, m_graphics_queue, m_present_queue);
 	if (m_logical_device == VK_NULL_HANDLE)
 		return;
 
