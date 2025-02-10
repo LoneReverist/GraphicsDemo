@@ -137,8 +137,11 @@
   <ItemGroup>
     <ClCompile Include="GraphicsApi.cpp" />
     <ClCompile Include="GraphicsApi.ixx" />
+    <ClCompile Include="Input.ixx" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="Renderer.ixx" />
+    <ClCompile Include="Scene.cpp" />
+    <ClCompile Include="Scene.ixx" />
     <ClCompile Include="VulkanApp.cpp" />
     <ClCompile Include="VulkanApp.ixx" />
     <ClCompile Include="VulkanDemo.cpp" />

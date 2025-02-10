@@ -11,7 +11,7 @@ import <atomic>;
 import <optional>;
 import <string>;
 
-//import Input;
+import Input;
 
 export struct WindowSize
 {
@@ -39,5 +39,5 @@ private:
 	std::string m_title;
 
 	std::atomic<std::optional<WindowSize>> m_new_window_size;
-	//Input m_input;
+	Input m_input;
 };
