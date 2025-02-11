@@ -140,8 +140,9 @@ void Renderer::LoadGraphicsPipeline(
 	std::filesystem::path const & vert_shader_path,
 	std::filesystem::path const & frag_shader_path)
 {
-	GraphicsPipeline graphics_pipeline;
-	graphics_pipeline.LoadPipeline(vert_shader_path, frag_shader_path, m_graphics_api.GetDevice());
+	GraphicsPipeline graphics_pipeline{ m_graphics_api };
+	graphics_pipeline.CreatePipeline(vert_shader_path, frag_shader_path);
+	graphics_pipeline.DestroyPipeline();
 }
 
 //int Renderer::LoadShaderProgram(std::filesystem::path const & vert_shader_path, std::filesystem::path const & frag_shader_path)

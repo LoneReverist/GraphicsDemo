@@ -24,6 +24,8 @@ public:
 	~GraphicsApi();
 
 	VkDevice GetDevice() const { return m_logical_device; }
+	VkFormat GetSwapChainImageFormat() const { return m_swap_chain_image_format; }
+	VkExtent2D GetSwapChainExtent() const { return m_swap_chain_extent; }
 
 private:
 	VkInstance m_instance = VK_NULL_HANDLE;

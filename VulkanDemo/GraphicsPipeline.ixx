@@ -10,14 +10,17 @@ export module GraphicsPipeline;
 
 import <filesystem>;
 
+import GraphicsApi;
+
 export class GraphicsPipeline
 {
 public:
-	bool LoadPipeline(
+	GraphicsPipeline(GraphicsApi const & graphics_api);
+
+	bool CreatePipeline(
 		std::filesystem::path const & vert_shader_path,
-		std::filesystem::path const & frag_shader_path,
-		VkDevice device);
-	void DeletePipeline();
+		std::filesystem::path const & frag_shader_path);
+	void DestroyPipeline();
 
 	void Activate() const;
 	void SetUniform(std::string const & uniform_label, float uniform) const;
@@ -29,5 +32,9 @@ private:
 	std::vector<char> read_file(std::filesystem::path const & path) const;
 
 private:
-	unsigned int m_program_id{ 0 };
+	GraphicsApi const & m_graphics_api;
+
+	VkRenderPass m_render_pass = VK_NULL_HANDLE;
+	VkPipelineLayout m_pipeline_layout = VK_NULL_HANDLE;
+	VkPipeline m_graphics_pipeline = VK_NULL_HANDLE;
 };

@@ -70,7 +70,7 @@ void VulkanApp::Run()
 
 			Renderer renderer{ graphics_api };
 			renderer.Init();
-			Scene scene(renderer);
+			Scene scene{ renderer };
 			scene.Init();
 
 			double last_update_time = glfwGetTime();
@@ -91,7 +91,7 @@ void VulkanApp::Run()
 
 				//glfwSwapBuffers(m_window);
 			}
-		});
+		}); // the GraphicsApi, Renderer and Scene are destroyed in the reverse order they were created
 
 	while (!glfwWindowShouldClose(m_window))
 		glfwPollEvents(); // must only be called from main thread
