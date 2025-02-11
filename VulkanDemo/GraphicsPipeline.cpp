@@ -18,46 +18,6 @@ import GraphicsApi;
 
 namespace
 {
-	VkRenderPass create_render_pass(GraphicsApi const & graphics_api)
-	{
-		VkAttachmentDescription color_attachment{
-			.format = graphics_api.GetSwapChainImageFormat(),
-			.samples = VK_SAMPLE_COUNT_1_BIT,
-			.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-			.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-			.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-			.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-			.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-			.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
-		};
-
-		VkAttachmentReference color_attachment_ref{
-			.attachment = 0,
-			.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-		};
-
-		VkSubpassDescription subpass{
-			.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
-			.colorAttachmentCount = 1,
-			.pColorAttachments = &color_attachment_ref
-		};
-
-		VkRenderPassCreateInfo renderPassInfo{
-			.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
-			.attachmentCount = 1,
-			.pAttachments = &color_attachment,
-			.subpassCount = 1,
-			.pSubpasses = &subpass
-		};
-
-		VkRenderPass render_pass = VK_NULL_HANDLE;
-		VkResult result = vkCreateRenderPass(graphics_api.GetDevice(), &renderPassInfo, nullptr, &render_pass);
-		if (result != VK_SUCCESS)
-			std::cout << "Failed to create render pass" << std::endl;
-
-		return render_pass;
-	}
-
 	VkPipelineLayout create_pipeline_layout(VkDevice device)
 	{
 		VkPipelineLayoutCreateInfo pipeline_layout_info{
@@ -226,10 +186,6 @@ bool GraphicsPipeline::CreatePipeline(
 {
 	VkDevice device = m_graphics_api.GetDevice();
 
-	m_render_pass = create_render_pass(m_graphics_api);
-	if (m_render_pass == VK_NULL_HANDLE)
-		return false;
-
 	m_pipeline_layout = create_pipeline_layout(device);
 	if (m_pipeline_layout == VK_NULL_HANDLE)
 		return false;
@@ -262,7 +218,7 @@ bool GraphicsPipeline::CreatePipeline(
 		frag_shader_stage_info
 	};
 
-	m_graphics_pipeline = create_graphics_pipeline(device, m_render_pass, m_pipeline_layout, shader_stages);
+	m_graphics_pipeline = create_graphics_pipeline(device, m_graphics_api.GetRenderPass(), m_pipeline_layout, shader_stages);
 
 	vkDestroyShaderModule(device, frag_shader_module, nullptr);
 	vkDestroyShaderModule(device, vert_shader_module, nullptr);
@@ -275,7 +231,6 @@ void GraphicsPipeline::DestroyPipeline()
 	VkDevice device = m_graphics_api.GetDevice();
 	vkDestroyPipeline(device, m_graphics_pipeline, nullptr);
 	vkDestroyPipelineLayout(device, m_pipeline_layout, nullptr);
-	vkDestroyRenderPass(device, m_render_pass, nullptr);
 }
 
 void GraphicsPipeline::Activate() const

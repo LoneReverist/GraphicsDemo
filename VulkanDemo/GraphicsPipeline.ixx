@@ -34,7 +34,6 @@ private:
 private:
 	GraphicsApi const & m_graphics_api;
 
-	VkRenderPass m_render_pass = VK_NULL_HANDLE;
 	VkPipelineLayout m_pipeline_layout = VK_NULL_HANDLE;
 	VkPipeline m_graphics_pipeline = VK_NULL_HANDLE;
 };

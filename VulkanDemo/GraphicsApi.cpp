@@ -389,6 +389,46 @@ namespace
 		return swap_chain;
 	}
 
+	VkRenderPass create_render_pass(VkDevice logical_device, VkFormat swap_chain_image_format)
+	{
+		VkAttachmentDescription color_attachment{
+			.format = swap_chain_image_format,
+			.samples = VK_SAMPLE_COUNT_1_BIT,
+			.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+			.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+			.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+			.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+			.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+			.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+		};
+
+		VkAttachmentReference color_attachment_ref{
+			.attachment = 0,
+			.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+		};
+
+		VkSubpassDescription subpass{
+			.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
+			.colorAttachmentCount = 1,
+			.pColorAttachments = &color_attachment_ref
+		};
+
+		VkRenderPassCreateInfo render_pass_info{
+			.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
+			.attachmentCount = 1,
+			.pAttachments = &color_attachment,
+			.subpassCount = 1,
+			.pSubpasses = &subpass
+		};
+
+		VkRenderPass render_pass = VK_NULL_HANDLE;
+		VkResult result = vkCreateRenderPass(logical_device, &render_pass_info, nullptr, &render_pass);
+		if (result != VK_SUCCESS)
+			std::cout << "Failed to create render pass" << std::endl;
+
+		return render_pass;
+	}
+
 	std::vector<VkImageView> create_image_views(
 		std::vector<VkImage> const & images,
 		VkDevice logical_device,
@@ -397,7 +437,7 @@ namespace
 		std::vector<VkImageView> image_views(images.size());
 
 		std::ranges::transform(images, image_views.begin(),
-			[logical_device, swap_chain_image_format](VkImage const & image)
+			[logical_device, swap_chain_image_format](VkImage image)
 			{
 				VkImageViewCreateInfo createInfo{};
 				createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -423,6 +463,40 @@ namespace
 			});
 
 		return image_views;
+	}
+
+	std::vector<VkFramebuffer> create_framebuffers(
+		std::vector<VkImageView> image_views,
+		VkDevice logical_device,
+		VkRenderPass render_pass,
+		VkExtent2D swap_chain_extent)
+	{
+		std::vector<VkFramebuffer> framebuffers(image_views.size());
+
+		std::ranges::transform(image_views, framebuffers.begin(),
+			[logical_device, render_pass, swap_chain_extent](VkImageView image_view)
+			{
+				VkImageView attachments[] = { image_view };
+
+				VkFramebufferCreateInfo framebuffer_info{
+					.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+					.renderPass = render_pass,
+					.attachmentCount = 1,
+					.pAttachments = attachments,
+					.width = swap_chain_extent.width,
+					.height = swap_chain_extent.height,
+					.layers = 1
+				};
+
+				VkFramebuffer framebuffer = VK_NULL_HANDLE;
+				VkResult result = vkCreateFramebuffer(logical_device, &framebuffer_info, nullptr, &framebuffer);
+				if (result != VK_SUCCESS)
+					throw std::runtime_error("Failed to create vulkan framebuffer");
+
+				return framebuffer;
+			});
+
+		return framebuffers;
 	}
 }
 
@@ -457,14 +531,24 @@ GraphicsApi::GraphicsApi(
 	if (m_swap_chain == VK_NULL_HANDLE)
 		return;
 
+	m_render_pass = create_render_pass(m_logical_device, m_swap_chain_image_format);
+	if (m_render_pass == VK_NULL_HANDLE)
+		return;
+
 	m_swap_chain_image_views = create_image_views(m_swap_chain_images, m_logical_device, m_swap_chain_image_format);
+	m_swap_chain_framebuffers = create_framebuffers(
+		m_swap_chain_image_views, m_logical_device, m_render_pass, m_swap_chain_extent);
 }
 
 GraphicsApi::~GraphicsApi()
 {
+	for (auto framebuffer : m_swap_chain_framebuffers)
+		vkDestroyFramebuffer(m_logical_device, framebuffer, nullptr);
+
 	for (auto image_view : m_swap_chain_image_views)
 		vkDestroyImageView(m_logical_device, image_view, nullptr);
 
+	vkDestroyRenderPass(m_logical_device, m_render_pass, nullptr);
 	vkDestroySwapchainKHR(m_logical_device, m_swap_chain, nullptr);
 	vkDestroyDevice(m_logical_device, nullptr);
 	vkDestroySurfaceKHR(m_instance, m_surface, nullptr);

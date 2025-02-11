@@ -26,6 +26,7 @@ public:
 	VkDevice GetDevice() const { return m_logical_device; }
 	VkFormat GetSwapChainImageFormat() const { return m_swap_chain_image_format; }
 	VkExtent2D GetSwapChainExtent() const { return m_swap_chain_extent; }
+	VkRenderPass GetRenderPass() const { return m_render_pass; }
 
 private:
 	VkInstance m_instance = VK_NULL_HANDLE;
@@ -41,7 +42,9 @@ private:
 	VkFormat m_swap_chain_image_format = VK_FORMAT_UNDEFINED;
 	VkExtent2D m_swap_chain_extent{ 0, 0 };
 
+	VkRenderPass m_render_pass = VK_NULL_HANDLE;
 	std::vector<VkImageView> m_swap_chain_image_views;
+	std::vector<VkFramebuffer> m_swap_chain_framebuffers;
 
 	std::vector<const char *> const m_device_extensions = {
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME
