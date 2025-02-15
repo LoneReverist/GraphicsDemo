@@ -73,7 +73,7 @@ private:
 private:
 	GraphicsApi const & m_graphics_api;
 
-//	std::vector<ShaderProgram> m_shader_programs;
+	std::vector<GraphicsPipeline> m_pipelines;
 //	std::vector<Mesh> m_meshes;
 //	std::vector<Texture> m_textures;
 //

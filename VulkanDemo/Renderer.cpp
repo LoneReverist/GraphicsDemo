@@ -21,8 +21,8 @@ Renderer::Renderer(GraphicsApi const & graphics_api)
 
 Renderer::~Renderer()
 {
-//	for (ShaderProgram & shader_program : m_shader_programs)
-//		shader_program.DeleteShaders();
+	for (GraphicsPipeline & pipeline : m_pipelines)
+		pipeline.DestroyPipeline();
 //	for (Mesh & mesh : m_meshes)
 //		mesh.DeleteBuffers();
 }
@@ -68,6 +68,63 @@ void Renderer::Init()
 
 void Renderer::Render() const
 {
+	VkCommandBuffer command_buffer = m_graphics_api.GetCommandBuffer();
+	VkExtent2D sc_extent = m_graphics_api.GetSwapChainExtent();
+
+	VkCommandBufferBeginInfo begin_info{
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+		.flags = 0,
+		.pInheritanceInfo = nullptr
+	};
+
+	VkResult result = vkBeginCommandBuffer(command_buffer, &begin_info);
+	if (result != VK_SUCCESS)
+		throw std::runtime_error("failed to begin recording command buffer!");
+
+	VkClearValue clear_color = { .color = { m_clear_color.r, m_clear_color.g, m_clear_color.b, 1.0f } };
+
+	VkViewport viewport{
+		.x = 0.0f,
+		.y = 0.0f,
+		.width = static_cast<float>(sc_extent.width),
+		.height = static_cast<float>(sc_extent.height),
+		.minDepth = 0.0f,
+		.maxDepth = 1.0f
+	};
+
+	VkRect2D scissor{
+		.offset = { 0, 0 },
+		.extent = sc_extent
+	};
+
+	VkRenderPassBeginInfo render_pass_info{
+		.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+		.renderPass = m_graphics_api.GetRenderPass(),
+		.framebuffer = m_graphics_api.GetCurFrameBuffer(),
+		.renderArea = scissor,
+		.clearValueCount = 1,
+		.pClearValues = &clear_color
+	};
+
+	vkCmdBeginRenderPass(command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
+
+	m_pipelines[0].Activate();
+
+	vkCmdSetViewport(command_buffer, 0, 1, &viewport);
+	vkCmdSetScissor(command_buffer, 0, 1, &scissor);
+
+	vkCmdDraw(command_buffer,
+		3 /*vertexCount*/,
+		1 /*instanceCount*/,
+		0 /*firstVertex*/,
+		0 /*firstInstance*/);
+
+	vkCmdEndRenderPass(command_buffer);
+
+	result = vkEndCommandBuffer(command_buffer);
+	if (result != VK_SUCCESS)
+		throw std::runtime_error("failed to record command buffer!");
+
 //	glClearColor(m_clear_color.r, m_clear_color.g, m_clear_color.b, 1.0);
 //	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 //
@@ -140,9 +197,10 @@ void Renderer::LoadGraphicsPipeline(
 	std::filesystem::path const & vert_shader_path,
 	std::filesystem::path const & frag_shader_path)
 {
-	GraphicsPipeline graphics_pipeline{ m_graphics_api };
-	graphics_pipeline.CreatePipeline(vert_shader_path, frag_shader_path);
-	graphics_pipeline.DestroyPipeline();
+	m_pipelines.emplace_back(m_graphics_api);
+
+	if (!m_pipelines.back().CreatePipeline(vert_shader_path, frag_shader_path))
+		m_pipelines.pop_back();
 }
 
 //int Renderer::LoadShaderProgram(std::filesystem::path const & vert_shader_path, std::filesystem::path const & frag_shader_path)

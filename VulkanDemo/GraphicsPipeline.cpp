@@ -59,29 +59,6 @@ namespace
 			.scissorCount = 1
 		};
 
-		//	VkExtent2D sc_extent = graphics_api.GetSwapChainExtent();
-		//	VkViewport viewport{
-		//		.x = 0.0f,
-		//		.y = 0.0f,
-		//		.width = static_cast<float>(sc_extent.width),
-		//		.height = static_cast<float>(sc_extent.height),
-		//		.minDepth = 0.0f,
-		//		.maxDepth = 1.0f
-		//	};
-		//
-		//	VkRect2D scissor{
-		//		.offset = { 0, 0 },
-		//		.extent = sc_extent
-		//	};
-		//
-		//	VkPipelineViewportStateCreateInfo viewport_state{
-		//		.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
-		//		.viewportCount = 1,
-		//		.pViewports = &viewport,
-		//		.scissorCount = 1,
-		//		.pScissors = &scissor
-		//	};
-
 		VkPipelineVertexInputStateCreateInfo vertex_input_info{
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
 			.vertexBindingDescriptionCount = 0,
@@ -235,13 +212,13 @@ void GraphicsPipeline::DestroyPipeline()
 
 void GraphicsPipeline::Activate() const
 {
-//	if (m_program_id == 0)
-//	{
-//		std::cout << "Activating invalid shader program" << std::endl;
-//		return;
-//	}
-//
-//	glUseProgram(m_program_id);
+	if (m_graphics_pipeline == VK_NULL_HANDLE)
+	{
+		std::cout << "Activating invalid graphics pipeline" << std::endl;
+		return;
+	}
+
+	vkCmdBindPipeline(m_graphics_api.GetCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphics_pipeline);
 }
 
 void GraphicsPipeline::SetUniform(std::string const & uniform_label, float uniform) const

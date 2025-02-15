@@ -498,6 +498,39 @@ namespace
 
 		return framebuffers;
 	}
+
+	VkCommandPool create_command_pool(
+		PhysicalDeviceInfo const & phys_device_info,
+		VkDevice logical_device)
+	{
+		VkCommandPoolCreateInfo poolInfo{};
+		poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+		poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+		poolInfo.queueFamilyIndex = phys_device_info.qfis.graphics_family.value();
+
+		VkCommandPool command_pool = VK_NULL_HANDLE;
+		VkResult result = vkCreateCommandPool(logical_device, &poolInfo, nullptr, &command_pool);
+		if (result != VK_SUCCESS)
+			throw std::runtime_error("Failed to create vulkan command pool");
+
+		return command_pool;
+	}
+
+	VkCommandBuffer create_command_buffer(VkCommandPool command_pool, VkDevice logical_device)
+	{
+		VkCommandBufferAllocateInfo allocInfo{};
+		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		allocInfo.commandPool = command_pool;
+		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		allocInfo.commandBufferCount = 1;
+
+		VkCommandBuffer command_buffer = VK_NULL_HANDLE;
+		VkResult result = vkAllocateCommandBuffers(logical_device, &allocInfo, &command_buffer);
+		if (result != VK_SUCCESS)
+			throw std::runtime_error("failed to allocate command buffers!");
+
+		return command_buffer;
+	}
 }
 
 GraphicsApi::GraphicsApi(
@@ -538,10 +571,20 @@ GraphicsApi::GraphicsApi(
 	m_swap_chain_image_views = create_image_views(m_swap_chain_images, m_logical_device, m_swap_chain_image_format);
 	m_swap_chain_framebuffers = create_framebuffers(
 		m_swap_chain_image_views, m_logical_device, m_render_pass, m_swap_chain_extent);
+
+	m_command_pool = create_command_pool(phys_device_info, m_logical_device);
+	if (m_command_pool == VK_NULL_HANDLE)
+		return;
+
+	m_command_buffer = create_command_buffer(m_command_pool, m_logical_device);
+	if (m_command_buffer == VK_NULL_HANDLE)
+		return;
 }
 
 GraphicsApi::~GraphicsApi()
 {
+	vkDestroyCommandPool(m_logical_device, m_command_pool, nullptr);
+
 	for (auto framebuffer : m_swap_chain_framebuffers)
 		vkDestroyFramebuffer(m_logical_device, framebuffer, nullptr);
 

@@ -27,6 +27,8 @@ public:
 	VkFormat GetSwapChainImageFormat() const { return m_swap_chain_image_format; }
 	VkExtent2D GetSwapChainExtent() const { return m_swap_chain_extent; }
 	VkRenderPass GetRenderPass() const { return m_render_pass; }
+	VkCommandBuffer GetCommandBuffer() const { return m_command_buffer; }
+	VkFramebuffer GetCurFrameBuffer() const { return m_swap_chain_framebuffers[m_current_image_index]; }
 
 private:
 	VkInstance m_instance = VK_NULL_HANDLE;
@@ -45,6 +47,10 @@ private:
 	VkRenderPass m_render_pass = VK_NULL_HANDLE;
 	std::vector<VkImageView> m_swap_chain_image_views;
 	std::vector<VkFramebuffer> m_swap_chain_framebuffers;
+	uint32_t m_current_image_index = 0;
+
+	VkCommandPool m_command_pool = VK_NULL_HANDLE;
+	VkCommandBuffer m_command_buffer = VK_NULL_HANDLE; // Automatically cleaned up when m_comand_pool is destroyed
 
 	std::vector<const char *> const m_device_extensions = {
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME
