@@ -11,8 +11,31 @@ module;
 
 export module GraphicsApi;
 
+import <optional>;
 import <string>;
 import <vector>;
+
+struct QueueFamilyIndices
+{
+	std::optional<uint32_t> graphics_family;
+	std::optional<uint32_t> present_family;
+
+	bool IsComplete() const { return graphics_family.has_value() && present_family.has_value(); }
+};
+
+struct SwapChainSupportDetails
+{
+	VkSurfaceCapabilitiesKHR capabilities;
+	std::vector<VkSurfaceFormatKHR> formats;
+	std::vector<VkPresentModeKHR> present_modes;
+};
+
+struct PhysicalDeviceInfo
+{
+	VkPhysicalDevice device;
+	QueueFamilyIndices qfis;
+	SwapChainSupportDetails sws_details;
+};
 
 export class GraphicsApi
 {
@@ -25,6 +48,9 @@ public:
 
 	~GraphicsApi();
 
+	void DestroySwapChain();
+	void RecreateSwapChain();
+
 	void DrawFrame(std::function<void()> render_fn);
 	void WaitForLastFrame() const;
 
@@ -36,10 +62,11 @@ public:
 	VkFramebuffer GetCurFrameBuffer() const { return m_swap_chain_framebuffers[m_current_image_index]; }
 
 private:
+	GLFWwindow * m_window = nullptr;
 	VkInstance m_instance = VK_NULL_HANDLE;
 	VkSurfaceKHR m_surface = VK_NULL_HANDLE;
 
-	VkPhysicalDevice m_physical_device = VK_NULL_HANDLE; // Automatically cleaned up when m_instance is destroyed
+	PhysicalDeviceInfo m_phys_device_info; // Automatically cleaned up when m_instance is destroyed
 	VkDevice m_logical_device = VK_NULL_HANDLE;
 	VkQueue m_graphics_queue = VK_NULL_HANDLE; // Automatically cleaned up when m_logical_device is destroyed
 	VkQueue m_present_queue = VK_NULL_HANDLE; // Automatically cleaned up when m_logical_device is destroyed

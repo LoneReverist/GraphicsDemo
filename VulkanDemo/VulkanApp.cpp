@@ -79,7 +79,8 @@ void VulkanApp::Run()
 			{
 				std::optional<WindowSize> size = m_new_window_size.exchange(std::nullopt);
 				if (size.has_value())
-					renderer.ResizeViewport(size->m_width, size->m_height);
+					graphics_api.RecreateSwapChain();
+					//renderer.ResizeViewport(size->m_width, size->m_height);
 
 				double cur_time = glfwGetTime();
 				double delta_time = cur_time - last_update_time;
