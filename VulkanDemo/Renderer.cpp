@@ -68,7 +68,7 @@ void Renderer::Init()
 
 void Renderer::Render() const
 {
-	VkCommandBuffer command_buffer = m_graphics_api.GetCommandBuffer();
+	VkCommandBuffer command_buffer = m_graphics_api.GetCurCommandBuffer();
 	VkExtent2D sc_extent = m_graphics_api.GetSwapChainExtent();
 
 	VkCommandBufferBeginInfo begin_info{

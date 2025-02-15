@@ -218,7 +218,7 @@ void GraphicsPipeline::Activate() const
 		return;
 	}
 
-	vkCmdBindPipeline(m_graphics_api.GetCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphics_pipeline);
+	vkCmdBindPipeline(m_graphics_api.GetCurCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphics_pipeline);
 }
 
 void GraphicsPipeline::SetUniform(std::string const & uniform_label, float uniform) const

@@ -32,7 +32,7 @@ public:
 	VkFormat GetSwapChainImageFormat() const { return m_swap_chain_image_format; }
 	VkExtent2D GetSwapChainExtent() const { return m_swap_chain_extent; }
 	VkRenderPass GetRenderPass() const { return m_render_pass; }
-	VkCommandBuffer GetCommandBuffer() const { return m_command_buffer; }
+	VkCommandBuffer GetCurCommandBuffer() const { return m_command_buffers[m_current_frame]; }
 	VkFramebuffer GetCurFrameBuffer() const { return m_swap_chain_framebuffers[m_current_image_index]; }
 
 private:
@@ -55,11 +55,14 @@ private:
 	uint32_t m_current_image_index = 0;
 
 	VkCommandPool m_command_pool = VK_NULL_HANDLE;
-	VkCommandBuffer m_command_buffer = VK_NULL_HANDLE; // Automatically cleaned up when m_comand_pool is destroyed
+	std::vector<VkCommandBuffer> m_command_buffers; // Automatically cleaned up when m_comand_pool is destroyed
 
-	VkSemaphore m_image_available_semaphore;
-	VkSemaphore m_render_finished_semaphore;
-	VkFence m_in_flight_fence;
+	std::vector<VkSemaphore> m_image_available_semaphores;
+	std::vector<VkSemaphore> m_render_finished_semaphores;
+	std::vector<VkFence> m_in_flight_fences;
+
+	constexpr static uint32_t m_max_frames_in_flight = 2;
+	uint32_t m_current_frame = 0;
 
 	std::vector<const char *> const m_device_extensions = {
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME
