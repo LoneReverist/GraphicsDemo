@@ -60,6 +60,9 @@
     <None Include="..\resources\shaders\test_vert.spv">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="..\resources\shaders\compile.bat">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\resources\shaders\test.vert">

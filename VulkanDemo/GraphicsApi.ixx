@@ -2,6 +2,8 @@
 
 module;
 
+#include <functional>
+
 #include <vulkan/vulkan.h>
 
 #define GLFW_INCLUDE_NONE
@@ -22,6 +24,9 @@ public:
 		char const ** extensions);
 
 	~GraphicsApi();
+
+	void DrawFrame(std::function<void()> render_fn);
+	void WaitForLastFrame() const;
 
 	VkDevice GetDevice() const { return m_logical_device; }
 	VkFormat GetSwapChainImageFormat() const { return m_swap_chain_image_format; }
@@ -51,6 +56,10 @@ private:
 
 	VkCommandPool m_command_pool = VK_NULL_HANDLE;
 	VkCommandBuffer m_command_buffer = VK_NULL_HANDLE; // Automatically cleaned up when m_comand_pool is destroyed
+
+	VkSemaphore m_image_available_semaphore;
+	VkSemaphore m_render_finished_semaphore;
+	VkFence m_in_flight_fence;
 
 	std::vector<const char *> const m_device_extensions = {
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME

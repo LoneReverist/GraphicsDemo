@@ -87,10 +87,10 @@ void VulkanApp::Run()
 
 				scene.Update(delta_time, m_input);
 
-				renderer.Render();
-
-				//glfwSwapBuffers(m_window);
+				graphics_api.DrawFrame([&renderer]() { renderer.Render(); });
 			}
+
+			graphics_api.WaitForLastFrame();
 		}); // the GraphicsApi, Renderer and Scene are destroyed in the reverse order they were created
 
 	while (!glfwWindowShouldClose(m_window))

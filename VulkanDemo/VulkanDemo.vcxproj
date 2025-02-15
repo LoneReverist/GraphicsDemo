@@ -94,6 +94,7 @@
     <ClCompile Include="VulkanDemo.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\resources\shaders\compile.bat" />
     <None Include="..\resources\shaders\test_frag.spv" />
     <None Include="..\resources\shaders\test_vert.spv" />
     <None Include="packages.config" />

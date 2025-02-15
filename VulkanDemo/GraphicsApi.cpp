@@ -413,12 +413,23 @@ namespace
 			.pColorAttachments = &color_attachment_ref
 		};
 
+		VkSubpassDependency dependency{
+			.srcSubpass = VK_SUBPASS_EXTERNAL,
+			.dstSubpass = 0,
+			.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+			.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+			.srcAccessMask = 0,
+			.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
+		};
+
 		VkRenderPassCreateInfo render_pass_info{
 			.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
 			.attachmentCount = 1,
 			.pAttachments = &color_attachment,
 			.subpassCount = 1,
-			.pSubpasses = &subpass
+			.pSubpasses = &subpass,
+			.dependencyCount = 1,
+			.pDependencies = &dependency
 		};
 
 		VkRenderPass render_pass = VK_NULL_HANDLE;
@@ -531,6 +542,35 @@ namespace
 
 		return command_buffer;
 	}
+
+	VkSemaphore create_semaphore(VkDevice logical_device)
+	{
+		VkSemaphoreCreateInfo semaphore_info{
+			.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
+		};
+
+		VkSemaphore semaphore = VK_NULL_HANDLE;
+		VkResult result = vkCreateSemaphore(logical_device, &semaphore_info, nullptr, &semaphore);
+		if (result != VK_SUCCESS)
+			throw std::runtime_error("failed to create semaphore!");
+
+		return semaphore;
+	}
+
+	VkFence create_fence(VkDevice logical_device, bool create_signaled)
+	{
+		VkFenceCreateInfo fence_info{
+			.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+			.flags = create_signaled ? VK_FENCE_CREATE_SIGNALED_BIT : VkFenceCreateFlags{}
+		};
+
+		VkFence fence = VK_NULL_HANDLE;
+		VkResult result = vkCreateFence(logical_device, &fence_info, nullptr, &fence);
+		if (result != VK_SUCCESS)
+			throw std::runtime_error("failed to create fence!");
+
+		return fence;
+	}
 }
 
 GraphicsApi::GraphicsApi(
@@ -579,10 +619,18 @@ GraphicsApi::GraphicsApi(
 	m_command_buffer = create_command_buffer(m_command_pool, m_logical_device);
 	if (m_command_buffer == VK_NULL_HANDLE)
 		return;
+
+	m_image_available_semaphore = create_semaphore(m_logical_device);
+	m_render_finished_semaphore = create_semaphore(m_logical_device);
+	m_in_flight_fence = create_fence(m_logical_device, true /*create_signaled*/);
 }
 
 GraphicsApi::~GraphicsApi()
 {
+	vkDestroyFence(m_logical_device, m_in_flight_fence, nullptr);
+	vkDestroySemaphore(m_logical_device, m_render_finished_semaphore, nullptr);
+	vkDestroySemaphore(m_logical_device, m_image_available_semaphore, nullptr);
+
 	vkDestroyCommandPool(m_logical_device, m_command_pool, nullptr);
 
 	for (auto framebuffer : m_swap_chain_framebuffers)
@@ -596,4 +644,70 @@ GraphicsApi::~GraphicsApi()
 	vkDestroyDevice(m_logical_device, nullptr);
 	vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
 	vkDestroyInstance(m_instance, nullptr);
+}
+
+void GraphicsApi::DrawFrame(std::function<void()> render_fn)
+{
+	VkResult result = vkWaitForFences(m_logical_device, 1, &m_in_flight_fence, VK_TRUE, UINT64_MAX);
+	if (result != VK_SUCCESS)
+		throw std::runtime_error("Failed waiting for fence");
+
+	result = vkResetFences(m_logical_device, 1, &m_in_flight_fence);
+	if (result != VK_SUCCESS)
+		throw std::runtime_error("Failed to reset fence");
+
+	result = vkAcquireNextImageKHR(
+		m_logical_device,
+		m_swap_chain,
+		UINT64_MAX,
+		m_image_available_semaphore,
+		VK_NULL_HANDLE,
+		&m_current_image_index);
+	if (result != VK_SUCCESS)
+		throw std::runtime_error("Failed to aquire next image");
+
+	result = vkResetCommandBuffer(m_command_buffer, 0);
+	if (result != VK_SUCCESS)
+		throw std::runtime_error("Failed to reset command buffer");
+
+	render_fn();
+
+	VkSemaphore wait_semaphores[] = { m_image_available_semaphore };
+	VkPipelineStageFlags wait_stages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+	VkSemaphore signal_semaphores[] = { m_render_finished_semaphore };
+
+	VkSubmitInfo submit_info{
+		.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+		.waitSemaphoreCount = 1,
+		.pWaitSemaphores = wait_semaphores,
+		.pWaitDstStageMask = wait_stages,
+		.commandBufferCount = 1,
+		.pCommandBuffers = &m_command_buffer,
+		.signalSemaphoreCount = 1,
+		.pSignalSemaphores = signal_semaphores
+	};
+
+	result = vkQueueSubmit(m_graphics_queue, 1, &submit_info, m_in_flight_fence);
+	if (result != VK_SUCCESS)
+		throw std::runtime_error("Failed to submit draw command buffer!");
+
+	VkSwapchainKHR swap_chains[] = { m_swap_chain };
+
+	VkPresentInfoKHR present_info{
+		.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+		.waitSemaphoreCount = 1,
+		.pWaitSemaphores = signal_semaphores,
+		.swapchainCount = 1,
+		.pSwapchains = swap_chains,
+		.pImageIndices = &m_current_image_index
+	};
+
+	result = vkQueuePresentKHR(m_present_queue, &present_info);
+	if (result != VK_SUCCESS)
+		throw std::runtime_error("Failed to present image to swap chain");
+}
+
+void GraphicsApi::WaitForLastFrame() const
+{
+	vkDeviceWaitIdle(m_logical_device);
 }
