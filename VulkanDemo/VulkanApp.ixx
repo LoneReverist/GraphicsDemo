@@ -17,6 +17,8 @@ export struct WindowSize
 {
 	int m_width{ 0 };
 	int m_height{ 0 };
+
+	auto operator<=>(WindowSize const &) const = default;
 };
 
 export class VulkanApp
@@ -38,6 +40,6 @@ private:
 	GLFWwindow * m_window{ nullptr };
 	std::string m_title;
 
-	std::atomic<std::optional<WindowSize>> m_new_window_size;
+	std::atomic<WindowSize> m_window_size;
 	Input m_input;
 };

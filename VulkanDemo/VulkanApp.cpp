@@ -47,7 +47,7 @@ VulkanApp::VulkanApp(WindowSize window_size, std::string title)
 			app->OnKeyEvent(key, scan_code, action, mods);
 		});
 
-	OnWindowResize(window_size);
+	m_window_size.store(window_size);
 }
 
 VulkanApp::~VulkanApp()
@@ -63,10 +63,13 @@ void VulkanApp::Run()
 
 	std::jthread update_render_loop([this](std::stop_token s_token)
 		{
+			WindowSize size = m_window_size.load();
 			uint32_t extension_count = 0;
 			const char ** extensions = glfwGetRequiredInstanceExtensions(&extension_count);
 
-			GraphicsApi graphics_api{ m_window, m_title, extension_count, extensions };
+			GraphicsApi graphics_api{
+				m_window, size.m_width, size.m_height,
+				m_title, extension_count, extensions };
 
 			Renderer renderer{ graphics_api };
 			renderer.Init();
@@ -77,18 +80,24 @@ void VulkanApp::Run()
 
 			while (!s_token.stop_requested())
 			{
-				std::optional<WindowSize> size = m_new_window_size.exchange(std::nullopt);
-				if (size.has_value())
-					graphics_api.RecreateSwapChain();
-					//renderer.ResizeViewport(size->m_width, size->m_height);
-
 				double cur_time = glfwGetTime();
 				double delta_time = cur_time - last_update_time;
 				last_update_time = cur_time;
 
 				scene.Update(delta_time, m_input);
 
-				graphics_api.DrawFrame([&renderer]() { renderer.Render(); });
+				bool swap_chain_out_of_date = false;
+				if (graphics_api.SwapChainIsValid())
+					graphics_api.DrawFrame([&renderer]() { renderer.Render(); }, swap_chain_out_of_date);
+				else
+					swap_chain_out_of_date = true;
+
+				WindowSize new_size = m_window_size.load();
+				if (swap_chain_out_of_date || new_size != size)
+				{
+					graphics_api.RecreateSwapChain(new_size.m_width, new_size.m_height);
+					size = new_size;
+				}
 			}
 
 			graphics_api.WaitForLastFrame();
@@ -100,7 +109,7 @@ void VulkanApp::Run()
 
 void VulkanApp::OnWindowResize(WindowSize size)
 {
-	m_new_window_size.store(size);
+	m_window_size.store(size);
 }
 
 void VulkanApp::OnKeyEvent(int key, int /*scan_code*/, int action, int /*mods*/)

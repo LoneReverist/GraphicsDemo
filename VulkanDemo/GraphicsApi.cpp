@@ -282,7 +282,7 @@ namespace
 		return VK_PRESENT_MODE_FIFO_KHR;
 	}
 
-	VkExtent2D choose_swap_extent(const VkSurfaceCapabilitiesKHR & capabilities, GLFWwindow * window)
+	VkExtent2D choose_swap_extent(const VkSurfaceCapabilitiesKHR & capabilities, int width, int height)
 	{
 		if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
 		{
@@ -290,10 +290,6 @@ namespace
 		}
 		else
 		{
-			// TODO: glfwGetFramebufferSize should only be called from the main thread
-			int width, height;
-			glfwGetFramebufferSize(window, &width, &height);
-
 			VkExtent2D actualExtent = {
 				std::clamp(static_cast<uint32_t>(width), capabilities.minImageExtent.width, capabilities.maxImageExtent.width),
 				std::clamp(static_cast<uint32_t>(height), capabilities.minImageExtent.height, capabilities.maxImageExtent.height)
@@ -305,7 +301,8 @@ namespace
 
 	VkSwapchainKHR create_swap_chain(
 		PhysicalDeviceInfo phys_device_info,
-		GLFWwindow * window,
+		int width,
+		int height,
 		VkSurfaceKHR surface,
 		VkDevice logical_device,
 		std::vector<VkImage> & out_swap_chain_images,
@@ -317,7 +314,9 @@ namespace
 
 		VkSurfaceFormatKHR surface_format = choose_swap_surface_format(sws.formats);
 		VkPresentModeKHR present_mode = choose_swap_present_mode(sws.present_modes);
-		VkExtent2D extent = choose_swap_extent(sws.capabilities, window);
+		VkExtent2D extent = choose_swap_extent(sws.capabilities, width, height);
+		if (extent.width == 0 || extent.height == 0)
+			return VK_NULL_HANDLE;
 
 		uint32_t image_count = sws.capabilities.minImageCount + 1;
 		if (sws.capabilities.maxImageCount > 0)
@@ -522,6 +521,7 @@ namespace
 		return command_buffers;
 	}
 
+	// VkSemaphore is used for synchronizing commands on the gpu
 	std::vector<VkSemaphore> create_semaphores(VkDevice logical_device, uint32_t count)
 	{
 		VkSemaphoreCreateInfo semaphore_info{
@@ -539,6 +539,7 @@ namespace
 		return semaphores;
 	}
 
+	// VkFence is used for synchronizing the cpu with the gpu
 	std::vector<VkFence> create_fences(VkDevice logical_device, bool create_signaled, uint32_t count)
 	{
 		VkFenceCreateInfo fence_info{
@@ -560,10 +561,11 @@ namespace
 
 GraphicsApi::GraphicsApi(
 	GLFWwindow * window,
+	int width,
+	int height,
 	std::string const & app_title,
 	uint32_t extension_count,
 	char const ** extensions)
-	: m_window(window)
 {
 	if (m_enable_validation_layers && !validation_layers_are_supported(m_validation_layers))
 		throw std::runtime_error("Validation layers requested, but not available!");
@@ -572,7 +574,7 @@ GraphicsApi::GraphicsApi(
 	if (m_instance == VK_NULL_HANDLE)
 		return;
 
-	m_surface = create_surface(m_instance, m_window);
+	m_surface = create_surface(m_instance, window);
 	if (m_surface == VK_NULL_HANDLE)
 		return;
 
@@ -584,7 +586,7 @@ GraphicsApi::GraphicsApi(
 	if (m_logical_device == VK_NULL_HANDLE)
 		return;
 
-	m_swap_chain = create_swap_chain(m_phys_device_info, m_window, m_surface, m_logical_device,
+	m_swap_chain = create_swap_chain(m_phys_device_info, width, height, m_surface, m_logical_device,
 		m_swap_chain_images, m_swap_chain_image_format, m_swap_chain_extent);
 	if (m_swap_chain == VK_NULL_HANDLE)
 		return;
@@ -633,26 +635,22 @@ void GraphicsApi::DestroySwapChain()
 {
 	for (auto framebuffer : m_swap_chain_framebuffers)
 		vkDestroyFramebuffer(m_logical_device, framebuffer, nullptr);
+	m_swap_chain_framebuffers.clear();
 
 	for (auto image_view : m_swap_chain_image_views)
 		vkDestroyImageView(m_logical_device, image_view, nullptr);
+	m_swap_chain_image_views.clear();
 
 	vkDestroySwapchainKHR(m_logical_device, m_swap_chain, nullptr);
+	m_swap_chain = VK_NULL_HANDLE;
+	m_swap_chain_images.clear();
+	m_swap_chain_image_format = VK_FORMAT_UNDEFINED;
+	m_swap_chain_extent = VkExtent2D{ 0, 0 };
 }
 
-void GraphicsApi::RecreateSwapChain()
+void GraphicsApi::RecreateSwapChain(int width, int height)
 {
-	// TODO: glfwGetFramebufferSize should only be called from the main thread
-	int width = 0, height = 0;
-	glfwGetFramebufferSize(m_window, &width, &height);
-	//while (width == 0 || height == 0)
-	//{
-	//	glfwWaitEvents();
-	//	glfwGetFramebufferSize(m_window, &width, &height);
-	//}
 	if (width == 0 || height == 0)
-		return;
-	if (m_swap_chain_extent.width == width && m_swap_chain_extent.height == height)
 		return;
 
 	vkDeviceWaitIdle(m_logical_device);
@@ -661,17 +659,22 @@ void GraphicsApi::RecreateSwapChain()
 
 	m_phys_device_info.sws_details = query_swap_chain_support(m_phys_device_info.device, m_surface);
 
-	m_swap_chain = create_swap_chain(m_phys_device_info, m_window, m_surface, m_logical_device,
+	m_swap_chain = create_swap_chain(m_phys_device_info, width, height, m_surface, m_logical_device,
 		m_swap_chain_images, m_swap_chain_image_format, m_swap_chain_extent);
 	if (m_swap_chain == VK_NULL_HANDLE)
-		throw std::runtime_error("Failed to recreate swap chain");
+		return;
 
 	m_swap_chain_image_views = create_image_views(m_swap_chain_images, m_logical_device, m_swap_chain_image_format);
 	m_swap_chain_framebuffers = create_framebuffers(
 		m_swap_chain_image_views, m_logical_device, m_render_pass, m_swap_chain_extent);
 }
 
-void GraphicsApi::DrawFrame(std::function<void()> render_fn)
+bool GraphicsApi::SwapChainIsValid() const
+{
+	return m_swap_chain != VK_NULL_HANDLE;
+}
+
+void GraphicsApi::DrawFrame(std::function<void()> render_fn, bool & out_swap_chain_out_of_date)
 {
 	vkWaitForFences(m_logical_device, 1, &m_in_flight_fences[m_current_frame], VK_TRUE, UINT64_MAX);
 
@@ -685,11 +688,17 @@ void GraphicsApi::DrawFrame(std::function<void()> render_fn)
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR)
 	{
-		RecreateSwapChain();
+		out_swap_chain_out_of_date = true;
 		return;
 	}
-	if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+	else if (result == VK_SUBOPTIMAL_KHR)
+	{
+		out_swap_chain_out_of_date = true;
+	}
+	else if (result != VK_SUCCESS)
+	{
 		throw std::runtime_error("Failed to acquire swap chain image!");
+	}
 
 	// Only reset the fence if we are submitting work
 	vkResetFences(m_logical_device, 1, &m_in_flight_fences[m_current_frame]);
@@ -733,7 +742,7 @@ void GraphicsApi::DrawFrame(std::function<void()> render_fn)
 	result = vkQueuePresentKHR(m_present_queue, &present_info);
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
-		RecreateSwapChain();
+		out_swap_chain_out_of_date = true;
 	else if (result != VK_SUCCESS)
 		throw std::runtime_error("Failed to present swap chain image!");
 

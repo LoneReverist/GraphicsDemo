@@ -41,7 +41,9 @@ export class GraphicsApi
 {
 public:
 	GraphicsApi(
-		GLFWwindow * window,
+		GLFWwindow * window, // Reminder: Do not call any glfw functions that require being on the main thread
+		int width,
+		int height,
 		std::string const & app_title,
 		uint32_t extension_count,
 		char const ** extensions);
@@ -49,9 +51,10 @@ public:
 	~GraphicsApi();
 
 	void DestroySwapChain();
-	void RecreateSwapChain();
+	void RecreateSwapChain(int width, int height);
+	bool SwapChainIsValid() const;
 
-	void DrawFrame(std::function<void()> render_fn);
+	void DrawFrame(std::function<void()> render_fn, bool & out_window_size_out_of_date);
 	void WaitForLastFrame() const;
 
 	VkDevice GetDevice() const { return m_logical_device; }
@@ -62,7 +65,6 @@ public:
 	VkFramebuffer GetCurFrameBuffer() const { return m_swap_chain_framebuffers[m_current_image_index]; }
 
 private:
-	GLFWwindow * m_window = nullptr;
 	VkInstance m_instance = VK_NULL_HANDLE;
 	VkSurfaceKHR m_surface = VK_NULL_HANDLE;
 
