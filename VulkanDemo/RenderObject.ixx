@@ -1,0 +1,45 @@
+// RenderObject.ixx
+
+module;
+
+#include <glm/vec3.hpp>
+#include <glm/ext/matrix_float4x4.hpp>
+
+export module RenderObject;
+
+export class RenderObject
+{
+public:
+	RenderObject(int mesh_id, int pipeline_id, int tex_id = -1)
+		: m_mesh_id(mesh_id)
+		, m_pipeline_id(pipeline_id)
+		, m_tex_id(tex_id)
+		, m_color({ 1.0, 1.0, 1.0 })
+	{}
+
+	void SetMeshId(int mesh_id) { m_mesh_id = mesh_id; }
+	void SetPipelineId(int pipeline_id) { m_pipeline_id = pipeline_id; }
+	void SetTextureId(int tex_id) { m_tex_id = tex_id; }
+	void SetColor(glm::vec3 const & color) { m_color = color; }
+	void SetDrawWireframe(bool wireframe = true) { m_draw_wireframe = wireframe; }
+
+	int GetMeshId() const { return m_mesh_id; }
+	int GetPipelineId() const { return m_pipeline_id; }
+	int GetTextureId() const { return m_tex_id; }
+	glm::vec3 const & GetColor() { return m_color; }
+	bool GetDrawWireframe() const { return m_draw_wireframe; }
+
+	glm::mat4 & ModifyWorldTransform() { return m_world_transform; }
+	glm::mat4 const & GetWorldTransform() const { return m_world_transform; }
+
+private:
+	int m_mesh_id{ -1 };
+	int m_pipeline_id{ -1 };
+	int m_tex_id{ -1 };
+
+	glm::vec3 m_color;
+
+	bool m_draw_wireframe{ false };
+
+	glm::mat4 m_world_transform{ glm::mat4(1.0) };
+};

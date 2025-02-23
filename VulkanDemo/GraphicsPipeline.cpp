@@ -18,12 +18,12 @@ import GraphicsApi;
 
 namespace
 {
-	VkPipelineLayout create_pipeline_layout(VkDevice device)
+	VkPipelineLayout create_pipeline_layout(VkDevice device, VkDescriptorSetLayout descriptor_set_layout)
 	{
 		VkPipelineLayoutCreateInfo pipeline_layout_info{
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-			.setLayoutCount = 0,
-			.pSetLayouts = nullptr,
+			.setLayoutCount = 1,
+			.pSetLayouts = &descriptor_set_layout,
 			.pushConstantRangeCount = 0,
 			.pPushConstantRanges = nullptr,
 		};
@@ -40,7 +40,9 @@ namespace
 		VkDevice device,
 		VkRenderPass render_pass,
 		VkPipelineLayout pipeline_layout,
-		std::vector<VkPipelineShaderStageCreateInfo> const & shader_stages)
+		std::vector<VkPipelineShaderStageCreateInfo> const & shader_stages,
+		VkVertexInputBindingDescription const & binding_desc,
+		std::vector<VkVertexInputAttributeDescription> const & attrib_descs)
 	{
 		std::vector<VkDynamicState> dynamic_states = {
 			VK_DYNAMIC_STATE_VIEWPORT,
@@ -61,10 +63,10 @@ namespace
 
 		VkPipelineVertexInputStateCreateInfo vertex_input_info{
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-			.vertexBindingDescriptionCount = 0,
-			.pVertexBindingDescriptions = nullptr,
-			.vertexAttributeDescriptionCount = 0,
-			.pVertexAttributeDescriptions = nullptr
+			.vertexBindingDescriptionCount = 1,
+			.pVertexBindingDescriptions = &binding_desc,
+			.vertexAttributeDescriptionCount = static_cast<uint32_t>(attrib_descs.size()),
+			.pVertexAttributeDescriptions = attrib_descs.data()
 		};
 
 		VkPipelineInputAssemblyStateCreateInfo input_assembly{
@@ -159,11 +161,14 @@ GraphicsPipeline::GraphicsPipeline(GraphicsApi const & graphics_api)
 
 bool GraphicsPipeline::CreatePipeline(
 	std::filesystem::path const & vert_shader_path,
-	std::filesystem::path const & frag_shader_path)
+	std::filesystem::path const & frag_shader_path,
+	VkVertexInputBindingDescription const & binding_desc,
+	std::vector<VkVertexInputAttributeDescription> const & attrib_descs)
 {
 	VkDevice device = m_graphics_api.GetDevice();
+	VkDescriptorSetLayout descriptor_set_layout = m_graphics_api.GetDescriptorSetLayout();
 
-	m_pipeline_layout = create_pipeline_layout(device);
+	m_pipeline_layout = create_pipeline_layout(device, descriptor_set_layout);
 	if (m_pipeline_layout == VK_NULL_HANDLE)
 		return false;
 
@@ -195,7 +200,13 @@ bool GraphicsPipeline::CreatePipeline(
 		frag_shader_stage_info
 	};
 
-	m_graphics_pipeline = create_graphics_pipeline(device, m_graphics_api.GetRenderPass(), m_pipeline_layout, shader_stages);
+	m_graphics_pipeline = create_graphics_pipeline(
+		device,
+		m_graphics_api.GetRenderPass(),
+		m_pipeline_layout,
+		shader_stages,
+		binding_desc,
+		attrib_descs);
 
 	vkDestroyShaderModule(device, frag_shader_module, nullptr);
 	vkDestroyShaderModule(device, vert_shader_module, nullptr);

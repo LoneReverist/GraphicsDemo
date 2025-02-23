@@ -10,7 +10,7 @@ import <memory>;
 
 import Input;
 import Renderer;
-//import RenderObject;
+import RenderObject;
 
 export class Scene
 {
@@ -21,7 +21,7 @@ public:
 	void Update(double delta_time, Input const & input);
 
 private:
-	//std::shared_ptr<RenderObject> create_object(int mesh_id, int shader_id, int tex_id = -1) const;
+	std::shared_ptr<RenderObject> create_object(int mesh_id, int pipeline_id, int tex_id = -1) const;
 
 	void update_camera(float dt, Input const & input);
 
@@ -30,9 +30,9 @@ private:
 
 	//std::shared_ptr<RenderObject> m_sword0;
 	//std::shared_ptr<RenderObject> m_sword1;
-	//std::shared_ptr<RenderObject> m_red_gem;
-	//std::shared_ptr<RenderObject> m_green_gem;
-	//std::shared_ptr<RenderObject> m_blue_gem;
+	std::shared_ptr<RenderObject> m_red_gem;
+	std::shared_ptr<RenderObject> m_green_gem;
+	std::shared_ptr<RenderObject> m_blue_gem;
 	//std::shared_ptr<RenderObject> m_ground;
 	//std::shared_ptr<RenderObject> m_skybox;
 

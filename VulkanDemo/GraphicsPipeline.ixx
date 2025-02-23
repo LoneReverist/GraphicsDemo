@@ -19,7 +19,9 @@ public:
 
 	bool CreatePipeline(
 		std::filesystem::path const & vert_shader_path,
-		std::filesystem::path const & frag_shader_path);
+		std::filesystem::path const & frag_shader_path,
+		VkVertexInputBindingDescription const & binding_desc,
+		std::vector<VkVertexInputAttributeDescription> const & attrib_descs);
 	void DestroyPipeline();
 
 	void Activate() const;

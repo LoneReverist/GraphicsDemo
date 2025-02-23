@@ -96,6 +96,7 @@ void VulkanApp::Run()
 				if (swap_chain_out_of_date || new_size != size)
 				{
 					graphics_api.RecreateSwapChain(new_size.m_width, new_size.m_height);
+					renderer.OnViewportResized(new_size.m_width, new_size.m_height);
 					size = new_size;
 				}
 			}

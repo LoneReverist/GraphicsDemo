@@ -557,6 +557,66 @@ namespace
 
 		return fences;
 	}
+
+	uint32_t find_memory_type(VkPhysicalDevice physical_device, uint32_t type_filter, VkMemoryPropertyFlags properties)
+	{
+		VkPhysicalDeviceMemoryProperties mem_properties;
+		vkGetPhysicalDeviceMemoryProperties(physical_device, &mem_properties);
+
+		for (uint32_t i = 0; i < mem_properties.memoryTypeCount; i++)
+		{
+			if (type_filter & (1 << i) && (mem_properties.memoryTypes[i].propertyFlags & properties) == properties)
+				return i;
+		}
+
+		throw std::runtime_error("failed to find suitable memory type!");
+	}
+
+	VkDescriptorSetLayout create_descriptor_set_layout(VkDevice device)
+	{
+		VkDescriptorSetLayoutBinding ubo_layout_binding{
+			.binding = 0,
+			.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+			.descriptorCount = 1,
+			.stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+			.pImmutableSamplers = nullptr
+		};
+
+		VkDescriptorSetLayoutCreateInfo layout_info{
+			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+			.bindingCount = 1,
+			.pBindings = &ubo_layout_binding
+		};
+
+		VkDescriptorSetLayout descriptor_set_layout = VK_NULL_HANDLE;
+		VkResult result = vkCreateDescriptorSetLayout(device, &layout_info, nullptr, &descriptor_set_layout);
+		if (result != VK_SUCCESS)
+			std::cout << "Failed to create ubo descriptor set layout";
+
+		return descriptor_set_layout;
+	}
+
+	void create_descriptor_pool(VkDevice device, uint32_t descriptor_count)
+	{
+		VkDescriptorPoolSize pool_size{
+			.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+			.descriptorCount = descriptor_count
+		};
+
+		VkDescriptorPoolCreateInfo pool_info{
+			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+			.maxSets = descriptor_count,
+			.poolSizeCount = 1,
+			.pPoolSizes = &pool_size
+		};
+
+		VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;
+		VkResult result = vkCreateDescriptorPool(device, &pool_info, nullptr, &descriptor_pool);
+		if (result != VK_SUCCESS)
+			throw std::runtime_error("failed to create descriptor pool!");
+
+		return descriptor_pool;
+	}
 }
 
 GraphicsApi::GraphicsApi(
@@ -610,10 +670,21 @@ GraphicsApi::GraphicsApi(
 	m_image_available_semaphores = create_semaphores(m_logical_device, m_max_frames_in_flight);
 	m_render_finished_semaphores = create_semaphores(m_logical_device, m_max_frames_in_flight);
 	m_in_flight_fences = create_fences(m_logical_device, true /*create_signaled*/, m_max_frames_in_flight);
+
+	m_descriptor_pool = create_descriptor_pool(m_logical_device, m_max_frames_in_flight);
+	m_descriptor_set_layout = create_descriptor_set_layout(m_logical_device);
+	CreateUniformBuffers();
 }
 
 GraphicsApi::~GraphicsApi()
 {
+	for (size_t i = 0; i < m_max_frames_in_flight; i++) {
+		vkDestroyBuffer(m_logical_device, m_uniform_buffers[i], nullptr);
+		vkFreeMemory(m_logical_device, m_uniform_buffers_memory[i], nullptr);
+	}
+
+	vkDestroyDescriptorSetLayout(m_logical_device, m_descriptor_set_layout, nullptr);
+
 	for (auto fence : m_in_flight_fences)
 		vkDestroyFence(m_logical_device, fence, nullptr);
 	for (auto semaphore : m_render_finished_semaphores)
@@ -752,4 +823,122 @@ void GraphicsApi::DrawFrame(std::function<void()> render_fn, bool & out_swap_cha
 void GraphicsApi::WaitForLastFrame() const
 {
 	vkDeviceWaitIdle(m_logical_device);
+}
+
+VkResult GraphicsApi::CreateBuffer(
+	VkDeviceSize size,
+	VkBufferUsageFlags usage,
+	VkMemoryPropertyFlags properties,
+	VkBuffer & out_buffer,
+	VkDeviceMemory & out_buffer_memory) const
+{
+	VkBufferCreateInfo buffer_info{
+		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+		.size = size,
+		.usage = usage,
+		.sharingMode = VK_SHARING_MODE_EXCLUSIVE
+	};
+
+	VkResult result = vkCreateBuffer(m_logical_device, &buffer_info, nullptr, &out_buffer);
+	if (result != VK_SUCCESS)
+	{
+		std::cout << "Failed to create buffer" << std::endl;
+		return result;
+	}
+
+	VkMemoryRequirements mem_requirements;
+	vkGetBufferMemoryRequirements(m_logical_device, out_buffer, &mem_requirements);
+
+	uint32_t mem_type_index = find_memory_type(
+		m_phys_device_info.device,
+		mem_requirements.memoryTypeBits,
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+	VkMemoryAllocateInfo alloc_info{
+		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+		.allocationSize = mem_requirements.size,
+		.memoryTypeIndex = mem_type_index
+	};
+
+	// TODO: should use something like VulkanMemoryAllocator library for managing memory
+	result = vkAllocateMemory(m_logical_device, &alloc_info, nullptr, &out_buffer_memory);
+	if (result != VK_SUCCESS)
+	{
+		std::cout << "Failed to allocate buffer memory" << std::endl;
+		return result;
+	}
+
+	vkBindBufferMemory(m_logical_device, out_buffer, out_buffer_memory, 0);
+	return VK_SUCCESS;
+}
+
+void GraphicsApi::CopyBuffer(
+	VkBuffer src_buffer,
+	VkBuffer dst_buffer,
+	VkDeviceSize size) const
+{
+	VkCommandBufferAllocateInfo alloc_info{
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+		.commandPool = m_command_pool,
+		.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+		.commandBufferCount = 1
+	};
+
+	VkCommandBuffer command_buffer;
+	vkAllocateCommandBuffers(m_logical_device, &alloc_info, &command_buffer);
+
+	VkCommandBufferBeginInfo begin_info{
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+		.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
+	};
+
+	vkBeginCommandBuffer(command_buffer, &begin_info);
+
+	VkBufferCopy copy_region{
+		.srcOffset = 0,
+		.dstOffset = 0,
+		.size = size
+	};
+
+	vkCmdCopyBuffer(command_buffer, src_buffer, dst_buffer, 1, &copy_region);
+
+	vkEndCommandBuffer(command_buffer);
+
+	VkSubmitInfo submit_info{
+		.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+		.commandBufferCount = 1,
+		.pCommandBuffers = &command_buffer
+	};
+
+	vkQueueSubmit(m_graphics_queue, 1, &submit_info, VK_NULL_HANDLE);
+	vkQueueWaitIdle(m_graphics_queue);
+
+	vkFreeCommandBuffers(m_logical_device, m_command_pool, 1, &command_buffer);
+}
+
+void GraphicsApi::CreateUniformBuffers()
+{
+	VkDeviceSize buffer_size = sizeof(UniformBufferObject);
+
+	m_uniform_buffers.resize(m_max_frames_in_flight);
+	m_uniform_buffers_memory.resize(m_max_frames_in_flight);
+	m_uniform_buffers_mapped.resize(m_max_frames_in_flight);
+
+	for (size_t i = 0; i < m_max_frames_in_flight; i++)
+	{
+		CreateBuffer(
+			buffer_size,
+			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			m_uniform_buffers[i],
+			m_uniform_buffers_memory[i]);
+
+		vkMapMemory(
+			m_logical_device,
+			m_uniform_buffers_memory[i],
+			0 /*offset*/,
+			buffer_size,
+			0 /*flags*/,
+			&m_uniform_buffers_mapped[i]);
+	}
 }

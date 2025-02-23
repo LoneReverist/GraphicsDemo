@@ -9,6 +9,8 @@ module;
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
+#include <glm/ext/matrix_float4x4.hpp>
+
 export module GraphicsApi;
 
 import <optional>;
@@ -37,6 +39,13 @@ struct PhysicalDeviceInfo
 	SwapChainSupportDetails sws_details;
 };
 
+export struct UniformBufferObject
+{
+	glm::mat4 model;
+	glm::mat4 view;
+	glm::mat4 proj;
+};
+
 export class GraphicsApi
 {
 public:
@@ -57,12 +66,29 @@ public:
 	void DrawFrame(std::function<void()> render_fn, bool & out_window_size_out_of_date);
 	void WaitForLastFrame() const;
 
+	VkResult CreateBuffer(
+		VkDeviceSize size,
+		VkBufferUsageFlags usage,
+		VkMemoryPropertyFlags properties,
+		VkBuffer & out_buffer,
+		VkDeviceMemory & out_buffer_memory) const;
+
+	void CopyBuffer(
+		VkBuffer src_buffer,
+		VkBuffer dst_buffer,
+		VkDeviceSize size) const;
+
+	void CreateUniformBuffers();
+
 	VkDevice GetDevice() const { return m_logical_device; }
 	VkFormat GetSwapChainImageFormat() const { return m_swap_chain_image_format; }
 	VkExtent2D GetSwapChainExtent() const { return m_swap_chain_extent; }
 	VkRenderPass GetRenderPass() const { return m_render_pass; }
 	VkCommandBuffer GetCurCommandBuffer() const { return m_command_buffers[m_current_frame]; }
 	VkFramebuffer GetCurFrameBuffer() const { return m_swap_chain_framebuffers[m_current_image_index]; }
+	VkQueue GetGraphicsQueue() const { return m_graphics_queue; }
+	VkDescriptorSetLayout GetDescriptorSetLayout() const { return m_descriptor_set_layout; }
+	void * GetCurMappedUniformBufferObject() const { return m_uniform_buffers_mapped[m_current_frame]; }
 
 private:
 	VkInstance m_instance = VK_NULL_HANDLE;
@@ -89,6 +115,13 @@ private:
 	std::vector<VkSemaphore> m_image_available_semaphores;
 	std::vector<VkSemaphore> m_render_finished_semaphores;
 	std::vector<VkFence> m_in_flight_fences;
+
+	VkDescriptorPool m_descriptor_pool = VK_NULL_HANDLE;
+	VkDescriptorSetLayout m_descriptor_set_layout = VK_NULL_HANDLE;
+
+	std::vector<VkBuffer> m_uniform_buffers;
+	std::vector<VkDeviceMemory> m_uniform_buffers_memory;
+	std::vector<void *> m_uniform_buffers_mapped;
 
 	constexpr static uint32_t m_max_frames_in_flight = 2;
 	uint32_t m_current_frame = 0;

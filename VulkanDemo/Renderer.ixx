@@ -13,8 +13,8 @@ import <filesystem>;
 
 import GraphicsApi;
 import GraphicsPipeline;
-//import Mesh;
-//import RenderObject;
+import Mesh;
+import RenderObject;
 //import Texture;
 
 export struct PointLight
@@ -42,19 +42,20 @@ public:
 	void Init();
 	void Render() const;
 
-	void ResizeViewport(int width, int height);
+	void OnViewportResized(int width, int height);
 
-	void LoadGraphicsPipeline(
+	int LoadGraphicsPipeline(
 		std::filesystem::path const & vert_shader_path,
-		std::filesystem::path const & frag_shader_path);
+		std::filesystem::path const & frag_shader_path,
+		VkVertexInputBindingDescription const & binding_desc,
+		std::vector<VkVertexInputAttributeDescription> const & attrib_descs);
 
-//	int LoadShaderProgram(std::filesystem::path const & vert_shader_path, std::filesystem::path const & frag_shader_path);
-//	int LoadMesh(std::filesystem::path const & mesh_path);
+	int LoadMesh(std::filesystem::path const & mesh_path);
 //	int AddMesh(Mesh && mesh_var);
 //	int LoadTexture(std::filesystem::path const & tex_path);
 //	int LoadCubeMap(std::array<std::filesystem::path, 6> const & filepaths);
-//
-//	void AddRenderObject(std::weak_ptr<RenderObject> render_object);
+
+	void AddRenderObject(std::weak_ptr<RenderObject> render_object);
 //	void SetSkybox(std::weak_ptr<RenderObject> skybox) { m_skybox = skybox; }
 
 	void SetCamera(glm::vec3 const & pos, glm::vec3 const & dir);
@@ -74,10 +75,10 @@ private:
 	GraphicsApi const & m_graphics_api;
 
 	std::vector<GraphicsPipeline> m_pipelines;
-//	std::vector<Mesh> m_meshes;
+	std::vector<Mesh> m_meshes;
 //	std::vector<Texture> m_textures;
-//
-//	std::vector<std::weak_ptr<RenderObject>> m_render_objects;
+
+	std::vector<std::weak_ptr<RenderObject>> m_render_objects;
 //	std::weak_ptr<RenderObject> m_skybox;
 
 	glm::vec3 m_camera_pos;

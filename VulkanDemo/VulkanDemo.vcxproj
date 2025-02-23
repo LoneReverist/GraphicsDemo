@@ -83,8 +83,12 @@
     <ClCompile Include="GraphicsApi.cpp" />
     <ClCompile Include="GraphicsApi.ixx" />
     <ClCompile Include="Input.ixx" />
+    <ClCompile Include="Mesh.ixx" />
+    <ClCompile Include="ObjLoader.cpp" />
+    <ClCompile Include="ObjLoader.ixx" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="Renderer.ixx" />
+    <ClCompile Include="RenderObject.ixx" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="Scene.ixx" />
     <ClCompile Include="GraphicsPipeline.cpp" />
@@ -95,6 +99,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\resources\shaders\compile.bat" />
+    <None Include="..\resources\shaders\light_source.frag" />
+    <None Include="..\resources\shaders\light_source.vert" />
     <None Include="..\resources\shaders\test_frag.spv" />
     <None Include="..\resources\shaders\test_vert.spv" />
     <None Include="packages.config" />

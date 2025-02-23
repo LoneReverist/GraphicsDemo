@@ -12,7 +12,7 @@ module Renderer;
 
 //import <iostream>;
 
-//import ObjLoader;
+import ObjLoader;
 
 Renderer::Renderer(GraphicsApi const & graphics_api)
 	: m_graphics_api(graphics_api)
@@ -23,8 +23,8 @@ Renderer::~Renderer()
 {
 	for (GraphicsPipeline & pipeline : m_pipelines)
 		pipeline.DestroyPipeline();
-//	for (Mesh & mesh : m_meshes)
-//		mesh.DeleteBuffers();
+	for (Mesh & mesh : m_meshes)
+		mesh.DeleteBuffers();
 }
 
 void Renderer::Init()
@@ -108,16 +108,34 @@ void Renderer::Render() const
 
 	vkCmdBeginRenderPass(command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
 
-	m_pipelines[0].Activate();
-
 	vkCmdSetViewport(command_buffer, 0, 1, &viewport);
 	vkCmdSetScissor(command_buffer, 0, 1, &scissor);
 
-	vkCmdDraw(command_buffer,
-		3 /*vertexCount*/,
-		1 /*instanceCount*/,
-		0 /*firstVertex*/,
-		0 /*firstInstance*/);
+	for (std::weak_ptr<RenderObject> render_object : m_render_objects)
+	{
+		std::shared_ptr<RenderObject> obj = render_object.lock();
+		if (!obj)
+			continue;
+
+		int mesh_id = obj->GetMeshId();
+		int pipeline_id = obj->GetPipelineId();
+		if (mesh_id == -1 || pipeline_id == -1)
+			continue;
+
+		GraphicsPipeline const & pipeline = m_pipelines[pipeline_id];
+		pipeline.Activate();
+
+		void * mapped_uniform_buffer = m_graphics_api.GetCurMappedUniformBufferObject();
+		UniformBufferObject ubo{
+			.model = obj->GetWorldTransform(),
+			.view = m_view_transform,
+			.proj = m_proj_transform
+		};
+		memcpy(mapped_uniform_buffer, &ubo, sizeof(ubo));
+
+		Mesh const & mesh = m_meshes[mesh_id];
+		mesh.Render(obj->GetDrawWireframe());
+	}
 
 	vkCmdEndRenderPass(command_buffer);
 
@@ -182,54 +200,50 @@ void Renderer::Render() const
 //	}
 }
 
-void Renderer::ResizeViewport(int width, int height)
+void Renderer::OnViewportResized(int width, int height)
 {
-//	glViewport(0, 0, width, height);
-//
-//	constexpr float field_of_view = glm::radians(45.0f);
-//	const float aspect_ratio = static_cast<float>(width) / static_cast<float>(height);
-//	const float near_plane = 0.1f;
-//	const float far_plane = 100.0f;
-//	m_proj_transform = glm::perspective(field_of_view, aspect_ratio, near_plane, far_plane);
+	constexpr float field_of_view = glm::radians(45.0f);
+	const float aspect_ratio = static_cast<float>(width) / static_cast<float>(height);
+	const float near_plane = 0.1f;
+	const float far_plane = 100.0f;
+	m_proj_transform = glm::perspective(field_of_view, aspect_ratio, near_plane, far_plane);
+
+	m_proj_transform[1][1] *= -1; // account for vulkan having flipped y-axis compared to opengl
 }
 
-void Renderer::LoadGraphicsPipeline(
+int Renderer::LoadGraphicsPipeline(
 	std::filesystem::path const & vert_shader_path,
-	std::filesystem::path const & frag_shader_path)
+	std::filesystem::path const & frag_shader_path,
+	VkVertexInputBindingDescription const & binding_desc,
+	std::vector<VkVertexInputAttributeDescription> const & attrib_descs)
 {
-	m_pipelines.emplace_back(m_graphics_api);
+	GraphicsPipeline & pipeline = m_pipelines.emplace_back(m_graphics_api);
 
-	if (!m_pipelines.back().CreatePipeline(vert_shader_path, frag_shader_path))
+	if (!pipeline.CreatePipeline(vert_shader_path, frag_shader_path, binding_desc, attrib_descs))
+	{
 		m_pipelines.pop_back();
+		return -1;
+	}
+
+	return static_cast<int>(m_pipelines.size() - 1);
 }
 
-//int Renderer::LoadShaderProgram(std::filesystem::path const & vert_shader_path, std::filesystem::path const & frag_shader_path)
-//{
-//	ShaderProgram shader_program;
-//	if (!shader_program.LoadShaders(vert_shader_path, frag_shader_path))
-//		return -1;
-//
-//	m_shader_programs.push_back(std::move(shader_program));
-//	return static_cast<int>(m_shader_programs.size() - 1);
-//}
-//
-//int Renderer::LoadMesh(std::filesystem::path const & mesh_path)
-//{
-//	std::vector<NormalVertex> vertices;
-//	std::vector<unsigned int> indices;
-//	if (!ObjLoader::LoadObjFile(mesh_path, vertices, indices))
-//	{
-//		std::cout << "Renderer::LoadMesh() error loading file:" << mesh_path << std::endl;
-//		return -1;
-//	}
-//
-//	Mesh mesh{ std::move(vertices), std::move(indices) };
-//	mesh.InitBuffers();
-//
-//	m_meshes.push_back(std::move(mesh));
-//	return static_cast<int>(m_meshes.size() - 1);
-//}
-//
+int Renderer::LoadMesh(std::filesystem::path const & mesh_path)
+{
+	std::vector<NormalVertex> vertices;
+	std::vector<Mesh::index_t> indices;
+	if (!ObjLoader::LoadObjFile(mesh_path, vertices, indices))
+	{
+		std::cout << "Renderer::LoadMesh() error loading file:" << mesh_path << std::endl;
+		return -1;
+	}
+
+	Mesh & mesh = m_meshes.emplace_back(m_graphics_api, std::move(vertices), std::move(indices));
+	mesh.InitBuffers();
+
+	return static_cast<int>(m_meshes.size() - 1);
+}
+
 //int Renderer::AddMesh(Mesh && mesh)
 //{
 //	mesh.InitBuffers();
@@ -257,11 +271,11 @@ void Renderer::LoadGraphicsPipeline(
 //	m_textures.push_back(std::move(texture));
 //	return static_cast<int>(m_textures.size() - 1);
 //}
-//
-//void Renderer::AddRenderObject(std::weak_ptr<RenderObject> render_object)
-//{
-//	m_render_objects.push_back(render_object);
-//}
+
+void Renderer::AddRenderObject(std::weak_ptr<RenderObject> render_object)
+{
+	m_render_objects.push_back(render_object);
+}
 
 void Renderer::SetCamera(glm::vec3 const & pos, glm::vec3 const & dir)
 {

@@ -13,7 +13,7 @@ module Scene;
 import <filesystem>;
 //import <numbers>;
 
-//import Mesh;
+import Mesh;
 
 namespace
 {
@@ -78,7 +78,7 @@ namespace
 //			{ { -scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.0, 0.0 } },
 //			{ {  scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 1.0, 0.0 } } };
 //
-//		std::vector<unsigned int> indices{
+//		std::vector<Mesh::index_t> indices{
 //			1, 0, 2,
 //			1, 2, 3 };
 //
@@ -97,7 +97,7 @@ namespace
 //			{ {  1.0f, -1.0f,  1.0f } },
 //			{ {  1.0f,  1.0f,  1.0f } } };
 //
-//		std::vector<unsigned int> indices{
+//		std::vector<Mesh::index_t> indices{
 //			0, 1, 2,
 //			2, 3, 0,
 //			5, 1, 0,
@@ -119,19 +119,17 @@ void Scene::Init()
 {
 	const std::filesystem::path resources_path = std::filesystem::path("..") / "resources";
 
-	m_renderer.LoadGraphicsPipeline(
-		resources_path / "shaders" / "test_vert.spv",
-		resources_path / "shaders" / "test_frag.spv");
-
 //	const int color_shader_id = m_renderer.LoadShaderProgram(
 //		resources_path / "shaders" / "color_vs.txt",
 //		resources_path / "shaders" / "color_fs.txt");
 //	const int texture_shader_id = m_renderer.LoadShaderProgram(
 //		resources_path / "shaders" / "texture_vs.txt",
 //		resources_path / "shaders" / "texture_fs.txt");
-//	const int light_source_shader_id = m_renderer.LoadShaderProgram(
-//		resources_path / "shaders" / "light_source_vs.txt",
-//		resources_path / "shaders" / "light_source_fs.txt");
+	const int light_source_pipeline_id = m_renderer.LoadGraphicsPipeline(
+		resources_path / "shaders" / "light_source_vs.txt",
+		resources_path / "shaders" / "light_source_fs.txt",
+		Vertex::GetBindingDesc<NormalVertex>(),
+		Vertex::GetAttribDescs<NormalVertex>());
 //	const int skybox_shader_id = m_renderer.LoadShaderProgram(
 //		resources_path / "shaders" / "skybox_vs.txt",
 //		resources_path / "shaders" / "skybox_fs.txt");
@@ -140,9 +138,9 @@ void Scene::Init()
 //		resources_path / "shaders" / "reflection_fs.txt");
 //
 //	const int sword_mesh_id = m_renderer.LoadMesh(resources_path / "objects" / "skullsword.obj");
-//	const int red_gem_mesh_id = m_renderer.LoadMesh(resources_path / "objects" / "redgem.obj");
-//	const int green_gem_mesh_id = m_renderer.LoadMesh(resources_path / "objects" / "greengem.obj");
-//	const int blue_gem_mesh_id = m_renderer.LoadMesh(resources_path / "objects" / "bluegem.obj");
+	const int red_gem_mesh_id = m_renderer.LoadMesh(resources_path / "objects" / "redgem.obj");
+	const int green_gem_mesh_id = m_renderer.LoadMesh(resources_path / "objects" / "greengem.obj");
+	const int blue_gem_mesh_id = m_renderer.LoadMesh(resources_path / "objects" / "bluegem.obj");
 //	const int ground_mesh_id = m_renderer.AddMesh(std::move(create_ground_mesh()));
 //	const int skybox_mesh_id = m_renderer.AddMesh(std::move(create_skybox_mesh()));
 //
@@ -157,9 +155,9 @@ void Scene::Init()
 //
 //	m_sword0 = create_object(sword_mesh_id, reflection_shader_id, skybox_tex_id);
 //	m_sword1 = create_object(sword_mesh_id, reflection_shader_id, skybox_tex_id);
-//	m_red_gem = create_object(red_gem_mesh_id, light_source_shader_id);
-//	m_green_gem = create_object(green_gem_mesh_id, light_source_shader_id);
-//	m_blue_gem = create_object(blue_gem_mesh_id, light_source_shader_id);
+	m_red_gem = create_object(red_gem_mesh_id, light_source_pipeline_id);
+	m_green_gem = create_object(green_gem_mesh_id, light_source_pipeline_id);
+	m_blue_gem = create_object(blue_gem_mesh_id, light_source_pipeline_id);
 //	m_ground = create_object(ground_mesh_id, texture_shader_id, ground_tex_id);
 //
 //	m_skybox = std::make_shared<RenderObject>(skybox_mesh_id, skybox_shader_id, skybox_tex_id);
@@ -206,35 +204,35 @@ void Scene::Update(double delta_time, Input const & input)
 
 //	update_sword_transform(0, m_sword0->ModifyWorldTransform(), m_timer, dt);
 //	update_sword_transform(1, m_sword1->ModifyWorldTransform(), m_timer, dt);
-//	update_gem_transform(m_red_gem->ModifyWorldTransform(), dt);
-//	update_gem_transform(m_green_gem->ModifyWorldTransform(), dt);
-//	update_gem_transform(m_blue_gem->ModifyWorldTransform(), dt);
-//
-//	glm::mat4 const & red_gem_transform = m_red_gem->GetWorldTransform();
-//	m_renderer.SetPointLight1(PointLight{
-//		.m_pos{ red_gem_transform[3][0], red_gem_transform[3][1], red_gem_transform[3][2] },
-//		.m_color{ 1.0, 0.0, 0.0 },
-//		.m_radius{ 20.0f } });
-//
-//	glm::mat4 const & green_gem_transform = m_green_gem->GetWorldTransform();
-//	m_renderer.SetPointLight2(PointLight{
-//		.m_pos{ green_gem_transform[3][0], green_gem_transform[3][1], green_gem_transform[3][2] },
-//		.m_color{ 0.0, 1.0, 0.0 },
-//		.m_radius{ 20.0f } });
-//
-//	glm::mat4 const & blue_gem_transform = m_blue_gem->GetWorldTransform();
-//	m_renderer.SetPointLight3(PointLight{
-//		.m_pos{ blue_gem_transform[3][0], blue_gem_transform[3][1], blue_gem_transform[3][2] },
-//		.m_color{ 0.0, 0.0, 1.0 },
-//		.m_radius{ 20.0f } });
+	update_gem_transform(m_red_gem->ModifyWorldTransform(), dt);
+	update_gem_transform(m_green_gem->ModifyWorldTransform(), dt);
+	update_gem_transform(m_blue_gem->ModifyWorldTransform(), dt);
+
+	glm::mat4 const & red_gem_transform = m_red_gem->GetWorldTransform();
+	m_renderer.SetPointLight1(PointLight{
+		.m_pos{ red_gem_transform[3][0], red_gem_transform[3][1], red_gem_transform[3][2] },
+		.m_color{ 1.0, 0.0, 0.0 },
+		.m_radius{ 20.0f } });
+
+	glm::mat4 const & green_gem_transform = m_green_gem->GetWorldTransform();
+	m_renderer.SetPointLight2(PointLight{
+		.m_pos{ green_gem_transform[3][0], green_gem_transform[3][1], green_gem_transform[3][2] },
+		.m_color{ 0.0, 1.0, 0.0 },
+		.m_radius{ 20.0f } });
+
+	glm::mat4 const & blue_gem_transform = m_blue_gem->GetWorldTransform();
+	m_renderer.SetPointLight3(PointLight{
+		.m_pos{ blue_gem_transform[3][0], blue_gem_transform[3][1], blue_gem_transform[3][2] },
+		.m_color{ 0.0, 0.0, 1.0 },
+		.m_radius{ 20.0f } });
 }
 
-//std::shared_ptr<RenderObject> Scene::create_object(int mesh_id, int shader_id, int tex_id /*= -1*/) const
-//{
-//	auto obj = std::make_shared<RenderObject>(mesh_id, shader_id, tex_id);
-//	m_renderer.AddRenderObject(obj);
-//	return obj;
-//}
+std::shared_ptr<RenderObject> Scene::create_object(int mesh_id, int pipeline_id, int tex_id /*= -1*/) const
+{
+	auto obj = std::make_shared<RenderObject>(mesh_id, pipeline_id, tex_id);
+	m_renderer.AddRenderObject(obj);
+	return obj;
+}
 
 void Scene::update_camera(float dt, Input const & input)
 {
