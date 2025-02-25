@@ -596,7 +596,7 @@ namespace
 		return descriptor_set_layout;
 	}
 
-	void create_descriptor_pool(VkDevice device, uint32_t descriptor_count)
+	VkDescriptorPool create_descriptor_pool(VkDevice device, uint32_t descriptor_count)
 	{
 		VkDescriptorPoolSize pool_size{
 			.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -616,6 +616,47 @@ namespace
 			throw std::runtime_error("failed to create descriptor pool!");
 
 		return descriptor_pool;
+	}
+
+	std::vector<VkDescriptorSet> create_descriptor_sets(
+		VkDevice device,
+		uint32_t count,
+		VkDescriptorSetLayout layout,
+		VkDescriptorPool pool,
+		std::vector<VkBuffer> uniform_buffers)
+	{
+		std::vector<VkDescriptorSetLayout> layouts(static_cast<size_t>(count), layout);
+		VkDescriptorSetAllocateInfo allocInfo{};
+		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+		allocInfo.descriptorPool = pool;
+		allocInfo.descriptorSetCount = count;
+		allocInfo.pSetLayouts = layouts.data();
+
+		std::vector<VkDescriptorSet> descriptor_sets(count);
+		if (vkAllocateDescriptorSets(device, &allocInfo, descriptor_sets.data()) != VK_SUCCESS)
+			throw std::runtime_error("failed to allocate descriptor sets!");
+
+		for (size_t i = 0; i < count; i++) {
+			VkDescriptorBufferInfo bufferInfo{};
+			bufferInfo.buffer = uniform_buffers[i];
+			bufferInfo.offset = 0;
+			bufferInfo.range = sizeof(UniformBufferObject); // VK_WHOLE_SIZE
+
+			VkWriteDescriptorSet descriptorWrite{};
+			descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			descriptorWrite.dstSet = descriptor_sets[i];
+			descriptorWrite.dstBinding = 0;
+			descriptorWrite.dstArrayElement = 0;
+			descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			descriptorWrite.descriptorCount = 1;
+			descriptorWrite.pBufferInfo = &bufferInfo;
+			descriptorWrite.pImageInfo = nullptr;
+			descriptorWrite.pTexelBufferView = nullptr;
+
+			vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
+		}
+
+		return descriptor_sets;
 	}
 }
 
@@ -671,9 +712,11 @@ GraphicsApi::GraphicsApi(
 	m_render_finished_semaphores = create_semaphores(m_logical_device, m_max_frames_in_flight);
 	m_in_flight_fences = create_fences(m_logical_device, true /*create_signaled*/, m_max_frames_in_flight);
 
-	m_descriptor_pool = create_descriptor_pool(m_logical_device, m_max_frames_in_flight);
 	m_descriptor_set_layout = create_descriptor_set_layout(m_logical_device);
+	m_descriptor_pool = create_descriptor_pool(m_logical_device, m_max_frames_in_flight);
 	CreateUniformBuffers();
+	m_descriptor_sets = create_descriptor_sets(m_logical_device,
+		m_max_frames_in_flight, m_descriptor_set_layout, m_descriptor_pool, m_uniform_buffers);
 }
 
 GraphicsApi::~GraphicsApi()
@@ -683,6 +726,7 @@ GraphicsApi::~GraphicsApi()
 		vkFreeMemory(m_logical_device, m_uniform_buffers_memory[i], nullptr);
 	}
 
+	vkDestroyDescriptorPool(m_logical_device, m_descriptor_pool, nullptr);
 	vkDestroyDescriptorSetLayout(m_logical_device, m_descriptor_set_layout, nullptr);
 
 	for (auto fence : m_in_flight_fences)

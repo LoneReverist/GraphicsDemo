@@ -126,8 +126,8 @@ void Scene::Init()
 //		resources_path / "shaders" / "texture_vs.txt",
 //		resources_path / "shaders" / "texture_fs.txt");
 	const int light_source_pipeline_id = m_renderer.LoadGraphicsPipeline(
-		resources_path / "shaders" / "light_source_vs.txt",
-		resources_path / "shaders" / "light_source_fs.txt",
+		resources_path / "shaders" / "light_source_vert.spv",
+		resources_path / "shaders" / "light_source_frag.spv",
 		Vertex::GetBindingDesc<NormalVertex>(),
 		Vertex::GetAttribDescs<NormalVertex>());
 //	const int skybox_shader_id = m_renderer.LoadShaderProgram(
@@ -165,15 +165,15 @@ void Scene::Init()
 //
 //	m_sword0->SetColor({ 0.6, 0.6, 0.6 });
 //	m_sword1->SetColor({ 0.6, 0.6, 0.6 });
-//	m_red_gem->SetColor({ 1.0, 0.0, 0.0 });
-//	m_green_gem->SetColor({ 0.0, 1.0, 0.0 });
-//	m_blue_gem->SetColor({ 0.0, 0.0, 1.0 });
+	m_red_gem->SetColor({ 1.0, 0.0, 0.0 });
+	m_green_gem->SetColor({ 0.0, 1.0, 0.0 });
+	m_blue_gem->SetColor({ 0.0, 0.0, 1.0 });
 //
 //	init_sword_transform(0, m_sword0->ModifyWorldTransform());
 //	init_sword_transform(1, m_sword1->ModifyWorldTransform());
-//	init_gem_transform(0, m_red_gem->ModifyWorldTransform());
-//	init_gem_transform(1, m_green_gem->ModifyWorldTransform());
-//	init_gem_transform(2, m_blue_gem->ModifyWorldTransform());
+	init_gem_transform(0, m_red_gem->ModifyWorldTransform());
+	init_gem_transform(1, m_green_gem->ModifyWorldTransform());
+	init_gem_transform(2, m_blue_gem->ModifyWorldTransform());
 
 	m_renderer.SetAmbientLightColor(glm::vec3(0.5, 0.5, 0.5));
 

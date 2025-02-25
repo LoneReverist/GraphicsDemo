@@ -81,6 +81,12 @@
     <None Include="..\resources\shaders\light_source.vert">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="..\resources\shaders\light_source_vert.spv">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\resources\shaders\light_source_frag.spv">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\resources\shaders\test.vert">

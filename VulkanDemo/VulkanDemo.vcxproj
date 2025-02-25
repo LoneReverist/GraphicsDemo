@@ -101,6 +101,8 @@
     <None Include="..\resources\shaders\compile.bat" />
     <None Include="..\resources\shaders\light_source.frag" />
     <None Include="..\resources\shaders\light_source.vert" />
+    <None Include="..\resources\shaders\light_source_frag.spv" />
+    <None Include="..\resources\shaders\light_source_vert.spv" />
     <None Include="..\resources\shaders\test_frag.spv" />
     <None Include="..\resources\shaders\test_vert.spv" />
     <None Include="packages.config" />

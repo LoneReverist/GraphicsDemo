@@ -89,6 +89,7 @@ public:
 	VkQueue GetGraphicsQueue() const { return m_graphics_queue; }
 	VkDescriptorSetLayout GetDescriptorSetLayout() const { return m_descriptor_set_layout; }
 	void * GetCurMappedUniformBufferObject() const { return m_uniform_buffers_mapped[m_current_frame]; }
+	VkDescriptorSet GetCurDescriptorSet() const { return m_descriptor_sets[m_current_frame]; }
 
 private:
 	VkInstance m_instance = VK_NULL_HANDLE;
@@ -116,8 +117,9 @@ private:
 	std::vector<VkSemaphore> m_render_finished_semaphores;
 	std::vector<VkFence> m_in_flight_fences;
 
-	VkDescriptorPool m_descriptor_pool = VK_NULL_HANDLE;
 	VkDescriptorSetLayout m_descriptor_set_layout = VK_NULL_HANDLE;
+	VkDescriptorPool m_descriptor_pool = VK_NULL_HANDLE;
+	std::vector<VkDescriptorSet> m_descriptor_sets; // Automatically cleaned up when m_descriptor_pool is destroyed
 
 	std::vector<VkBuffer> m_uniform_buffers;
 	std::vector<VkDeviceMemory> m_uniform_buffers_memory;
