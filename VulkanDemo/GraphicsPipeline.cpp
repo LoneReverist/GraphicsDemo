@@ -20,12 +20,25 @@ namespace
 {
 	VkPipelineLayout create_pipeline_layout(VkDevice device, VkDescriptorSetLayout descriptor_set_layout)
 	{
+		VkPushConstantRange push_constants[] = {
+			{
+				.stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+				.offset = 0,
+				.size = sizeof(PushConstantVSData),
+			},
+			{
+				.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+				.offset = sizeof(PushConstantVSData),
+				.size = sizeof(PushConstantFSData),
+			}
+		};
+
 		VkPipelineLayoutCreateInfo pipeline_layout_info{
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
 			.setLayoutCount = 1,
 			.pSetLayouts = &descriptor_set_layout,
-			.pushConstantRangeCount = 0,
-			.pPushConstantRanges = nullptr,
+			.pushConstantRangeCount = 2,
+			.pPushConstantRanges = push_constants,
 		};
 
 		VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;

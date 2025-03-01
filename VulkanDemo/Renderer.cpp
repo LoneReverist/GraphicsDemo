@@ -128,11 +128,33 @@ void Renderer::Render() const
 
 		void * mapped_uniform_buffer = m_graphics_api.GetCurMappedUniformBufferObject();
 		UniformBufferObject ubo{
-			.model = obj->GetWorldTransform(),
 			.view = m_view_transform,
 			.proj = m_proj_transform
 		};
 		memcpy(mapped_uniform_buffer, &ubo, sizeof(ubo));
+
+		PushConstantVSData vs_obj_data{
+			obj->GetWorldTransform()
+		};
+		vkCmdPushConstants(
+			command_buffer,
+			pipeline.GetLayout(),
+			VK_SHADER_STAGE_VERTEX_BIT,
+			0 /*offset*/,
+			sizeof(PushConstantVSData),
+			&vs_obj_data);
+
+		PushConstantFSData fs_obj_data{
+			obj->GetColor(),
+			m_camera_pos
+		};
+		vkCmdPushConstants(
+			command_buffer,
+			pipeline.GetLayout(),
+			VK_SHADER_STAGE_FRAGMENT_BIT,
+			sizeof(PushConstantVSData) /*offset*/,
+			sizeof(PushConstantFSData),
+			&fs_obj_data);
 
 		Mesh const & mesh = m_meshes[mesh_id];
 		mesh.Render(obj->GetDrawWireframe());

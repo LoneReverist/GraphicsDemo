@@ -39,11 +39,21 @@ struct PhysicalDeviceInfo
 	SwapChainSupportDetails sws_details;
 };
 
+export struct PushConstantVSData
+{
+	alignas(16) glm::mat4 model;
+};
+
+export struct PushConstantFSData
+{
+	alignas(16) glm::vec3 color;
+	alignas(16) glm::vec3 camera_pos_world; // TODO: would make more sense as a descriptor set since it's not per object
+};
+
 export struct UniformBufferObject
 {
-	glm::mat4 model;
-	glm::mat4 view;
-	glm::mat4 proj;
+	alignas(16) glm::mat4 view;
+	alignas(16) glm::mat4 proj;
 };
 
 export class GraphicsApi

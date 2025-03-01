@@ -29,6 +29,8 @@ public:
 	void SetUniform(std::string const & uniform_label, glm::vec3 const & uniform) const;
 	void SetUniform(std::string const & uniform_label, glm::mat4 const & uniform) const;
 
+	VkPipelineLayout GetLayout() const { return m_pipeline_layout; }
+
 private:
 	VkShaderModule load_shader(std::filesystem::path const & shader_path, VkDevice device) const;
 	std::vector<char> read_file(std::filesystem::path const & path) const;
