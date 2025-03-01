@@ -505,7 +505,8 @@ namespace
 		return command_pool;
 	}
 
-	std::vector<VkCommandBuffer> create_command_buffers(VkCommandPool command_pool, VkDevice logical_device, uint32_t count)
+	template <uint32_t count>
+	std::array<VkCommandBuffer, count> create_command_buffers(VkCommandPool command_pool, VkDevice logical_device)
 	{
 		VkCommandBufferAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -513,7 +514,7 @@ namespace
 		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 		allocInfo.commandBufferCount = count;
 
-		std::vector<VkCommandBuffer> command_buffers(count, VK_NULL_HANDLE);
+		std::array<VkCommandBuffer, count> command_buffers;
 		VkResult result = vkAllocateCommandBuffers(logical_device, &allocInfo, command_buffers.data());
 		if (result != VK_SUCCESS)
 			throw std::runtime_error("failed to allocate command buffers!");
@@ -522,13 +523,14 @@ namespace
 	}
 
 	// VkSemaphore is used for synchronizing commands on the gpu
-	std::vector<VkSemaphore> create_semaphores(VkDevice logical_device, uint32_t count)
+	template <uint32_t count>
+	std::array<VkSemaphore, count> create_semaphores(VkDevice logical_device)
 	{
 		VkSemaphoreCreateInfo semaphore_info{
 			.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
 		};
 
-		std::vector<VkSemaphore> semaphores(count, VK_NULL_HANDLE);
+		std::array<VkSemaphore, count> semaphores;
 		for (uint32_t i = 0; i < count; ++i)
 		{
 			VkResult result = vkCreateSemaphore(logical_device, &semaphore_info, nullptr, &semaphores[i]);
@@ -540,14 +542,15 @@ namespace
 	}
 
 	// VkFence is used for synchronizing the cpu with the gpu
-	std::vector<VkFence> create_fences(VkDevice logical_device, bool create_signaled, uint32_t count)
+	template <uint32_t count>
+	std::array<VkFence, count> create_fences(VkDevice logical_device, bool create_signaled)
 	{
 		VkFenceCreateInfo fence_info{
 			.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
 			.flags = create_signaled ? VK_FENCE_CREATE_SIGNALED_BIT : VkFenceCreateFlags{}
 		};
 
-		std::vector<VkFence> fences(count, VK_NULL_HANDLE);
+		std::array<VkFence, count> fences;
 		for (uint32_t i = 0; i < count; ++i)
 		{
 			VkResult result = vkCreateFence(logical_device, &fence_info, nullptr, &fences[i]);
@@ -570,93 +573,6 @@ namespace
 		}
 
 		throw std::runtime_error("failed to find suitable memory type!");
-	}
-
-	VkDescriptorSetLayout create_descriptor_set_layout(VkDevice device)
-	{
-		VkDescriptorSetLayoutBinding ubo_layout_binding{
-			.binding = 0,
-			.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-			.descriptorCount = 1,
-			.stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-			.pImmutableSamplers = nullptr
-		};
-
-		VkDescriptorSetLayoutCreateInfo layout_info{
-			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-			.bindingCount = 1,
-			.pBindings = &ubo_layout_binding
-		};
-
-		VkDescriptorSetLayout descriptor_set_layout = VK_NULL_HANDLE;
-		VkResult result = vkCreateDescriptorSetLayout(device, &layout_info, nullptr, &descriptor_set_layout);
-		if (result != VK_SUCCESS)
-			std::cout << "Failed to create ubo descriptor set layout";
-
-		return descriptor_set_layout;
-	}
-
-	VkDescriptorPool create_descriptor_pool(VkDevice device, uint32_t descriptor_count)
-	{
-		VkDescriptorPoolSize pool_size{
-			.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-			.descriptorCount = descriptor_count
-		};
-
-		VkDescriptorPoolCreateInfo pool_info{
-			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
-			.maxSets = descriptor_count,
-			.poolSizeCount = 1,
-			.pPoolSizes = &pool_size
-		};
-
-		VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;
-		VkResult result = vkCreateDescriptorPool(device, &pool_info, nullptr, &descriptor_pool);
-		if (result != VK_SUCCESS)
-			throw std::runtime_error("failed to create descriptor pool!");
-
-		return descriptor_pool;
-	}
-
-	std::vector<VkDescriptorSet> create_descriptor_sets(
-		VkDevice device,
-		uint32_t count,
-		VkDescriptorSetLayout layout,
-		VkDescriptorPool pool,
-		std::vector<VkBuffer> uniform_buffers)
-	{
-		std::vector<VkDescriptorSetLayout> layouts(static_cast<size_t>(count), layout);
-		VkDescriptorSetAllocateInfo allocInfo{};
-		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-		allocInfo.descriptorPool = pool;
-		allocInfo.descriptorSetCount = count;
-		allocInfo.pSetLayouts = layouts.data();
-
-		std::vector<VkDescriptorSet> descriptor_sets(count);
-		if (vkAllocateDescriptorSets(device, &allocInfo, descriptor_sets.data()) != VK_SUCCESS)
-			throw std::runtime_error("failed to allocate descriptor sets!");
-
-		for (size_t i = 0; i < count; i++) {
-			VkDescriptorBufferInfo bufferInfo{};
-			bufferInfo.buffer = uniform_buffers[i];
-			bufferInfo.offset = 0;
-			bufferInfo.range = sizeof(UniformBufferObject); // VK_WHOLE_SIZE
-
-			VkWriteDescriptorSet descriptorWrite{};
-			descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			descriptorWrite.dstSet = descriptor_sets[i];
-			descriptorWrite.dstBinding = 0;
-			descriptorWrite.dstArrayElement = 0;
-			descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-			descriptorWrite.descriptorCount = 1;
-			descriptorWrite.pBufferInfo = &bufferInfo;
-			descriptorWrite.pImageInfo = nullptr;
-			descriptorWrite.pTexelBufferView = nullptr;
-
-			vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
-		}
-
-		return descriptor_sets;
 	}
 }
 
@@ -704,31 +620,17 @@ GraphicsApi::GraphicsApi(
 	if (m_command_pool == VK_NULL_HANDLE)
 		return;
 
-	m_command_buffers = create_command_buffers(m_command_pool, m_logical_device, m_max_frames_in_flight);
+	m_command_buffers = create_command_buffers<m_max_frames_in_flight>(m_command_pool, m_logical_device);
 	if (std::ranges::find(m_command_buffers, VK_NULL_HANDLE) != m_command_buffers.end())
 		return;
 
-	m_image_available_semaphores = create_semaphores(m_logical_device, m_max_frames_in_flight);
-	m_render_finished_semaphores = create_semaphores(m_logical_device, m_max_frames_in_flight);
-	m_in_flight_fences = create_fences(m_logical_device, true /*create_signaled*/, m_max_frames_in_flight);
-
-	m_descriptor_set_layout = create_descriptor_set_layout(m_logical_device);
-	m_descriptor_pool = create_descriptor_pool(m_logical_device, m_max_frames_in_flight);
-	CreateUniformBuffers();
-	m_descriptor_sets = create_descriptor_sets(m_logical_device,
-		m_max_frames_in_flight, m_descriptor_set_layout, m_descriptor_pool, m_uniform_buffers);
+	m_image_available_semaphores = create_semaphores<m_max_frames_in_flight>(m_logical_device);
+	m_render_finished_semaphores = create_semaphores<m_max_frames_in_flight>(m_logical_device);
+	m_in_flight_fences = create_fences<m_max_frames_in_flight>(m_logical_device, true /*create_signaled*/);
 }
 
 GraphicsApi::~GraphicsApi()
 {
-	for (size_t i = 0; i < m_max_frames_in_flight; i++) {
-		vkDestroyBuffer(m_logical_device, m_uniform_buffers[i], nullptr);
-		vkFreeMemory(m_logical_device, m_uniform_buffers_memory[i], nullptr);
-	}
-
-	vkDestroyDescriptorPool(m_logical_device, m_descriptor_pool, nullptr);
-	vkDestroyDescriptorSetLayout(m_logical_device, m_descriptor_set_layout, nullptr);
-
 	for (auto fence : m_in_flight_fences)
 		vkDestroyFence(m_logical_device, fence, nullptr);
 	for (auto semaphore : m_render_finished_semaphores)
@@ -958,31 +860,4 @@ void GraphicsApi::CopyBuffer(
 	vkQueueWaitIdle(m_graphics_queue);
 
 	vkFreeCommandBuffers(m_logical_device, m_command_pool, 1, &command_buffer);
-}
-
-void GraphicsApi::CreateUniformBuffers()
-{
-	VkDeviceSize buffer_size = sizeof(UniformBufferObject);
-
-	m_uniform_buffers.resize(m_max_frames_in_flight);
-	m_uniform_buffers_memory.resize(m_max_frames_in_flight);
-	m_uniform_buffers_mapped.resize(m_max_frames_in_flight);
-
-	for (size_t i = 0; i < m_max_frames_in_flight; i++)
-	{
-		CreateBuffer(
-			buffer_size,
-			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-			m_uniform_buffers[i],
-			m_uniform_buffers_memory[i]);
-
-		vkMapMemory(
-			m_logical_device,
-			m_uniform_buffers_memory[i],
-			0 /*offset*/,
-			buffer_size,
-			0 /*flags*/,
-			&m_uniform_buffers_mapped[i]);
-	}
 }

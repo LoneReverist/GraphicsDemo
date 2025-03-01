@@ -2,6 +2,7 @@
 
 module;
 
+#include <array>
 #include <functional>
 
 #include <vulkan/vulkan.h>
@@ -34,30 +35,16 @@ struct SwapChainSupportDetails
 
 struct PhysicalDeviceInfo
 {
-	VkPhysicalDevice device;
+	VkPhysicalDevice device = VK_NULL_HANDLE;
 	QueueFamilyIndices qfis;
 	SwapChainSupportDetails sws_details;
 };
 
-export struct PushConstantVSData
-{
-	alignas(16) glm::mat4 model;
-};
-
-export struct PushConstantFSData
-{
-	alignas(16) glm::vec3 color;
-	alignas(16) glm::vec3 camera_pos_world; // TODO: would make more sense as a descriptor set since it's not per object
-};
-
-export struct UniformBufferObject
-{
-	alignas(16) glm::mat4 view;
-	alignas(16) glm::mat4 proj;
-};
-
 export class GraphicsApi
 {
+public:
+	constexpr static uint32_t m_max_frames_in_flight = 2;
+
 public:
 	GraphicsApi(
 		GLFWwindow * window, // Reminder: Do not call any glfw functions that require being on the main thread
@@ -88,8 +75,6 @@ public:
 		VkBuffer dst_buffer,
 		VkDeviceSize size) const;
 
-	void CreateUniformBuffers();
-
 	VkDevice GetDevice() const { return m_logical_device; }
 	VkFormat GetSwapChainImageFormat() const { return m_swap_chain_image_format; }
 	VkExtent2D GetSwapChainExtent() const { return m_swap_chain_extent; }
@@ -97,9 +82,7 @@ public:
 	VkCommandBuffer GetCurCommandBuffer() const { return m_command_buffers[m_current_frame]; }
 	VkFramebuffer GetCurFrameBuffer() const { return m_swap_chain_framebuffers[m_current_image_index]; }
 	VkQueue GetGraphicsQueue() const { return m_graphics_queue; }
-	VkDescriptorSetLayout GetDescriptorSetLayout() const { return m_descriptor_set_layout; }
-	void * GetCurMappedUniformBufferObject() const { return m_uniform_buffers_mapped[m_current_frame]; }
-	VkDescriptorSet GetCurDescriptorSet() const { return m_descriptor_sets[m_current_frame]; }
+	uint32_t GetCurFrameIndex() const { return m_current_frame; }
 
 private:
 	VkInstance m_instance = VK_NULL_HANDLE;
@@ -121,21 +104,12 @@ private:
 	uint32_t m_current_image_index = 0;
 
 	VkCommandPool m_command_pool = VK_NULL_HANDLE;
-	std::vector<VkCommandBuffer> m_command_buffers; // Automatically cleaned up when m_comand_pool is destroyed
+	std::array<VkCommandBuffer, m_max_frames_in_flight> m_command_buffers; // Automatically cleaned up when m_comand_pool is destroyed
 
-	std::vector<VkSemaphore> m_image_available_semaphores;
-	std::vector<VkSemaphore> m_render_finished_semaphores;
-	std::vector<VkFence> m_in_flight_fences;
+	std::array<VkSemaphore, m_max_frames_in_flight> m_image_available_semaphores;
+	std::array<VkSemaphore, m_max_frames_in_flight> m_render_finished_semaphores;
+	std::array<VkFence, m_max_frames_in_flight> m_in_flight_fences;
 
-	VkDescriptorSetLayout m_descriptor_set_layout = VK_NULL_HANDLE;
-	VkDescriptorPool m_descriptor_pool = VK_NULL_HANDLE;
-	std::vector<VkDescriptorSet> m_descriptor_sets; // Automatically cleaned up when m_descriptor_pool is destroyed
-
-	std::vector<VkBuffer> m_uniform_buffers;
-	std::vector<VkDeviceMemory> m_uniform_buffers_memory;
-	std::vector<void *> m_uniform_buffers_mapped;
-
-	constexpr static uint32_t m_max_frames_in_flight = 2;
 	uint32_t m_current_frame = 0;
 
 	std::vector<const char *> const m_device_extensions = {

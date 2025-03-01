@@ -126,7 +126,7 @@ void Renderer::Render() const
 		GraphicsPipeline const & pipeline = m_pipelines[pipeline_id];
 		pipeline.Activate();
 
-		void * mapped_uniform_buffer = m_graphics_api.GetCurMappedUniformBufferObject();
+		void * mapped_uniform_buffer = pipeline.GetCurMappedUniformBufferObject();
 		UniformBufferObject ubo{
 			.view = m_view_transform,
 			.proj = m_proj_transform
