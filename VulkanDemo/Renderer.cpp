@@ -27,9 +27,10 @@ Renderer::~Renderer()
 		mesh.DeleteBuffers();
 }
 
-void Renderer::Init()
+void Renderer::Init(int width, int height)
 {
 	m_view_transform = glm::mat4(1.0);
+	OnViewportResized(width, height);
 
 //	glEnable(GL_DEPTH_TEST);
 //	glEnable(GL_CULL_FACE); // cull back facing facets. by default, front facing facets have counter-clockwise vertex windings.
@@ -204,8 +205,8 @@ void Renderer::OnViewportResized(int width, int height)
 {
 	constexpr float field_of_view = glm::radians(45.0f);
 	const float aspect_ratio = static_cast<float>(width) / static_cast<float>(height);
-	const float near_plane = 0.1f;
-	const float far_plane = 100.0f;
+	constexpr float near_plane = 0.1f;
+	constexpr float far_plane = 100.0f;
 	m_proj_transform = glm::perspective(field_of_view, aspect_ratio, near_plane, far_plane);
 
 	m_proj_transform[1][1] *= -1; // account for vulkan having flipped y-axis compared to opengl

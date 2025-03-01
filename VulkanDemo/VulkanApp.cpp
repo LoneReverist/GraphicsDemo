@@ -72,7 +72,7 @@ void VulkanApp::Run()
 				m_title, extension_count, extensions };
 
 			Renderer renderer{ graphics_api };
-			renderer.Init();
+			renderer.Init(size.m_width, size.m_height);
 			Scene scene{ renderer };
 			scene.Init();
 

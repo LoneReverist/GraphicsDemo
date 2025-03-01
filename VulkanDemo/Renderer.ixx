@@ -39,7 +39,7 @@ public:
 	Renderer(GraphicsApi const & graphics_api);
 	~Renderer();
 
-	void Init();
+	void Init(int width, int height);
 	void Render() const;
 
 	void OnViewportResized(int width, int height);
