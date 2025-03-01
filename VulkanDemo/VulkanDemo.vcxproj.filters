@@ -66,34 +66,20 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="..\resources\shaders\test_frag.spv">
+    <None Include="shaders\compile.bat">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="..\resources\shaders\test_vert.spv">
+    <None Include="shaders\light_source.frag">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="..\resources\shaders\compile.bat">
+    <None Include="shaders\light_source.vert">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="..\resources\shaders\light_source.frag">
+    <None Include="shaders\light_source_frag.spv">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="..\resources\shaders\light_source.vert">
+    <None Include="shaders\light_source_vert.spv">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="..\resources\shaders\light_source_vert.spv">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="..\resources\shaders\light_source_frag.spv">
-      <Filter>Resource Files</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="..\resources\shaders\test.vert">
-      <Filter>Resource Files</Filter>
-    </Text>
-    <Text Include="..\resources\shaders\test.frag">
-      <Filter>Resource Files</Filter>
-    </Text>
   </ItemGroup>
 </Project>

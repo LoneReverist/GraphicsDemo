@@ -118,24 +118,25 @@ namespace
 void Scene::Init()
 {
 	const std::filesystem::path resources_path = std::filesystem::path("..") / "resources";
+	const std::filesystem::path shaders_path = "shaders";
 
 //	const int color_shader_id = m_renderer.LoadShaderProgram(
-//		resources_path / "shaders" / "color_vs.txt",
-//		resources_path / "shaders" / "color_fs.txt");
+//		shaders_path / "color_vs.txt",
+//		shaders_path / "color_fs.txt");
 //	const int texture_shader_id = m_renderer.LoadShaderProgram(
-//		resources_path / "shaders" / "texture_vs.txt",
-//		resources_path / "shaders" / "texture_fs.txt");
+//		shaders_path / "texture_vs.txt",
+//		shaders_path / "texture_fs.txt");
 	const int light_source_pipeline_id = m_renderer.LoadGraphicsPipeline(
-		resources_path / "shaders" / "light_source_vert.spv",
-		resources_path / "shaders" / "light_source_frag.spv",
+		shaders_path / "light_source_vert.spv",
+		shaders_path / "light_source_frag.spv",
 		Vertex::GetBindingDesc<NormalVertex>(),
 		Vertex::GetAttribDescs<NormalVertex>());
 //	const int skybox_shader_id = m_renderer.LoadShaderProgram(
-//		resources_path / "shaders" / "skybox_vs.txt",
-//		resources_path / "shaders" / "skybox_fs.txt");
+//		shaders_path / "skybox_vs.txt",
+//		shaders_path / "skybox_fs.txt");
 //	const int reflection_shader_id = m_renderer.LoadShaderProgram(
-//		resources_path / "shaders" / "reflection_vs.txt",
-//		resources_path / "shaders" / "reflection_fs.txt");
+//		shaders_path / "reflection_vs.txt",
+//		shaders_path / "reflection_fs.txt");
 //
 //	const int sword_mesh_id = m_renderer.LoadMesh(resources_path / "objects" / "skullsword.obj");
 	const int red_gem_mesh_id = m_renderer.LoadMesh(resources_path / "objects" / "redgem.obj");

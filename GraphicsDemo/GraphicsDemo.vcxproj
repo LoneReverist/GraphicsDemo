@@ -135,16 +135,16 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="..\resources\shaders\color_fs.txt" />
-    <Text Include="..\resources\shaders\color_vs.txt" />
-    <Text Include="..\resources\shaders\light_source_fs.txt" />
-    <Text Include="..\resources\shaders\light_source_vs.txt" />
-    <Text Include="..\resources\shaders\reflection_fs.txt" />
-    <Text Include="..\resources\shaders\reflection_vs.txt" />
-    <Text Include="..\resources\shaders\skybox_fs.txt" />
-    <Text Include="..\resources\shaders\skybox_vs.txt" />
-    <Text Include="..\resources\shaders\texture_fs.txt" />
-    <Text Include="..\resources\shaders\texture_vs.txt" />
+    <Text Include="shaders\color_fs.txt" />
+    <Text Include="shaders\color_vs.txt" />
+    <Text Include="shaders\light_source_fs.txt" />
+    <Text Include="shaders\light_source_vs.txt" />
+    <Text Include="shaders\reflection_fs.txt" />
+    <Text Include="shaders\reflection_vs.txt" />
+    <Text Include="shaders\skybox_fs.txt" />
+    <Text Include="shaders\skybox_vs.txt" />
+    <Text Include="shaders\texture_fs.txt" />
+    <Text Include="shaders\texture_vs.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

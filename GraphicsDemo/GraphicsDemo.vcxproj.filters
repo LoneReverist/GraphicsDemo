@@ -85,34 +85,34 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="..\resources\shaders\color_fs.txt">
+    <Text Include="shaders\color_fs.txt">
       <Filter>Resource Files</Filter>
     </Text>
-    <Text Include="..\resources\shaders\color_vs.txt">
+    <Text Include="shaders\color_vs.txt">
       <Filter>Resource Files</Filter>
     </Text>
-    <Text Include="..\resources\shaders\light_source_vs.txt">
+    <Text Include="shaders\light_source_fs.txt">
       <Filter>Resource Files</Filter>
     </Text>
-    <Text Include="..\resources\shaders\light_source_fs.txt">
+    <Text Include="shaders\light_source_vs.txt">
       <Filter>Resource Files</Filter>
     </Text>
-    <Text Include="..\resources\shaders\texture_fs.txt">
+    <Text Include="shaders\reflection_fs.txt">
       <Filter>Resource Files</Filter>
     </Text>
-    <Text Include="..\resources\shaders\texture_vs.txt">
+    <Text Include="shaders\reflection_vs.txt">
       <Filter>Resource Files</Filter>
     </Text>
-    <Text Include="..\resources\shaders\skybox_fs.txt">
+    <Text Include="shaders\skybox_fs.txt">
       <Filter>Resource Files</Filter>
     </Text>
-    <Text Include="..\resources\shaders\skybox_vs.txt">
+    <Text Include="shaders\skybox_vs.txt">
       <Filter>Resource Files</Filter>
     </Text>
-    <Text Include="..\resources\shaders\reflection_vs.txt">
+    <Text Include="shaders\texture_fs.txt">
       <Filter>Resource Files</Filter>
     </Text>
-    <Text Include="..\resources\shaders\reflection_fs.txt">
+    <Text Include="shaders\texture_vs.txt">
       <Filter>Resource Files</Filter>
     </Text>
   </ItemGroup>
