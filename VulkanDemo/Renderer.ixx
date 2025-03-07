@@ -33,6 +33,12 @@ export struct SpotLight
 	float m_outer_radius{ 0.0 };
 };
 
+struct PipelineContainer
+{
+	GraphicsPipeline m_pipeline;
+	std::vector<std::weak_ptr<RenderObject>> m_render_objects;
+};
+
 export class Renderer
 {
 public:
@@ -74,21 +80,21 @@ private:
 private:
 	GraphicsApi const & m_graphics_api;
 
-	std::vector<GraphicsPipeline> m_pipelines;
-	std::vector<Mesh> m_meshes;
+	std::vector<PipelineContainer> m_pipeline_containers;
+
+	std::vector<Mesh> m_meshes; // TODO: need asset manager
 //	std::vector<Texture> m_textures;
 
-	std::vector<std::weak_ptr<RenderObject>> m_render_objects;
 //	std::weak_ptr<RenderObject> m_skybox;
 
-	glm::vec3 m_camera_pos;
+	glm::vec3 m_camera_pos; // TODO: need camera class
 
 	glm::mat4 m_view_transform;
 	glm::mat4 m_proj_transform;
 
 	glm::vec3 m_clear_color;
 
-	glm::vec3 m_ambient_light_color;
+	glm::vec3 m_ambient_light_color; // TODO: need light container/manager
 	PointLight m_pointlight_1;
 	PointLight m_pointlight_2;
 	PointLight m_pointlight_3;

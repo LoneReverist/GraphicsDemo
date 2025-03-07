@@ -21,8 +21,8 @@ Renderer::Renderer(GraphicsApi const & graphics_api)
 
 Renderer::~Renderer()
 {
-	for (GraphicsPipeline & pipeline : m_pipelines)
-		pipeline.DestroyPipeline();
+	for (PipelineContainer & container : m_pipeline_containers)
+		container.m_pipeline.DestroyPipeline();
 	for (Mesh & mesh : m_meshes)
 		mesh.DeleteBuffers();
 }
@@ -112,18 +112,9 @@ void Renderer::Render() const
 	vkCmdSetViewport(command_buffer, 0, 1, &viewport);
 	vkCmdSetScissor(command_buffer, 0, 1, &scissor);
 
-	for (std::weak_ptr<RenderObject> render_object : m_render_objects)
+	for (PipelineContainer const & container : m_pipeline_containers)
 	{
-		std::shared_ptr<RenderObject> obj = render_object.lock();
-		if (!obj)
-			continue;
-
-		int mesh_id = obj->GetMeshId();
-		int pipeline_id = obj->GetPipelineId();
-		if (mesh_id == -1 || pipeline_id == -1)
-			continue;
-
-		GraphicsPipeline const & pipeline = m_pipelines[pipeline_id];
+		GraphicsPipeline const & pipeline = container.m_pipeline;
 		pipeline.Activate();
 
 		void * mapped_uniform_buffer = pipeline.GetCurMappedUniformBufferObject();
@@ -133,31 +124,32 @@ void Renderer::Render() const
 		};
 		memcpy(mapped_uniform_buffer, &ubo, sizeof(ubo));
 
-		PushConstantVSData vs_obj_data{
-			obj->GetWorldTransform()
-		};
-		vkCmdPushConstants(
-			command_buffer,
-			pipeline.GetLayout(),
-			VK_SHADER_STAGE_VERTEX_BIT,
-			0 /*offset*/,
-			sizeof(PushConstantVSData),
-			&vs_obj_data);
+		for (std::weak_ptr<RenderObject> render_object : container.m_render_objects)
+		{
+			std::shared_ptr<RenderObject> obj = render_object.lock();
+			if (!obj)
+				continue;
 
-		PushConstantFSData fs_obj_data{
-			obj->GetColor(),
-			m_camera_pos
-		};
-		vkCmdPushConstants(
-			command_buffer,
-			pipeline.GetLayout(),
-			VK_SHADER_STAGE_FRAGMENT_BIT,
-			sizeof(PushConstantVSData) /*offset*/,
-			sizeof(PushConstantFSData),
-			&fs_obj_data);
+			int mesh_id = obj->GetMeshId();
+			if (mesh_id == -1)
+				continue;
 
-		Mesh const & mesh = m_meshes[mesh_id];
-		mesh.Render(obj->GetDrawWireframe());
+			PushConstantVSData vs_obj_data{
+				obj->GetWorldTransform()
+			};
+			vkCmdPushConstants(command_buffer, pipeline.GetLayout(), VK_SHADER_STAGE_VERTEX_BIT,
+				0 /*offset*/, sizeof(PushConstantVSData), &vs_obj_data);
+
+			PushConstantFSData fs_obj_data{
+				obj->GetColor(),
+				m_camera_pos
+			};
+			vkCmdPushConstants(command_buffer, pipeline.GetLayout(), VK_SHADER_STAGE_FRAGMENT_BIT,
+				sizeof(PushConstantVSData) /*offset*/, sizeof(PushConstantFSData), &fs_obj_data);
+
+			Mesh const & mesh = m_meshes[mesh_id];
+			mesh.Render(obj->GetDrawWireframe());
+		}
 	}
 
 	vkCmdEndRenderPass(command_buffer);
@@ -240,15 +232,19 @@ int Renderer::LoadGraphicsPipeline(
 	VkVertexInputBindingDescription const & binding_desc,
 	std::vector<VkVertexInputAttributeDescription> const & attrib_descs)
 {
-	GraphicsPipeline & pipeline = m_pipelines.emplace_back(m_graphics_api);
+	m_pipeline_containers.emplace_back(PipelineContainer{
+		.m_pipeline{ m_graphics_api }
+		});
+
+	GraphicsPipeline & pipeline = m_pipeline_containers.back().m_pipeline;
 
 	if (!pipeline.CreatePipeline(vert_shader_path, frag_shader_path, binding_desc, attrib_descs))
 	{
-		m_pipelines.pop_back();
+		m_pipeline_containers.pop_back();
 		return -1;
 	}
 
-	return static_cast<int>(m_pipelines.size() - 1);
+	return static_cast<int>(m_pipeline_containers.size() - 1);
 }
 
 int Renderer::LoadMesh(std::filesystem::path const & mesh_path)
@@ -297,7 +293,9 @@ int Renderer::LoadMesh(std::filesystem::path const & mesh_path)
 
 void Renderer::AddRenderObject(std::weak_ptr<RenderObject> render_object)
 {
-	m_render_objects.push_back(render_object);
+	std::shared_ptr<RenderObject> obj = render_object.lock();
+	if (obj)
+		m_pipeline_containers[obj->GetPipelineId()].m_render_objects.push_back(obj);
 }
 
 void Renderer::SetCamera(glm::vec3 const & pos, glm::vec3 const & dir)
