@@ -26,7 +26,7 @@ public:
 	int GetMeshId() const { return m_mesh_id; }
 	int GetPipelineId() const { return m_pipeline_id; }
 	int GetTextureId() const { return m_tex_id; }
-	glm::vec3 const & GetColor() { return m_color; }
+	glm::vec3 const & GetColor() const { return m_color; }
 	bool GetDrawWireframe() const { return m_draw_wireframe; }
 
 	glm::mat4 & ModifyWorldTransform() { return m_world_transform; }

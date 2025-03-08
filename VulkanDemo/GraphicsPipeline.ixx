@@ -3,6 +3,7 @@
 module;
 
 #include <array>
+#include <functional>
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -13,6 +14,7 @@ export module GraphicsPipeline;
 import <filesystem>;
 
 import GraphicsApi;
+import RenderObject;
 
 export struct PushConstantVSData
 {
@@ -25,7 +27,7 @@ export struct PushConstantFSData
 	alignas(16) glm::vec3 camera_pos_world; // TODO: would make more sense as a descriptor set since it's not per object
 };
 
-export struct UniformBufferObject
+export struct ViewProjUniform
 {
 	alignas(16) glm::mat4 view;
 	alignas(16) glm::mat4 proj;
@@ -34,23 +36,30 @@ export struct UniformBufferObject
 export class GraphicsPipeline
 {
 public:
-	GraphicsPipeline(GraphicsApi const & graphics_api);
+	using PerFrameConstantsCallback = std::function<void(GraphicsPipeline const & pipeline)>;
+	using PerObjectConstantsCallback = std::function<void(GraphicsPipeline const & pipeline, RenderObject const &)>;
 
-	bool CreatePipeline(
+	GraphicsPipeline(GraphicsApi const & graphics_api,
 		std::filesystem::path const & vert_shader_path,
 		std::filesystem::path const & frag_shader_path,
 		VkVertexInputBindingDescription const & binding_desc,
 		std::vector<VkVertexInputAttributeDescription> const & attrib_descs);
-	void DestroyPipeline();
+	~GraphicsPipeline();
+
+	bool IsValid() const { return m_graphics_pipeline != VK_NULL_HANDLE; }
+
+	void SetPerFrameConstantsCallback(PerFrameConstantsCallback callback) { m_per_frame_constants_callback = callback; }
+	void SetPerObjectConstantsCallback(PerObjectConstantsCallback callback) { m_per_object_constants_callback = callback; }
 
 	void Activate() const;
-	void SetUniform(std::string const & uniform_label, float uniform) const;
-	void SetUniform(std::string const & uniform_label, glm::vec3 const & uniform) const;
-	void SetUniform(std::string const & uniform_label, glm::mat4 const & uniform) const;
+	void UpdatePerFrameConstants() const;
+	void UpdatePerObjectConstants(RenderObject const & obj) const;
 
-	VkPipelineLayout GetLayout() const { return m_pipeline_layout; }
-	void * GetCurMappedUniformBufferObject() const { return m_uniform_buffers_mapped[m_graphics_api.GetCurFrameIndex()]; }
-	VkDescriptorSet GetCurDescriptorSet() const { return m_descriptor_sets[m_graphics_api.GetCurFrameIndex()]; }
+	template <typename UniformData>
+	void SetUniform(uint32_t index, UniformData const & data) const;
+
+	template <typename VSConstantData, typename FSContantData>
+	void SetPushConstants(VSConstantData const & vs_data, FSContantData const & fs_data) const;
 
 private:
 	VkShaderModule load_shader(std::filesystem::path const & shader_path, VkDevice device) const;
@@ -71,4 +80,26 @@ private:
 	std::array<VkBuffer, GraphicsApi::m_max_frames_in_flight> m_uniform_buffers;
 	std::array<VkDeviceMemory, GraphicsApi::m_max_frames_in_flight> m_uniform_buffers_memory;
 	std::array<void *, GraphicsApi::m_max_frames_in_flight> m_uniform_buffers_mapped;
+
+	PerFrameConstantsCallback m_per_frame_constants_callback;
+	PerObjectConstantsCallback m_per_object_constants_callback;
 };
+
+template <typename UniformData>
+void GraphicsPipeline::SetUniform(uint32_t /*index*/, UniformData const & data) const
+{
+	void * mapped_buffer = m_uniform_buffers_mapped[m_graphics_api.GetCurFrameIndex()];
+	memcpy(mapped_buffer, &data, sizeof(data));
+}
+
+template <typename VSConstantData, typename FSContantData>
+void GraphicsPipeline::SetPushConstants(VSConstantData const & vs_data, FSContantData const & fs_data) const
+{
+	VkCommandBuffer command_buffer = m_graphics_api.GetCurCommandBuffer();
+
+	vkCmdPushConstants(command_buffer, m_pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT,
+		0 /*offset*/, sizeof(VSConstantData), &vs_data);
+
+	vkCmdPushConstants(command_buffer, m_pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT,
+		sizeof(VSConstantData) /*offset*/, sizeof(FSContantData), &fs_data);
+}

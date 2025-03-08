@@ -35,7 +35,7 @@ export struct SpotLight
 
 struct PipelineContainer
 {
-	GraphicsPipeline m_pipeline;
+	std::unique_ptr<GraphicsPipeline> m_pipeline;
 	std::vector<std::weak_ptr<RenderObject>> m_render_objects;
 };
 
@@ -50,11 +50,7 @@ public:
 
 	void OnViewportResized(int width, int height);
 
-	int LoadGraphicsPipeline(
-		std::filesystem::path const & vert_shader_path,
-		std::filesystem::path const & frag_shader_path,
-		VkVertexInputBindingDescription const & binding_desc,
-		std::vector<VkVertexInputAttributeDescription> const & attrib_descs);
+	int AddGraphicsPipeline(std::unique_ptr<GraphicsPipeline> && pipeline);
 
 	int LoadMesh(std::filesystem::path const & mesh_path);
 //	int AddMesh(Mesh && mesh_var);
@@ -73,6 +69,11 @@ public:
 	void SetPointLight2(PointLight const & light) { m_pointlight_2 = light; }
 	void SetPointLight3(PointLight const & light) { m_pointlight_3 = light; }
 	void SetSpotLight(SpotLight const & light) { m_spotlight = light; }
+
+	GraphicsApi const & GetGraphicsApi() const { return m_graphics_api; }
+	glm::mat4 const & GetViewTransform() const { return m_view_transform; }
+	glm::mat4 const & GetProjTransform() const { return m_proj_transform; }
+	glm::vec3 const & GetCameraPos() const { return m_camera_pos; }
 
 private:
 //	void render_skybox() const;

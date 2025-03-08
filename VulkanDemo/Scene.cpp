@@ -13,6 +13,7 @@ module Scene;
 import <filesystem>;
 //import <numbers>;
 
+import GraphicsPipeline;
 import Mesh;
 
 namespace
@@ -113,6 +114,41 @@ namespace
 //
 //		return Mesh{ std::move(verts), std::move(indices) };
 //	}
+
+	std::unique_ptr<GraphicsPipeline> create_light_source_pipeline(
+		Renderer const & renderer,
+		std::filesystem::path const & shaders_path)
+	{
+		auto pipeline = std::make_unique<GraphicsPipeline>(renderer.GetGraphicsApi(),
+			shaders_path / "light_source_vert.spv",
+			shaders_path / "light_source_frag.spv",
+			Vertex::GetBindingDesc<NormalVertex>(),
+			Vertex::GetAttribDescs<NormalVertex>());
+
+		pipeline->SetPerFrameConstantsCallback(
+			[&renderer](GraphicsPipeline const & pipeline)
+			{
+				pipeline.SetUniform(0 /*index*/,
+					ViewProjUniform{
+						.view = renderer.GetViewTransform(),
+						.proj = renderer.GetProjTransform()
+					});
+			});
+		pipeline->SetPerObjectConstantsCallback(
+			[&renderer](GraphicsPipeline const & pipeline, RenderObject const & obj)
+			{
+				pipeline.SetPushConstants(
+					PushConstantVSData{
+						.model = obj.GetWorldTransform()
+					},
+					PushConstantFSData{
+						.color = obj.GetColor(),
+						.camera_pos_world = renderer.GetCameraPos()
+					});
+			});
+
+		return pipeline;
+	}
 }
 
 void Scene::Init()
@@ -126,11 +162,8 @@ void Scene::Init()
 //	const int texture_shader_id = m_renderer.LoadShaderProgram(
 //		shaders_path / "texture_vs.txt",
 //		shaders_path / "texture_fs.txt");
-	const int light_source_pipeline_id = m_renderer.LoadGraphicsPipeline(
-		shaders_path / "light_source_vert.spv",
-		shaders_path / "light_source_frag.spv",
-		Vertex::GetBindingDesc<NormalVertex>(),
-		Vertex::GetAttribDescs<NormalVertex>());
+	const int light_source_pipeline_id = m_renderer.AddGraphicsPipeline(
+		create_light_source_pipeline(m_renderer, shaders_path));
 //	const int skybox_shader_id = m_renderer.LoadShaderProgram(
 //		shaders_path / "skybox_vs.txt",
 //		shaders_path / "skybox_fs.txt");

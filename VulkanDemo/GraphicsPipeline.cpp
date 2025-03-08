@@ -236,7 +236,7 @@ namespace
 			VkDescriptorBufferInfo bufferInfo{};
 			bufferInfo.buffer = uniform_buffers[i];
 			bufferInfo.offset = 0;
-			bufferInfo.range = sizeof(UniformBufferObject); // VK_WHOLE_SIZE
+			bufferInfo.range = sizeof(ViewProjUniform); // VK_WHOLE_SIZE
 
 			VkWriteDescriptorSet descriptorWrite{};
 			descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -256,16 +256,12 @@ namespace
 	}
 }
 
-GraphicsPipeline::GraphicsPipeline(GraphicsApi const & graphics_api)
-	: m_graphics_api(graphics_api)
-{
-}
-
-bool GraphicsPipeline::CreatePipeline(
+GraphicsPipeline::GraphicsPipeline(GraphicsApi const & graphics_api,
 	std::filesystem::path const & vert_shader_path,
 	std::filesystem::path const & frag_shader_path,
 	VkVertexInputBindingDescription const & binding_desc,
 	std::vector<VkVertexInputAttributeDescription> const & attrib_descs)
+	: m_graphics_api(graphics_api)
 {
 	VkDevice device = m_graphics_api.GetDevice();
 
@@ -277,7 +273,7 @@ bool GraphicsPipeline::CreatePipeline(
 
 	m_pipeline_layout = create_pipeline_layout(device, m_descriptor_set_layout);
 	if (m_pipeline_layout == VK_NULL_HANDLE)
-		return false;
+		return;
 
 	VkShaderModule vert_shader_module = load_shader(vert_shader_path, device);
 	VkShaderModule frag_shader_module = load_shader(frag_shader_path, device);
@@ -285,7 +281,7 @@ bool GraphicsPipeline::CreatePipeline(
 	{
 		vkDestroyShaderModule(device, frag_shader_module, nullptr); // TODO: a scope_guard class would be handy
 		vkDestroyShaderModule(device, vert_shader_module, nullptr);
-		return false;
+		return;
 	}
 
 	VkPipelineShaderStageCreateInfo vert_shader_stage_info{
@@ -317,11 +313,9 @@ bool GraphicsPipeline::CreatePipeline(
 
 	vkDestroyShaderModule(device, frag_shader_module, nullptr);
 	vkDestroyShaderModule(device, vert_shader_module, nullptr);
-
-	return m_graphics_pipeline != VK_NULL_HANDLE;
 }
 
-void GraphicsPipeline::DestroyPipeline()
+GraphicsPipeline::~GraphicsPipeline()
 {
 	VkDevice device = m_graphics_api.GetDevice();
 
@@ -349,7 +343,7 @@ void GraphicsPipeline::Activate() const
 
 	vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphics_pipeline);
 
-	VkDescriptorSet descriptor_set = GetCurDescriptorSet();
+	VkDescriptorSet descriptor_set = m_descriptor_sets[m_graphics_api.GetCurFrameIndex()];
 	vkCmdBindDescriptorSets(command_buffer,
 		VK_PIPELINE_BIND_POINT_GRAPHICS,
 		m_pipeline_layout,
@@ -360,25 +354,16 @@ void GraphicsPipeline::Activate() const
 		nullptr);
 }
 
-void GraphicsPipeline::SetUniform(std::string const & uniform_label, float uniform) const
+void GraphicsPipeline::UpdatePerFrameConstants() const
 {
-//	GLint uniform_loc = glGetUniformLocation(m_program_id, uniform_label.c_str());
-//	if (uniform_loc != -1)
-//		glUniform1f(uniform_loc, uniform);
+	if (m_per_frame_constants_callback)
+		m_per_frame_constants_callback(*this);
 }
 
-void GraphicsPipeline::SetUniform(std::string const & uniform_label, glm::vec3 const & uniform) const
+void GraphicsPipeline::UpdatePerObjectConstants(RenderObject const & obj) const
 {
-//	GLint uniform_loc = glGetUniformLocation(m_program_id, uniform_label.c_str());
-//	if (uniform_loc != -1)
-//		glUniform3fv(uniform_loc, 1, glm::value_ptr(uniform));
-}
-
-void GraphicsPipeline::SetUniform(std::string const & uniform_label, glm::mat4 const & uniform) const
-{
-//	GLint uniform_loc = glGetUniformLocation(m_program_id, uniform_label.c_str());
-//	if (uniform_loc != -1)
-//		glUniformMatrix4fv(uniform_loc, 1, GL_FALSE, glm::value_ptr(uniform));
+	if (m_per_object_constants_callback)
+		m_per_object_constants_callback(*this, obj);
 }
 
 VkShaderModule GraphicsPipeline::load_shader(
@@ -427,7 +412,7 @@ void GraphicsPipeline::create_uniform_buffers()
 {
 	VkDevice device = m_graphics_api.GetDevice();
 
-	const VkDeviceSize buffer_size = sizeof(UniformBufferObject);
+	const VkDeviceSize buffer_size = sizeof(ViewProjUniform);
 
 	for (size_t i = 0; i < GraphicsApi::m_max_frames_in_flight; i++)
 	{

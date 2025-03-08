@@ -21,8 +21,6 @@ Renderer::Renderer(GraphicsApi const & graphics_api)
 
 Renderer::~Renderer()
 {
-	for (PipelineContainer & container : m_pipeline_containers)
-		container.m_pipeline.DestroyPipeline();
 	for (Mesh & mesh : m_meshes)
 		mesh.DeleteBuffers();
 }
@@ -114,15 +112,9 @@ void Renderer::Render() const
 
 	for (PipelineContainer const & container : m_pipeline_containers)
 	{
-		GraphicsPipeline const & pipeline = container.m_pipeline;
+		GraphicsPipeline const & pipeline = *container.m_pipeline;
 		pipeline.Activate();
-
-		void * mapped_uniform_buffer = pipeline.GetCurMappedUniformBufferObject();
-		UniformBufferObject ubo{
-			.view = m_view_transform,
-			.proj = m_proj_transform
-		};
-		memcpy(mapped_uniform_buffer, &ubo, sizeof(ubo));
+		pipeline.UpdatePerFrameConstants();
 
 		for (std::weak_ptr<RenderObject> render_object : container.m_render_objects)
 		{
@@ -134,18 +126,7 @@ void Renderer::Render() const
 			if (mesh_id == -1)
 				continue;
 
-			PushConstantVSData vs_obj_data{
-				obj->GetWorldTransform()
-			};
-			vkCmdPushConstants(command_buffer, pipeline.GetLayout(), VK_SHADER_STAGE_VERTEX_BIT,
-				0 /*offset*/, sizeof(PushConstantVSData), &vs_obj_data);
-
-			PushConstantFSData fs_obj_data{
-				obj->GetColor(),
-				m_camera_pos
-			};
-			vkCmdPushConstants(command_buffer, pipeline.GetLayout(), VK_SHADER_STAGE_FRAGMENT_BIT,
-				sizeof(PushConstantVSData) /*offset*/, sizeof(PushConstantFSData), &fs_obj_data);
+			pipeline.UpdatePerObjectConstants(*obj);
 
 			Mesh const & mesh = m_meshes[mesh_id];
 			mesh.Render(obj->GetDrawWireframe());
@@ -226,23 +207,17 @@ void Renderer::OnViewportResized(int width, int height)
 	m_proj_transform[1][1] *= -1; // account for vulkan having flipped y-axis compared to opengl
 }
 
-int Renderer::LoadGraphicsPipeline(
-	std::filesystem::path const & vert_shader_path,
-	std::filesystem::path const & frag_shader_path,
-	VkVertexInputBindingDescription const & binding_desc,
-	std::vector<VkVertexInputAttributeDescription> const & attrib_descs)
+int Renderer::AddGraphicsPipeline(std::unique_ptr<GraphicsPipeline> && pipeline)
 {
-	m_pipeline_containers.emplace_back(PipelineContainer{
-		.m_pipeline{ m_graphics_api }
-		});
-
-	GraphicsPipeline & pipeline = m_pipeline_containers.back().m_pipeline;
-
-	if (!pipeline.CreatePipeline(vert_shader_path, frag_shader_path, binding_desc, attrib_descs))
+	if (!pipeline || !pipeline->IsValid())
 	{
-		m_pipeline_containers.pop_back();
+		std::cout << "Renderer::AddGraphicsPipeline() invalid pipeline";
 		return -1;
 	}
+
+	m_pipeline_containers.emplace_back(PipelineContainer{
+		.m_pipeline{ std::move(pipeline) }
+		});
 
 	return static_cast<int>(m_pipeline_containers.size() - 1);
 }
