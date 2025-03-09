@@ -58,7 +58,7 @@ template <VertexConcept VertexType>
 void PipelineBuilder::SetVertexType()
 {
 	m_vert_binding_desc = Vertex::GetBindingDesc<VertexType>();
-	m_vert_attrib_descs = Vertex::GetAttribDescs<NormalVertex>();
+	m_vert_attrib_descs = Vertex::GetAttribDescs<VertexType>();
 }
 
 template <typename VSConstantData, typename FSContantData>
