@@ -5,33 +5,12 @@ module;
 #include <array>
 #include <functional>
 
-#include <glm/gtc/matrix_transform.hpp>
-
 #include <vulkan/vulkan.h>
 
 export module GraphicsPipeline;
 
-import <filesystem>;
-
 import GraphicsApi;
 import RenderObject;
-
-export struct PushConstantVSData
-{
-	alignas(16) glm::mat4 model;
-};
-
-export struct PushConstantFSData
-{
-	alignas(16) glm::vec3 color;
-	alignas(16) glm::vec3 camera_pos_world; // TODO: would make more sense as a descriptor set since it's not per object
-};
-
-export struct ViewProjUniform
-{
-	alignas(16) glm::mat4 view;
-	alignas(16) glm::mat4 proj;
-};
 
 export class GraphicsPipeline
 {
@@ -40,16 +19,17 @@ public:
 	using PerObjectConstantsCallback = std::function<void(GraphicsPipeline const & pipeline, RenderObject const &)>;
 
 	GraphicsPipeline(GraphicsApi const & graphics_api,
-		std::filesystem::path const & vert_shader_path,
-		std::filesystem::path const & frag_shader_path,
+		VkShaderModule vert_shader_module,
+		VkShaderModule frag_shader_module,
 		VkVertexInputBindingDescription const & binding_desc,
-		std::vector<VkVertexInputAttributeDescription> const & attrib_descs);
+		std::vector<VkVertexInputAttributeDescription> const & attrib_descs,
+		std::vector<VkPushConstantRange> push_constants_ranges,
+		VkDeviceSize uniform_size,
+		PerFrameConstantsCallback per_frame_constants_callback,
+		PerObjectConstantsCallback per_object_constants_callback);
 	~GraphicsPipeline();
 
 	bool IsValid() const { return m_graphics_pipeline != VK_NULL_HANDLE; }
-
-	void SetPerFrameConstantsCallback(PerFrameConstantsCallback callback) { m_per_frame_constants_callback = callback; }
-	void SetPerObjectConstantsCallback(PerObjectConstantsCallback callback) { m_per_object_constants_callback = callback; }
 
 	void Activate() const;
 	void UpdatePerFrameConstants() const;
@@ -62,10 +42,7 @@ public:
 	void SetPushConstants(VSConstantData const & vs_data, FSContantData const & fs_data) const;
 
 private:
-	VkShaderModule load_shader(std::filesystem::path const & shader_path, VkDevice device) const;
-	std::vector<char> read_file(std::filesystem::path const & path) const;
-
-	void create_uniform_buffers();
+	void create_uniform_buffers(VkDeviceSize size);
 
 private:
 	GraphicsApi const & m_graphics_api;

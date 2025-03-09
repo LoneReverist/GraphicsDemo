@@ -2,43 +2,27 @@
 
 module;
 
-#include <fstream>
 #include <iostream>
 
 #include <vulkan/vulkan.h>
 
-#include <glm/gtc/type_ptr.hpp>
-
 module GraphicsPipeline;
-
-//import <fstream>;
-//import <iostream>;
 
 import GraphicsApi;
 
 namespace
 {
-	VkPipelineLayout create_pipeline_layout(VkDevice device, VkDescriptorSetLayout descriptor_set_layout)
+	VkPipelineLayout create_pipeline_layout(
+		VkDevice device,
+		VkDescriptorSetLayout descriptor_set_layout,
+		std::vector<VkPushConstantRange> push_constants_ranges)
 	{
-		VkPushConstantRange push_constants[] = {
-			{
-				.stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-				.offset = 0,
-				.size = sizeof(PushConstantVSData),
-			},
-			{
-				.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
-				.offset = sizeof(PushConstantVSData),
-				.size = sizeof(PushConstantFSData),
-			}
-		};
-
 		VkPipelineLayoutCreateInfo pipeline_layout_info{
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
 			.setLayoutCount = 1,
 			.pSetLayouts = &descriptor_set_layout,
-			.pushConstantRangeCount = 2,
-			.pPushConstantRanges = push_constants,
+			.pushConstantRangeCount = static_cast<uint32_t>(push_constants_ranges.size()),
+			.pPushConstantRanges = push_constants_ranges.data(),
 		};
 
 		VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
@@ -217,7 +201,8 @@ namespace
 		VkDevice device,
 		VkDescriptorSetLayout layout,
 		VkDescriptorPool pool,
-		std::array<VkBuffer, count> uniform_buffers)
+		std::array<VkBuffer, count> uniform_buffers,
+		VkDeviceSize uniform_size)
 	{
 		std::array<VkDescriptorSetLayout, count> layouts;
 		layouts.fill(layout);
@@ -236,7 +221,7 @@ namespace
 			VkDescriptorBufferInfo bufferInfo{};
 			bufferInfo.buffer = uniform_buffers[i];
 			bufferInfo.offset = 0;
-			bufferInfo.range = sizeof(ViewProjUniform); // VK_WHOLE_SIZE
+			bufferInfo.range = uniform_size; // or VK_WHOLE_SIZE
 
 			VkWriteDescriptorSet descriptorWrite{};
 			descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -257,32 +242,29 @@ namespace
 }
 
 GraphicsPipeline::GraphicsPipeline(GraphicsApi const & graphics_api,
-	std::filesystem::path const & vert_shader_path,
-	std::filesystem::path const & frag_shader_path,
+	VkShaderModule vert_shader_module,
+	VkShaderModule frag_shader_module,
 	VkVertexInputBindingDescription const & binding_desc,
-	std::vector<VkVertexInputAttributeDescription> const & attrib_descs)
+	std::vector<VkVertexInputAttributeDescription> const & attrib_descs,
+	std::vector<VkPushConstantRange> push_constants_ranges,
+	VkDeviceSize uniform_size,
+	PerFrameConstantsCallback per_frame_constants_callback,
+	PerObjectConstantsCallback per_object_constants_callback)
 	: m_graphics_api(graphics_api)
+	, m_per_frame_constants_callback(per_frame_constants_callback)
+	, m_per_object_constants_callback(per_object_constants_callback)
 {
 	VkDevice device = m_graphics_api.GetDevice();
 
 	m_descriptor_set_layout = create_descriptor_set_layout(device);
 	m_descriptor_pool = create_descriptor_pool(device, GraphicsApi::m_max_frames_in_flight);
-	create_uniform_buffers();
+	create_uniform_buffers(uniform_size);
 	m_descriptor_sets = create_descriptor_sets<GraphicsApi::m_max_frames_in_flight>(
-		device, m_descriptor_set_layout, m_descriptor_pool, m_uniform_buffers);
+		device, m_descriptor_set_layout, m_descriptor_pool, m_uniform_buffers, uniform_size);
 
-	m_pipeline_layout = create_pipeline_layout(device, m_descriptor_set_layout);
+	m_pipeline_layout = create_pipeline_layout(device, m_descriptor_set_layout, push_constants_ranges);
 	if (m_pipeline_layout == VK_NULL_HANDLE)
 		return;
-
-	VkShaderModule vert_shader_module = load_shader(vert_shader_path, device);
-	VkShaderModule frag_shader_module = load_shader(frag_shader_path, device);
-	if (vert_shader_module == VK_NULL_HANDLE || frag_shader_module == VK_NULL_HANDLE)
-	{
-		vkDestroyShaderModule(device, frag_shader_module, nullptr); // TODO: a scope_guard class would be handy
-		vkDestroyShaderModule(device, vert_shader_module, nullptr);
-		return;
-	}
 
 	VkPipelineShaderStageCreateInfo vert_shader_stage_info{
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
@@ -310,9 +292,6 @@ GraphicsPipeline::GraphicsPipeline(GraphicsApi const & graphics_api,
 		shader_stages,
 		binding_desc,
 		attrib_descs);
-
-	vkDestroyShaderModule(device, frag_shader_module, nullptr);
-	vkDestroyShaderModule(device, vert_shader_module, nullptr);
 }
 
 GraphicsPipeline::~GraphicsPipeline()
@@ -366,53 +345,9 @@ void GraphicsPipeline::UpdatePerObjectConstants(RenderObject const & obj) const
 		m_per_object_constants_callback(*this, obj);
 }
 
-VkShaderModule GraphicsPipeline::load_shader(
-	std::filesystem::path const & shader_path,
-	VkDevice device) const
-{
-	std::vector<char> file_data = read_file(shader_path);
-	if (file_data.empty())
-		return VK_NULL_HANDLE;
-
-	VkShaderModuleCreateInfo create_info{
-		.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-		.codeSize = file_data.size(),
-		.pCode = reinterpret_cast<const uint32_t *>(file_data.data())
-	};
-
-	VkShaderModule shader_module = VK_NULL_HANDLE;
-	VkResult result = vkCreateShaderModule(device, &create_info, nullptr, &shader_module);
-	if (result != VK_SUCCESS)
-		std::cout << "Failed to create shader module: " << shader_path << std::endl;
-
-	return shader_module;
-}
-
-std::vector<char> GraphicsPipeline::read_file(std::filesystem::path const & path) const
-{
-	std::ifstream file(path.string(), std::ios::ate | std::ios::binary);
-	if (!file.is_open())
-	{
-		std::cout << "Failed to open file for reading: " << path << std::endl;
-		return std::vector<char>{};
-	}
-
-	size_t file_size = static_cast<size_t>(file.tellg());
-	std::vector<char> buffer(file_size);
-
-	file.seekg(0);
-	file.read(buffer.data(), file_size);
-
-	file.close();
-
-	return buffer;
-}
-
-void GraphicsPipeline::create_uniform_buffers()
+void GraphicsPipeline::create_uniform_buffers(VkDeviceSize buffer_size)
 {
 	VkDevice device = m_graphics_api.GetDevice();
-
-	const VkDeviceSize buffer_size = sizeof(ViewProjUniform);
 
 	for (size_t i = 0; i < GraphicsApi::m_max_frames_in_flight; i++)
 	{
