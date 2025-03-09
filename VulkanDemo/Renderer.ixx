@@ -50,7 +50,7 @@ public:
 
 	void OnViewportResized(int width, int height);
 
-	int AddGraphicsPipeline(std::unique_ptr<GraphicsPipeline> && pipeline);
+	int AddGraphicsPipeline(std::unique_ptr<GraphicsPipeline> pipeline);
 
 	int LoadMesh(std::filesystem::path const & mesh_path);
 //	int AddMesh(Mesh && mesh_var);

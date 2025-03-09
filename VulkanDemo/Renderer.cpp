@@ -207,7 +207,7 @@ void Renderer::OnViewportResized(int width, int height)
 	m_proj_transform[1][1] *= -1; // account for vulkan having flipped y-axis compared to opengl
 }
 
-int Renderer::AddGraphicsPipeline(std::unique_ptr<GraphicsPipeline> && pipeline)
+int Renderer::AddGraphicsPipeline(std::unique_ptr<GraphicsPipeline> pipeline)
 {
 	if (!pipeline || !pipeline->IsValid())
 	{
