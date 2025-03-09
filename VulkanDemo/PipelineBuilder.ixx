@@ -11,7 +11,7 @@ export module PipelineBuilder;
 import GraphicsApi;
 import GraphicsPipeline;
 import RenderObject;
-import Mesh;
+import Vertex;
 
 export class PipelineBuilder
 {
@@ -24,7 +24,7 @@ public:
 
 	void LoadShaders(std::filesystem::path const & vs_path, std::filesystem::path const & fs_path);
 
-	template <typename Vertex>
+	template <VertexConcept VertexType>
 	void SetVertexType();
 
 	template <typename VSConstantData, typename FSContantData>
@@ -54,7 +54,7 @@ private:
 	PerObjectConstantsCallback m_per_object_constants_callback;
 };
 
-template <typename VertexType>
+template <VertexConcept VertexType>
 void PipelineBuilder::SetVertexType()
 {
 	m_vert_binding_desc = Vertex::GetBindingDesc<VertexType>();

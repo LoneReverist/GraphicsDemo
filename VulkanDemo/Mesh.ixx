@@ -2,6 +2,10 @@
 
 module;
 
+#include <iostream>
+#include <variant>
+#include <vector>
+
 #include <vulkan/vulkan.h>
 
 #include <glm/vec2.hpp>
@@ -9,84 +13,8 @@ module;
 
 export module Mesh;
 
-import <concepts>;
-import <iostream>;
-import <variant>;
-import <vector>;
-
 import GraphicsApi;
-
-export struct PositionVertex {
-	glm::vec3 m_pos;
-};
-
-export struct NormalVertex {
-	glm::vec3 m_pos;
-	glm::vec3 m_normal;
-};
-
-export struct TextureVertex {
-	glm::vec3 m_pos;
-	glm::vec3 m_normal;
-	glm::vec2 m_tex_coord;
-};
-
-template <typename T>
-concept VertexConcept = std::same_as<T, PositionVertex> || std::same_as<T, NormalVertex> || std::same_as<T, TextureVertex>;
-
-template <typename T>
-concept VertexSupportsNormal = VertexConcept<T> && requires(T v) { v.m_normal; };
-
-template <typename T>
-concept VertexSupportsTexCoord = VertexConcept<T> && requires(T v) { v.m_tex_coord; };
-
-namespace Vertex
-{
-	export template <VertexConcept Vertex>
-	VkVertexInputBindingDescription GetBindingDesc()
-	{
-		return VkVertexInputBindingDescription{
-			.binding = 0,
-			.stride = sizeof(Vertex),
-			.inputRate = VK_VERTEX_INPUT_RATE_VERTEX
-		};
-	}
-
-	export template <VertexConcept Vertex>
-	std::vector<VkVertexInputAttributeDescription> GetAttribDescs()
-	{
-		std::vector<VkVertexInputAttributeDescription> attrib_descs;
-
-		attrib_descs.emplace_back(VkVertexInputAttributeDescription{
-			.location = static_cast<uint32_t>(attrib_descs.size()),
-			.binding = 0,
-			.format = VK_FORMAT_R32G32B32_SFLOAT,
-			.offset = offsetof(Vertex, m_pos)
-			});
-
-		if constexpr (VertexSupportsNormal<Vertex>)
-		{
-			attrib_descs.emplace_back(VkVertexInputAttributeDescription{
-				.location = static_cast<uint32_t>(attrib_descs.size()),
-				.binding = 0,
-				.format = VK_FORMAT_R32G32B32_SFLOAT,
-				.offset = offsetof(Vertex, m_normal),
-				});
-		}
-
-		if constexpr (VertexSupportsTexCoord<Vertex>)
-		{
-			attrib_descs.emplace_back(VkVertexInputAttributeDescription{
-				.location = static_cast<uint32_t>(attrib_descs.size()),
-				.binding = 0,
-				.format = VK_FORMAT_R32G32_SFLOAT,
-				.offset = offsetof(Vertex, m_tex_coord)
-				});
-		}
-
-		return attrib_descs;
-	}
-}
+import Vertex;
 
 template <VertexConcept Vertex>
 class MeshImpl
@@ -98,7 +26,6 @@ public:
 		GraphicsApi const & graphics_api,
 		std::vector<Vertex> && vertices,
 		std::vector<index_t> && indices);
-
 
 	void InitBuffers();
 	void DeleteBuffers();

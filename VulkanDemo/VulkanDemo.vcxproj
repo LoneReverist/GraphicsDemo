@@ -95,6 +95,7 @@
     <ClCompile Include="Scene.ixx" />
     <ClCompile Include="GraphicsPipeline.cpp" />
     <ClCompile Include="GraphicsPipeline.ixx" />
+    <ClCompile Include="Vertex.ixx" />
     <ClCompile Include="VulkanApp.cpp" />
     <ClCompile Include="VulkanApp.ixx" />
     <ClCompile Include="VulkanDemo.cpp" />

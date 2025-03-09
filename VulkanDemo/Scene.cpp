@@ -16,6 +16,7 @@ import <filesystem>;
 import GraphicsPipeline;
 import Mesh;
 import PipelineBuilder;
+import Vertex;
 
 namespace
 {

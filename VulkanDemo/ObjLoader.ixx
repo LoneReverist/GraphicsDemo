@@ -5,6 +5,7 @@ export module ObjLoader;
 import <filesystem>;
 
 import Mesh;
+import Vertex;
 
 export namespace ObjLoader
 {
