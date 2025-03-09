@@ -81,7 +81,7 @@ void Renderer::Render() const
 		shader_program.Activate();
 
 		// vertex shader uniforms
-		shader_program.SetUniform("world_transform", obj->GetWorldTransform());
+		shader_program.SetUniform("world_transform", obj->GetModelTransform());
 		shader_program.SetUniform("view_transform", m_view_transform);
 		shader_program.SetUniform("proj_transform", m_proj_transform);
 

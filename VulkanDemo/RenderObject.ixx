@@ -29,8 +29,8 @@ public:
 	glm::vec3 const & GetColor() const { return m_color; }
 	bool GetDrawWireframe() const { return m_draw_wireframe; }
 
-	glm::mat4 & ModifyWorldTransform() { return m_world_transform; }
-	glm::mat4 const & GetWorldTransform() const { return m_world_transform; }
+	glm::mat4 & ModifyModelTransform() { return m_model_transform; }
+	glm::mat4 const & GetModelTransform() const { return m_model_transform; }
 
 private:
 	int m_mesh_id{ -1 };
@@ -41,5 +41,5 @@ private:
 
 	bool m_draw_wireframe{ false };
 
-	glm::mat4 m_world_transform{ glm::mat4(1.0) };
+	glm::mat4 m_model_transform{ glm::mat4(1.0) };
 };

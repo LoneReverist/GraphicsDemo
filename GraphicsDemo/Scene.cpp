@@ -168,11 +168,11 @@ void Scene::Init()
 	m_green_gem->SetColor({ 0.0, 1.0, 0.0 });
 	m_blue_gem->SetColor({ 0.0, 0.0, 1.0 });
 
-	init_sword_transform(0, m_sword0->ModifyWorldTransform());
-	init_sword_transform(1, m_sword1->ModifyWorldTransform());
-	init_gem_transform(0, m_red_gem->ModifyWorldTransform());
-	init_gem_transform(1, m_green_gem->ModifyWorldTransform());
-	init_gem_transform(2, m_blue_gem->ModifyWorldTransform());
+	init_sword_transform(0, m_sword0->ModifyModelTransform());
+	init_sword_transform(1, m_sword1->ModifyModelTransform());
+	init_gem_transform(0, m_red_gem->ModifyModelTransform());
+	init_gem_transform(1, m_green_gem->ModifyModelTransform());
+	init_gem_transform(2, m_blue_gem->ModifyModelTransform());
 
 	m_renderer.SetAmbientLightColor(glm::vec3(0.5, 0.5, 0.5));
 
@@ -201,25 +201,25 @@ void Scene::Update(double delta_time, Input const & input)
 	bg_color.b = std::tan(m_timer) / 2.0f + 0.5f;
 	m_renderer.SetClearColor(bg_color);
 
-	update_sword_transform(0, m_sword0->ModifyWorldTransform(), m_timer, dt);
-	update_sword_transform(1, m_sword1->ModifyWorldTransform(), m_timer, dt);
-	update_gem_transform(m_red_gem->ModifyWorldTransform(), dt);
-	update_gem_transform(m_green_gem->ModifyWorldTransform(), dt);
-	update_gem_transform(m_blue_gem->ModifyWorldTransform(), dt);
+	update_sword_transform(0, m_sword0->ModifyModelTransform(), m_timer, dt);
+	update_sword_transform(1, m_sword1->ModifyModelTransform(), m_timer, dt);
+	update_gem_transform(m_red_gem->ModifyModelTransform(), dt);
+	update_gem_transform(m_green_gem->ModifyModelTransform(), dt);
+	update_gem_transform(m_blue_gem->ModifyModelTransform(), dt);
 
-	glm::mat4 const & red_gem_transform = m_red_gem->GetWorldTransform();
+	glm::mat4 const & red_gem_transform = m_red_gem->GetModelTransform();
 	m_renderer.SetPointLight1(PointLight{
 		.m_pos{ red_gem_transform[3][0], red_gem_transform[3][1], red_gem_transform[3][2] },
 		.m_color{ 1.0, 0.0, 0.0 },
 		.m_radius{ 20.0f } });
 
-	glm::mat4 const & green_gem_transform = m_green_gem->GetWorldTransform();
+	glm::mat4 const & green_gem_transform = m_green_gem->GetModelTransform();
 	m_renderer.SetPointLight2(PointLight{
 		.m_pos{ green_gem_transform[3][0], green_gem_transform[3][1], green_gem_transform[3][2] },
 		.m_color{ 0.0, 1.0, 0.0 },
 		.m_radius{ 20.0f } });
 
-	glm::mat4 const & blue_gem_transform = m_blue_gem->GetWorldTransform();
+	glm::mat4 const & blue_gem_transform = m_blue_gem->GetModelTransform();
 	m_renderer.SetPointLight3(PointLight{
 		.m_pos{ blue_gem_transform[3][0], blue_gem_transform[3][1], blue_gem_transform[3][2] },
 		.m_color{ 0.0, 0.0, 1.0 },
