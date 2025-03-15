@@ -101,7 +101,8 @@ std::unique_ptr<GraphicsPipeline> PipelineBuilder::CreatePipeline() const
 		m_vert_binding_desc,
 		m_vert_attrib_descs,
 		m_push_constants_ranges,
-		m_uniform_size,
+		m_vs_uniform_sizes,
+		m_fs_uniform_sizes,
 		m_per_frame_constants_callback,
 		m_per_object_constants_callback);
 }

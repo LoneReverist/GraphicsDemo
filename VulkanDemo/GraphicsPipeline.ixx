@@ -12,6 +12,19 @@ export module GraphicsPipeline;
 import GraphicsApi;
 import RenderObject;
 
+struct UniformBuffer
+{
+	VkBuffer m_buffer{ VK_NULL_HANDLE };
+	VkDeviceMemory m_memory{ VK_NULL_HANDLE };
+	void * m_mapping{ nullptr };
+};
+
+struct DescriptorSet
+{
+	VkDescriptorSet m_descriptor_set{ VK_NULL_HANDLE }; // Automatically cleaned up when m_descriptor_pool is destroyed
+	std::vector<UniformBuffer> m_uniform_buffers;
+};
+
 export class GraphicsPipeline
 {
 public:
@@ -24,7 +37,8 @@ public:
 		VkVertexInputBindingDescription const & binding_desc,
 		std::vector<VkVertexInputAttributeDescription> const & attrib_descs,
 		std::vector<VkPushConstantRange> push_constants_ranges,
-		VkDeviceSize uniform_size,
+		std::vector<VkDeviceSize> vs_uniform_sizes,
+		std::vector<VkDeviceSize> fs_uniform_sizes,
 		PerFrameConstantsCallback per_frame_constants_callback,
 		PerObjectConstantsCallback per_object_constants_callback);
 	~GraphicsPipeline();
@@ -36,13 +50,10 @@ public:
 	void UpdatePerObjectConstants(RenderObject const & obj) const;
 
 	template <typename UniformData>
-	void SetUniform(uint32_t index, UniformData const & data) const;
+	void SetUniform(uint32_t binding, UniformData const & data) const;
 
 	template <typename VSConstantData, typename FSContantData>
 	void SetPushConstants(VSConstantData const & vs_data, FSContantData const & fs_data) const;
-
-private:
-	void create_uniform_buffers(VkDeviceSize size);
 
 private:
 	GraphicsApi const & m_graphics_api;
@@ -52,21 +63,18 @@ private:
 
 	VkDescriptorSetLayout m_descriptor_set_layout = VK_NULL_HANDLE;
 	VkDescriptorPool m_descriptor_pool = VK_NULL_HANDLE;
-	std::array<VkDescriptorSet, GraphicsApi::m_max_frames_in_flight> m_descriptor_sets; // Automatically cleaned up when m_descriptor_pool is destroyed
 
-	std::array<VkBuffer, GraphicsApi::m_max_frames_in_flight> m_uniform_buffers;
-	std::array<VkDeviceMemory, GraphicsApi::m_max_frames_in_flight> m_uniform_buffers_memory;
-	std::array<void *, GraphicsApi::m_max_frames_in_flight> m_uniform_buffers_mapped;
+	std::array<DescriptorSet, GraphicsApi::m_max_frames_in_flight> m_descriptor_sets;
 
 	PerFrameConstantsCallback m_per_frame_constants_callback;
 	PerObjectConstantsCallback m_per_object_constants_callback;
 };
 
 template <typename UniformData>
-void GraphicsPipeline::SetUniform(uint32_t /*index*/, UniformData const & data) const
+void GraphicsPipeline::SetUniform(uint32_t binding, UniformData const & data) const
 {
-	void * mapped_buffer = m_uniform_buffers_mapped[m_graphics_api.GetCurFrameIndex()];
-	memcpy(mapped_buffer, &data, sizeof(data));
+	UniformBuffer const & buffer = m_descriptor_sets[m_graphics_api.GetCurFrameIndex()].m_uniform_buffers[binding];
+	memcpy(buffer.m_mapping, &data, sizeof(data));
 }
 
 template <typename VSConstantData, typename FSContantData>

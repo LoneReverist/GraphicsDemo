@@ -2,6 +2,7 @@
 
 module;
 
+#include <algorithm>
 #include <iostream>
 
 #include <vulkan/vulkan.h>
@@ -150,20 +151,41 @@ namespace
 		return graphics_pipeline;
 	}
 
-	VkDescriptorSetLayout create_descriptor_set_layout(VkDevice device)
+	VkDescriptorSetLayout create_descriptor_set_layout(
+		VkDevice device,
+		uint32_t vs_descriptor_set_count,
+		uint32_t fs_descriptor_set_count)
 	{
-		VkDescriptorSetLayoutBinding ubo_layout_binding{
-			.binding = 0,
-			.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-			.descriptorCount = 1,
-			.stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-			.pImmutableSamplers = nullptr
-		};
+		std::vector<VkDescriptorSetLayoutBinding> layout_bindings;
+		layout_bindings.reserve(vs_descriptor_set_count + fs_descriptor_set_count);
+
+		for (uint32_t i = 0; i < vs_descriptor_set_count; ++i)
+		{
+			layout_bindings.emplace_back(
+				VkDescriptorSetLayoutBinding{
+					.binding = static_cast<uint32_t>(layout_bindings.size()),
+					.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+					.descriptorCount = 1,
+					.stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+					.pImmutableSamplers = nullptr
+				});
+		}
+		for (uint32_t i = 0; i < fs_descriptor_set_count; ++i)
+		{
+			layout_bindings.emplace_back(
+				VkDescriptorSetLayoutBinding{
+					.binding = static_cast<uint32_t>(layout_bindings.size()),
+					.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+					.descriptorCount = 1,
+					.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+					.pImmutableSamplers = nullptr
+				});
+		}
 
 		VkDescriptorSetLayoutCreateInfo layout_info{
 			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-			.bindingCount = 1,
-			.pBindings = &ubo_layout_binding
+			.bindingCount = static_cast<uint32_t>(layout_bindings.size()),
+			.pBindings = layout_bindings.data()
 		};
 
 		VkDescriptorSetLayout descriptor_set_layout = VK_NULL_HANDLE;
@@ -174,7 +196,7 @@ namespace
 		return descriptor_set_layout;
 	}
 
-	VkDescriptorPool create_descriptor_pool(VkDevice device, uint32_t descriptor_count)
+	VkDescriptorPool create_descriptor_pool(VkDevice device, uint32_t descriptor_count, uint32_t descriptor_set_count)
 	{
 		VkDescriptorPoolSize pool_size{
 			.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -183,7 +205,7 @@ namespace
 
 		VkDescriptorPoolCreateInfo pool_info{
 			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
-			.maxSets = descriptor_count,
+			.maxSets = descriptor_set_count,
 			.poolSizeCount = 1,
 			.pPoolSizes = &pool_size
 		};
@@ -197,47 +219,90 @@ namespace
 	}
 
 	template <uint32_t count>
-	std::array<VkDescriptorSet, count> create_descriptor_sets(
+	std::array<VkDescriptorSet, count> create_descriptor_set(
 		VkDevice device,
 		VkDescriptorSetLayout layout,
 		VkDescriptorPool pool,
-		std::array<VkBuffer, count> uniform_buffers,
-		VkDeviceSize uniform_size)
+		std::array<std::vector<VkBuffer>, count> uniform_buffers,
+		std::vector<VkDeviceSize> uniform_sizes)
 	{
 		std::array<VkDescriptorSetLayout, count> layouts;
 		layouts.fill(layout);
 
-		VkDescriptorSetAllocateInfo allocInfo{};
-		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-		allocInfo.descriptorPool = pool;
-		allocInfo.descriptorSetCount = count;
-		allocInfo.pSetLayouts = layouts.data();
+		VkDescriptorSetAllocateInfo alloc_info{
+			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+			.descriptorPool = pool,
+			.descriptorSetCount = static_cast<uint32_t>(layouts.size()),
+			.pSetLayouts = layouts.data()
+		};
 
 		std::array<VkDescriptorSet, count> descriptor_sets;
-		if (vkAllocateDescriptorSets(device, &allocInfo, descriptor_sets.data()) != VK_SUCCESS)
+		VkResult result = vkAllocateDescriptorSets(device, &alloc_info, descriptor_sets.data());
+		if (result != VK_SUCCESS)
 			throw std::runtime_error("failed to allocate descriptor sets!");
 
-		for (size_t i = 0; i < count; i++) {
-			VkDescriptorBufferInfo bufferInfo{};
-			bufferInfo.buffer = uniform_buffers[i];
-			bufferInfo.offset = 0;
-			bufferInfo.range = uniform_size; // or VK_WHOLE_SIZE
-
-			VkWriteDescriptorSet descriptorWrite{};
-			descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			descriptorWrite.dstSet = descriptor_sets[i];
-			descriptorWrite.dstBinding = 0;
-			descriptorWrite.dstArrayElement = 0;
-			descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-			descriptorWrite.descriptorCount = 1;
-			descriptorWrite.pBufferInfo = &bufferInfo;
-			descriptorWrite.pImageInfo = nullptr;
-			descriptorWrite.pTexelBufferView = nullptr;
-
-			vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
+		std::vector<VkDescriptorBufferInfo> buffer_infos;
+		for (size_t frame = 0; frame < count; frame++)
+		{
+			for (size_t binding = 0; binding < uniform_sizes.size(); ++binding)
+			{
+				buffer_infos.emplace_back(VkDescriptorBufferInfo{
+					.buffer = uniform_buffers[frame][binding],
+					.offset = 0,
+					.range = uniform_sizes[binding] // or VK_WHOLE_SIZE
+					});
+			}
 		}
 
+		std::vector<VkWriteDescriptorSet> descriptor_writes;
+		for (size_t frame = 0; frame < count; frame++)
+		{
+			for (size_t binding = 0; binding < uniform_sizes.size(); ++binding)
+			{
+				descriptor_writes.emplace_back(VkWriteDescriptorSet{
+					.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+					.dstSet = descriptor_sets[frame],
+					.dstBinding = static_cast<uint32_t>(binding),
+					.dstArrayElement = 0,
+					.descriptorCount = 1,
+					.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+					.pImageInfo = nullptr,
+					.pBufferInfo = &buffer_infos[descriptor_writes.size()],
+					.pTexelBufferView = nullptr
+				});
+			}
+		}
+
+		vkUpdateDescriptorSets(device,
+			static_cast<uint32_t>(descriptor_writes.size()),
+			descriptor_writes.data(),
+			0 /*descriptorCopyCount*/,
+			nullptr);
+
 		return descriptor_sets;
+	}
+
+	void create_uniform_buffer(
+		GraphicsApi const & graphics_api,
+		VkDeviceSize buffer_size,
+		VkBuffer & out_uniform_buffer,
+		VkDeviceMemory & out_buffer_memory,
+		void *& out_mapped_buffer)
+	{
+		graphics_api.CreateBuffer(
+			buffer_size,
+			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			out_uniform_buffer,
+			out_buffer_memory);
+
+		vkMapMemory(
+			graphics_api.GetDevice(),
+			out_buffer_memory,
+			0 /*offset*/,
+			buffer_size,
+			0 /*flags*/,
+			&out_mapped_buffer);
 	}
 }
 
@@ -247,7 +312,8 @@ GraphicsPipeline::GraphicsPipeline(GraphicsApi const & graphics_api,
 	VkVertexInputBindingDescription const & binding_desc,
 	std::vector<VkVertexInputAttributeDescription> const & attrib_descs,
 	std::vector<VkPushConstantRange> push_constants_ranges,
-	VkDeviceSize uniform_size,
+	std::vector<VkDeviceSize> vs_uniform_sizes,
+	std::vector<VkDeviceSize> fs_uniform_sizes,
 	PerFrameConstantsCallback per_frame_constants_callback,
 	PerObjectConstantsCallback per_object_constants_callback)
 	: m_graphics_api(graphics_api)
@@ -256,11 +322,37 @@ GraphicsPipeline::GraphicsPipeline(GraphicsApi const & graphics_api,
 {
 	VkDevice device = m_graphics_api.GetDevice();
 
-	m_descriptor_set_layout = create_descriptor_set_layout(device);
-	m_descriptor_pool = create_descriptor_pool(device, GraphicsApi::m_max_frames_in_flight);
-	create_uniform_buffers(uniform_size);
-	m_descriptor_sets = create_descriptor_sets<GraphicsApi::m_max_frames_in_flight>(
-		device, m_descriptor_set_layout, m_descriptor_pool, m_uniform_buffers, uniform_size);
+	m_descriptor_set_layout = create_descriptor_set_layout(device,
+		static_cast<uint32_t>(vs_uniform_sizes.size()),
+		static_cast<uint32_t>(fs_uniform_sizes.size()));
+
+	std::vector<VkDeviceSize> uniform_sizes{ vs_uniform_sizes };
+	uniform_sizes.insert(uniform_sizes.end(), fs_uniform_sizes.begin(), fs_uniform_sizes.end());
+	uint32_t total_descriptor_set_count = static_cast<uint32_t>(uniform_sizes.size());
+
+	m_descriptor_pool = create_descriptor_pool(device,
+		GraphicsApi::m_max_frames_in_flight * total_descriptor_set_count /*descriptor_count*/,
+		GraphicsApi::m_max_frames_in_flight /*descriptor_set_count*/);
+
+	std::array<std::vector<VkBuffer>, GraphicsApi::m_max_frames_in_flight> uniform_buffers;
+	for (size_t frame = 0; frame < GraphicsApi::m_max_frames_in_flight; ++frame)
+	{
+		m_descriptor_sets[frame].m_uniform_buffers.resize(uniform_sizes.size());
+		for (int binding = 0; binding < uniform_sizes.size(); ++binding)
+		{
+			UniformBuffer & uniform = m_descriptor_sets[frame].m_uniform_buffers[binding];
+			create_uniform_buffer(m_graphics_api, uniform_sizes[binding],
+				uniform.m_buffer, uniform.m_memory, uniform.m_mapping);
+			uniform_buffers[frame].push_back(uniform.m_buffer);
+		}
+	}
+
+	std::array<VkDescriptorSet, GraphicsApi::m_max_frames_in_flight> descriptor_sets
+		= create_descriptor_set<GraphicsApi::m_max_frames_in_flight>(device,
+		m_descriptor_set_layout, m_descriptor_pool, uniform_buffers, uniform_sizes);
+
+	for (size_t frame = 0; frame < GraphicsApi::m_max_frames_in_flight; ++frame)
+		m_descriptor_sets[frame].m_descriptor_set = descriptor_sets[frame];
 
 	m_pipeline_layout = create_pipeline_layout(device, m_descriptor_set_layout, push_constants_ranges);
 	if (m_pipeline_layout == VK_NULL_HANDLE)
@@ -298,9 +390,13 @@ GraphicsPipeline::~GraphicsPipeline()
 {
 	VkDevice device = m_graphics_api.GetDevice();
 
-	for (size_t i = 0; i < m_uniform_buffers.size(); i++) {
-		vkDestroyBuffer(device, m_uniform_buffers[i], nullptr);
-		vkFreeMemory(device, m_uniform_buffers_memory[i], nullptr);
+	for (DescriptorSet & descriptor_set : m_descriptor_sets)
+	{
+		for (UniformBuffer & uniform : descriptor_set.m_uniform_buffers)
+		{
+			vkDestroyBuffer(device, uniform.m_buffer, nullptr);
+			vkFreeMemory(device, uniform.m_memory, nullptr);
+		}
 	}
 
 	vkDestroyDescriptorPool(device, m_descriptor_pool, nullptr);
@@ -322,14 +418,13 @@ void GraphicsPipeline::Activate() const
 
 	vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphics_pipeline);
 
-	VkDescriptorSet descriptor_set = m_descriptor_sets[m_graphics_api.GetCurFrameIndex()];
 	vkCmdBindDescriptorSets(command_buffer,
 		VK_PIPELINE_BIND_POINT_GRAPHICS,
 		m_pipeline_layout,
-		0,
-		1,
-		&descriptor_set,
-		0,
+		0 /*firstSet*/,
+		1 /*descriptor_set_count*/,
+		&m_descriptor_sets[m_graphics_api.GetCurFrameIndex()].m_descriptor_set,
+		0 /*dynamicOffsetCount*/,
 		nullptr);
 }
 
@@ -343,27 +438,4 @@ void GraphicsPipeline::UpdatePerObjectConstants(RenderObject const & obj) const
 {
 	if (m_per_object_constants_callback)
 		m_per_object_constants_callback(*this, obj);
-}
-
-void GraphicsPipeline::create_uniform_buffers(VkDeviceSize buffer_size)
-{
-	VkDevice device = m_graphics_api.GetDevice();
-
-	for (size_t i = 0; i < GraphicsApi::m_max_frames_in_flight; i++)
-	{
-		m_graphics_api.CreateBuffer(
-			buffer_size,
-			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-			m_uniform_buffers[i],
-			m_uniform_buffers_memory[i]);
-
-		vkMapMemory(
-			device,
-			m_uniform_buffers_memory[i],
-			0 /*offset*/,
-			buffer_size,
-			0 /*flags*/,
-			&m_uniform_buffers_mapped[i]);
-	}
 }

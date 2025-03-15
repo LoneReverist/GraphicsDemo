@@ -30,8 +30,11 @@ public:
 	template <typename VSConstantData, typename FSContantData>
 	void SetPushConstantTypes();
 
-	template <typename UniformData>
-	void SetUniformType();
+	template <typename... UniformTypes>
+	void SetVSUniformTypes();
+
+	template <typename... UniformTypes>
+	void SetFSUniformTypes();
 
 	void SetPerFrameConstantsCallback(PerFrameConstantsCallback callback) { m_per_frame_constants_callback = callback; }
 	void SetPerObjectConstantsCallback(PerObjectConstantsCallback callback) { m_per_object_constants_callback = callback; }
@@ -48,7 +51,8 @@ private:
 	std::vector<VkVertexInputAttributeDescription> m_vert_attrib_descs;
 
 	std::vector<VkPushConstantRange> m_push_constants_ranges;
-	VkDeviceSize m_uniform_size{ 0 };
+	std::vector<VkDeviceSize> m_vs_uniform_sizes;
+	std::vector<VkDeviceSize> m_fs_uniform_sizes;
 
 	PerFrameConstantsCallback m_per_frame_constants_callback;
 	PerObjectConstantsCallback m_per_object_constants_callback;
@@ -78,8 +82,18 @@ void PipelineBuilder::SetPushConstantTypes()
 	};
 }
 
-template <typename UniformData>
-void PipelineBuilder::SetUniformType()
+template <typename... UniformTypes>
+void PipelineBuilder::SetVSUniformTypes()
 {
-	m_uniform_size = static_cast<VkDeviceSize>(sizeof(UniformData));
+	m_vs_uniform_sizes = {
+		static_cast<VkDeviceSize>(sizeof(UniformTypes))...
+	};
+}
+
+template <typename... UniformTypes>
+void PipelineBuilder::SetFSUniformTypes()
+{
+	m_fs_uniform_sizes = {
+		static_cast<VkDeviceSize>(sizeof(UniformTypes))...
+	};
 }

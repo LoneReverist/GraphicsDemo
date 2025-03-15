@@ -128,12 +128,15 @@ namespace
 		struct FSPushConstant
 		{
 			alignas(16) glm::vec3 color;
-			alignas(16) glm::vec3 camera_pos_world; // TODO: would make more sense as a descriptor set since it's not per object
 		};
 		struct ViewProjUniform
 		{
 			alignas(16) glm::mat4 view;
 			alignas(16) glm::mat4 proj;
+		};
+		struct CameraPosUniform
+		{
+			alignas(16) glm::vec3 camera_pos_world;
 		};
 
 		PipelineBuilder builder{ renderer.GetGraphicsApi() };
@@ -142,19 +145,24 @@ namespace
 			shaders_path / "light_source_frag.spv");
 		builder.SetVertexType<NormalVertex>();
 		builder.SetPushConstantTypes<VSPushConstant, FSPushConstant>();
-		builder.SetUniformType<ViewProjUniform>();
+		builder.SetVSUniformTypes<ViewProjUniform>();
+		builder.SetFSUniformTypes<CameraPosUniform>();
 
 		builder.SetPerFrameConstantsCallback(
 			[&renderer](GraphicsPipeline const & pipeline)
 			{
-				pipeline.SetUniform(0 /*index*/,
+				pipeline.SetUniform(0 /*binding*/,
 					ViewProjUniform{
 						.view = renderer.GetViewTransform(),
 						.proj = renderer.GetProjTransform()
 					});
+				pipeline.SetUniform(1 /*binding*/,
+					CameraPosUniform{
+						.camera_pos_world = renderer.GetCameraPos()
+					});
 			});
 		builder.SetPerObjectConstantsCallback(
-			[&renderer](GraphicsPipeline const & pipeline, RenderObject const & obj)
+			[](GraphicsPipeline const & pipeline, RenderObject const & obj)
 			{
 				pipeline.SetPushConstants(
 					VSPushConstant{
@@ -162,7 +170,6 @@ namespace
 					},
 					FSPushConstant{
 						.color = obj.GetColor(),
-						.camera_pos_world = renderer.GetCameraPos()
 					});
 			});
 
