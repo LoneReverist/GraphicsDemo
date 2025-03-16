@@ -19,18 +19,18 @@ import RenderObject;
 
 export struct PointLight
 {
-	glm::vec3 m_pos{ 0.0, 0.0, 0.0 };
-	glm::vec3 m_color{ 1.0, 1.0, 1.0 };
-	float m_radius{ 0.0f };
+	alignas(16) glm::vec3 m_pos{ 0.0, 0.0, 0.0 };
+	alignas(16) glm::vec3 m_color{ 1.0, 1.0, 1.0 };
+	alignas(4) float m_radius{ 0.0f };
 };
 
 export struct SpotLight
 {
-	glm::vec3 m_pos{ 0.0, 0.0, 0.0 };
-	glm::vec3 m_dir{ 0.0, 0.0, -1.0 };
-	glm::vec3 m_color{ 1.0, 1.0, 1.0 };
-	float m_inner_radius{ 0.0 };
-	float m_outer_radius{ 0.0 };
+	alignas(16) glm::vec3 m_pos{ 0.0, 0.0, 0.0 };
+	alignas(16) glm::vec3 m_dir{ 0.0, 0.0, -1.0 };
+	alignas(16) glm::vec3 m_color{ 1.0, 1.0, 1.0 };
+	alignas(4) float m_inner_radius{ 0.0 };
+	alignas(4) float m_outer_radius{ 0.0 };
 };
 
 struct PipelineContainer
@@ -53,7 +53,7 @@ public:
 	int AddGraphicsPipeline(std::unique_ptr<GraphicsPipeline> pipeline);
 
 	int LoadMesh(std::filesystem::path const & mesh_path);
-//	int AddMesh(Mesh && mesh_var);
+	int AddMesh(Mesh && mesh_var);
 //	int LoadTexture(std::filesystem::path const & tex_path);
 //	int LoadCubeMap(std::array<std::filesystem::path, 6> const & filepaths);
 
@@ -69,6 +69,12 @@ public:
 	void SetPointLight2(PointLight const & light) { m_pointlight_2 = light; }
 	void SetPointLight3(PointLight const & light) { m_pointlight_3 = light; }
 	void SetSpotLight(SpotLight const & light) { m_spotlight = light; }
+
+	glm::vec3 const & GetAmbientLightColor() const { return m_ambient_light_color; }
+	PointLight const & GetPointLight1() const { return m_pointlight_1; }
+	PointLight const & GetPointLight2() const { return m_pointlight_2; }
+	PointLight const & GetPointLight3() const { return m_pointlight_3; }
+	SpotLight const & GetSpotLight() const { return m_spotlight; }
 
 	GraphicsApi const & GetGraphicsApi() const { return m_graphics_api; }
 	glm::mat4 const & GetViewTransform() const { return m_view_transform; }

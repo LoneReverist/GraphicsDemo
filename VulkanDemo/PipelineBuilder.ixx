@@ -24,10 +24,10 @@ public:
 
 	void LoadShaders(std::filesystem::path const & vs_path, std::filesystem::path const & fs_path);
 
-	template <VertexConcept VertexType>
+	template <IsVertex Vert>
 	void SetVertexType();
 
-	template <typename VSConstantData, typename FSContantData>
+	template <typename VSConstantData, typename FSConstantData = std::nullopt_t>
 	void SetPushConstantTypes();
 
 	template <typename... UniformTypes>
@@ -58,28 +58,32 @@ private:
 	PerObjectConstantsCallback m_per_object_constants_callback;
 };
 
-template <VertexConcept VertexType>
+template <IsVertex Vert>
 void PipelineBuilder::SetVertexType()
 {
-	m_vert_binding_desc = Vertex::GetBindingDesc<VertexType>();
-	m_vert_attrib_descs = Vertex::GetAttribDescs<VertexType>();
+	m_vert_binding_desc = Vertex::GetBindingDesc<Vert>();
+	m_vert_attrib_descs = Vertex::GetAttribDescs<Vert>();
 }
 
-template <typename VSConstantData, typename FSContantData>
+template <typename VSConstantData, typename FSConstantData /*= std::nullopt_t*/>
 void PipelineBuilder::SetPushConstantTypes()
 {
-	m_push_constants_ranges = {
+	m_push_constants_ranges.emplace_back(
 		VkPushConstantRange{
 			.stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
 			.offset = 0,
 			.size = static_cast<uint32_t>(sizeof(VSConstantData)),
-		},
-		VkPushConstantRange{
-			.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
-			.offset = static_cast<uint32_t>(sizeof(VSConstantData)),
-			.size = static_cast<uint32_t>(sizeof(FSContantData)),
-		}
-	};
+		});
+
+	if constexpr (!std::same_as<FSConstantData, std::nullopt_t>)
+	{
+		m_push_constants_ranges.emplace_back(
+			VkPushConstantRange{
+				.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+				.offset = static_cast<uint32_t>(sizeof(VSConstantData)),
+				.size = static_cast<uint32_t>(sizeof(FSConstantData)),
+			});
+	}
 }
 
 template <typename... UniformTypes>

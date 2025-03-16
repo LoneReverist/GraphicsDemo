@@ -102,6 +102,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="shaders\color.frag" />
+    <None Include="shaders\color.vert" />
+    <None Include="shaders\color_frag.spv" />
+    <None Include="shaders\color_vert.spv" />
     <None Include="shaders\compile.bat" />
     <None Include="shaders\light_source.frag" />
     <None Include="shaders\light_source.vert" />

@@ -16,7 +16,7 @@ export module Mesh;
 import GraphicsApi;
 import Vertex;
 
-template <VertexConcept Vertex>
+template <IsVertex Vert>
 class MeshImpl
 {
 public:
@@ -24,7 +24,7 @@ public:
 
 	MeshImpl(
 		GraphicsApi const & graphics_api,
-		std::vector<Vertex> && vertices,
+		std::vector<Vert> && vertices,
 		std::vector<index_t> && indices);
 
 	void InitBuffers();
@@ -37,7 +37,7 @@ public:
 private:
 	GraphicsApi const & m_graphics_api;
 
-	std::vector<Vertex> m_vertices;
+	std::vector<Vert> m_vertices;
 	std::vector<index_t> m_indices;
 
 	VkBuffer m_vertex_buffer = VK_NULL_HANDLE;
@@ -51,10 +51,10 @@ export class Mesh
 public:
 	using index_t = uint16_t;
 
-	template<VertexConcept Vertex>
+	template<IsVertex Vert>
 	Mesh(
 		GraphicsApi const & graphics_api,
-		std::vector<Vertex> && vertices,
+		std::vector<Vert> && vertices,
 		std::vector<index_t> && indices);
 
 	void InitBuffers();
@@ -66,17 +66,18 @@ private:
 	using mesh_variant_t = std::variant<
 		MeshImpl<PositionVertex>,
 		MeshImpl<NormalVertex>,
-		MeshImpl<TextureVertex>>;
+		MeshImpl<TextureVertex>,
+		MeshImpl<ColorVertex>>;
 
 	mesh_variant_t m_mesh_var;
 };
 
-template<VertexConcept Vertex>
+template<IsVertex Vert>
 Mesh::Mesh(
 	GraphicsApi const & graphics_api,
-	std::vector<Vertex> && vertices,
+	std::vector<Vert> && vertices,
 	std::vector<index_t> && indices)
-	: m_mesh_var(MeshImpl<Vertex>{ graphics_api, std::move(vertices), std::move(indices) })
+	: m_mesh_var(MeshImpl<Vert>{ graphics_api, std::move(vertices), std::move(indices) })
 {}
 
 void Mesh::InitBuffers()
@@ -149,18 +150,18 @@ namespace
 	}
 }
 
-template<VertexConcept Vertex>
-MeshImpl<Vertex>::MeshImpl(
+template<IsVertex Vert>
+MeshImpl<Vert>::MeshImpl(
 	GraphicsApi const & graphics_api,
-	std::vector<Vertex> && vertices,
+	std::vector<Vert> && vertices,
 	std::vector<index_t> && indices)
 	: m_graphics_api{ graphics_api }
 	, m_vertices{ std::move(vertices) }
 	, m_indices{ std::move(indices) }
 {}
 
-template <VertexConcept Vertex>
-void MeshImpl<Vertex>::InitBuffers()
+template <IsVertex Vert>
+void MeshImpl<Vert>::InitBuffers()
 {
 	if (m_vertices.empty())
 	{
@@ -198,8 +199,8 @@ void MeshImpl<Vertex>::InitBuffers()
 	}
 }
 
-template <VertexConcept Vertex>
-void MeshImpl<Vertex>::DeleteBuffers()
+template <IsVertex Vert>
+void MeshImpl<Vert>::DeleteBuffers()
 {
 	VkDevice device = m_graphics_api.GetDevice();
 
@@ -214,8 +215,8 @@ void MeshImpl<Vertex>::DeleteBuffers()
 	m_vertex_buffer_memory = VK_NULL_HANDLE;
 }
 
-template <VertexConcept Vertex>
-bool MeshImpl<Vertex>::IsInitialized() const
+template <IsVertex Vert>
+bool MeshImpl<Vert>::IsInitialized() const
 {
 	return m_vertex_buffer != VK_NULL_HANDLE
 		&& m_vertex_buffer_memory != VK_NULL_HANDLE
@@ -223,8 +224,8 @@ bool MeshImpl<Vertex>::IsInitialized() const
 		&& m_index_buffer_memory != VK_NULL_HANDLE;
 }
 
-template <VertexConcept Vertex>
-void MeshImpl<Vertex>::Render(bool /*wireframe*/) const
+template <IsVertex Vert>
+void MeshImpl<Vert>::Render(bool /*wireframe*/) const
 {
 	if (!IsInitialized())
 		return;

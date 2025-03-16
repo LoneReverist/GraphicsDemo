@@ -90,5 +90,17 @@
     <None Include="shaders\light_source_vert.spv">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="shaders\color.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\color.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\color_frag.spv">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\color_vert.spv">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

@@ -27,28 +27,41 @@ export struct TextureVertex {
 	glm::vec2 m_tex_coord;
 };
 
-export template <typename T>
-concept VertexConcept = std::same_as<T, PositionVertex> || std::same_as<T, NormalVertex> || std::same_as<T, TextureVertex>;
+export struct ColorVertex {
+	glm::vec3 m_pos;
+	glm::vec3 m_normal;
+	glm::vec3 m_color;
+};
 
 export template <typename T>
-concept VertexSupportsNormal = VertexConcept<T> && requires(T v) { v.m_normal; };
+concept IsVertex =
+	std::same_as<T, PositionVertex>
+	|| std::same_as<T, NormalVertex>
+	|| std::same_as<T, TextureVertex>
+	|| std::same_as<T, ColorVertex>;
 
 export template <typename T>
-concept VertexSupportsTexCoord = VertexConcept<T> && requires(T v) { v.m_tex_coord; };
+concept VertexSupportsNormal = IsVertex<T> && requires(T v) { v.m_normal; };
+
+export template <typename T>
+concept VertexSupportsTexCoord = IsVertex<T> && requires(T v) { v.m_tex_coord; };
+
+export template <typename T>
+concept VertexSupportsColor = IsVertex<T> && requires(T v) { v.m_color; };
 
 namespace Vertex
 {
-	export template <VertexConcept Vertex>
+	export template <IsVertex Vert>
 		VkVertexInputBindingDescription GetBindingDesc()
 	{
 		return VkVertexInputBindingDescription{
 			.binding = 0,
-			.stride = sizeof(Vertex),
+			.stride = sizeof(Vert),
 			.inputRate = VK_VERTEX_INPUT_RATE_VERTEX
 		};
 	}
 
-	export template <VertexConcept Vertex>
+	export template <IsVertex Vert>
 		std::vector<VkVertexInputAttributeDescription> GetAttribDescs()
 	{
 		std::vector<VkVertexInputAttributeDescription> attrib_descs;
@@ -57,26 +70,36 @@ namespace Vertex
 			.location = static_cast<uint32_t>(attrib_descs.size()),
 			.binding = 0,
 			.format = VK_FORMAT_R32G32B32_SFLOAT,
-			.offset = offsetof(Vertex, m_pos)
+			.offset = offsetof(Vert, m_pos)
 			});
 
-		if constexpr (VertexSupportsNormal<Vertex>)
+		if constexpr (VertexSupportsNormal<Vert>)
 		{
 			attrib_descs.emplace_back(VkVertexInputAttributeDescription{
 				.location = static_cast<uint32_t>(attrib_descs.size()),
 				.binding = 0,
 				.format = VK_FORMAT_R32G32B32_SFLOAT,
-				.offset = offsetof(Vertex, m_normal),
+				.offset = offsetof(Vert, m_normal),
 				});
 		}
 
-		if constexpr (VertexSupportsTexCoord<Vertex>)
+		if constexpr (VertexSupportsTexCoord<Vert>)
 		{
 			attrib_descs.emplace_back(VkVertexInputAttributeDescription{
 				.location = static_cast<uint32_t>(attrib_descs.size()),
 				.binding = 0,
 				.format = VK_FORMAT_R32G32_SFLOAT,
-				.offset = offsetof(Vertex, m_tex_coord)
+				.offset = offsetof(Vert, m_tex_coord)
+				});
+		}
+
+		if constexpr (VertexSupportsColor<Vert>)
+		{
+			attrib_descs.emplace_back(VkVertexInputAttributeDescription{
+				.location = static_cast<uint32_t>(attrib_descs.size()),
+				.binding = 0,
+				.format = VK_FORMAT_R32G32B32_SFLOAT,
+				.offset = offsetof(Vert, m_color)
 				});
 		}
 

@@ -13,6 +13,7 @@ module Renderer;
 //import <iostream>;
 
 import ObjLoader;
+import Vertex;
 
 Renderer::Renderer(GraphicsApi const & graphics_api)
 	: m_graphics_api(graphics_api)
@@ -238,14 +239,14 @@ int Renderer::LoadMesh(std::filesystem::path const & mesh_path)
 	return static_cast<int>(m_meshes.size() - 1);
 }
 
-//int Renderer::AddMesh(Mesh && mesh)
-//{
-//	mesh.InitBuffers();
-//
-//	m_meshes.push_back(std::move(mesh));
-//	return static_cast<int>(m_meshes.size() - 1);
-//}
-//
+int Renderer::AddMesh(Mesh && mesh)
+{
+	mesh.InitBuffers();
+
+	m_meshes.push_back(std::move(mesh));
+	return static_cast<int>(m_meshes.size() - 1);
+}
+
 //int Renderer::LoadTexture(std::filesystem::path const & tex_path)
 //{
 //	Texture texture;

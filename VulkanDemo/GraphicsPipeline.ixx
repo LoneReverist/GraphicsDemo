@@ -52,8 +52,8 @@ public:
 	template <typename UniformData>
 	void SetUniform(uint32_t binding, UniformData const & data) const;
 
-	template <typename VSConstantData, typename FSContantData>
-	void SetPushConstants(VSConstantData const & vs_data, FSContantData const & fs_data) const;
+	template <typename VSConstantData, typename FSConstantData = std::nullopt_t>
+	void SetPushConstants(VSConstantData const & vs_data, FSConstantData const & fs_data) const;
 
 private:
 	GraphicsApi const & m_graphics_api;
@@ -77,14 +77,17 @@ void GraphicsPipeline::SetUniform(uint32_t binding, UniformData const & data) co
 	memcpy(buffer.m_mapping, &data, sizeof(data));
 }
 
-template <typename VSConstantData, typename FSContantData>
-void GraphicsPipeline::SetPushConstants(VSConstantData const & vs_data, FSContantData const & fs_data) const
+template <typename VSConstantData, typename FSConstantData /*= std::nullopt_t*/>
+void GraphicsPipeline::SetPushConstants(VSConstantData const & vs_data, FSConstantData const & fs_data) const
 {
 	VkCommandBuffer command_buffer = m_graphics_api.GetCurCommandBuffer();
 
 	vkCmdPushConstants(command_buffer, m_pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT,
 		0 /*offset*/, sizeof(VSConstantData), &vs_data);
 
-	vkCmdPushConstants(command_buffer, m_pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT,
-		sizeof(VSConstantData) /*offset*/, sizeof(FSContantData), &fs_data);
+	if constexpr (!std::same_as<FSConstantData, std::nullopt_t>)
+	{
+		vkCmdPushConstants(command_buffer, m_pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT,
+			sizeof(VSConstantData) /*offset*/, sizeof(FSConstantData), &fs_data);
+	}
 }
