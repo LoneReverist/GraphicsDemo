@@ -52,9 +52,10 @@ private:
 	unsigned char * m_data{ nullptr };
 };
 
-bool Texture::LoadTexture(GraphicsApi const & graphics_api, std::filesystem::path const & filepath)
+Texture::Texture(GraphicsApi const & graphics_api, std::filesystem::path const & filepath)
+	: m_graphics_api(graphics_api)
 {
-	VkDevice device = graphics_api.GetDevice();
+	VkDevice device = m_graphics_api.GetDevice();
 
 	VkBuffer staging_buffer = VK_NULL_HANDLE;
 	VkDeviceMemory staging_buffer_memory = VK_NULL_HANDLE;
@@ -63,7 +64,7 @@ bool Texture::LoadTexture(GraphicsApi const & graphics_api, std::filesystem::pat
 	{
 		ImageData image{ filepath };
 		if (!image.IsValid())
-			return false;
+			return;
 
 		width = static_cast<uint32_t>(image.GetWidth());
 		height = static_cast<uint32_t>(image.GetHeight());
@@ -76,7 +77,7 @@ bool Texture::LoadTexture(GraphicsApi const & graphics_api, std::filesystem::pat
 		if (result != VK_SUCCESS)
 		{
 			std::cout << "Texture::LoadTexture() Failed to create staging buffer: " << filepath << std::endl;
-			return false;
+			return;
 		}
 
 		void * data = nullptr;
@@ -97,22 +98,13 @@ bool Texture::LoadTexture(GraphicsApi const & graphics_api, std::filesystem::pat
 	if (result != VK_SUCCESS)
 	{
 		std::cout << "Texture::LoadTexture() Failed to create image: " << filepath << std::endl;
-		return false;
+		return;
 	}
 
-	//m_type = GL_TEXTURE_2D;
-	//glGenTextures(1, &m_tex_id);
-	//glBindTexture(m_type, m_tex_id);
-	//
-	//glTexParameteri(m_type, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	//glTexParameteri(m_type, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	//glTexParameteri(m_type, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	//glTexParameteri(m_type, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	//
-	//glTexImage2D(m_type, 0 /*level*/, GL_RGB, image.GetWidth(), image.GetHeight(), 0 /*border*/, GL_RGB, GL_UNSIGNED_BYTE, image.GetData());
-	//glGenerateMipmap(m_type);
 
-	return true;
+
+	vkDestroyBuffer(device, staging_buffer, nullptr);
+	vkFreeMemory(device, staging_buffer_memory, nullptr);
 }
 
 //bool Texture::LoadCubeMap(std::array<std::filesystem::path, 6> const & filepaths)
@@ -142,6 +134,14 @@ bool Texture::LoadTexture(GraphicsApi const & graphics_api, std::filesystem::pat
 //
 //	return true;
 //}
+
+Texture::~Texture()
+{
+	VkDevice device = m_graphics_api.GetDevice();
+
+	vkDestroyImage(device, m_texture_image, nullptr);
+	vkFreeMemory(device, m_texture_image_memory, nullptr);
+}
 
 void Texture::Bind() const
 {
