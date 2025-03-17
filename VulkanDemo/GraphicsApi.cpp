@@ -792,13 +792,21 @@ VkResult GraphicsApi::CreateBuffer(
 		return result;
 	}
 
+	return CreateBufferMemory(out_buffer, properties, out_buffer_memory);
+}
+
+VkResult GraphicsApi::CreateBufferMemory(
+	VkBuffer buffer,
+	VkMemoryPropertyFlags properties,
+	VkDeviceMemory & out_buffer_memory) const
+{
 	VkMemoryRequirements mem_requirements;
-	vkGetBufferMemoryRequirements(m_logical_device, out_buffer, &mem_requirements);
+	vkGetBufferMemoryRequirements(m_logical_device, buffer, &mem_requirements);
 
 	uint32_t mem_type_index = find_memory_type(
 		m_phys_device_info.device,
 		mem_requirements.memoryTypeBits,
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+		properties);
 
 	VkMemoryAllocateInfo alloc_info{
 		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
@@ -807,14 +815,83 @@ VkResult GraphicsApi::CreateBuffer(
 	};
 
 	// TODO: should use something like VulkanMemoryAllocator library for managing memory
-	result = vkAllocateMemory(m_logical_device, &alloc_info, nullptr, &out_buffer_memory);
+	VkResult result = vkAllocateMemory(m_logical_device, &alloc_info, nullptr, &out_buffer_memory);
 	if (result != VK_SUCCESS)
 	{
 		std::cout << "Failed to allocate buffer memory" << std::endl;
 		return result;
 	}
 
-	vkBindBufferMemory(m_logical_device, out_buffer, out_buffer_memory, 0);
+	vkBindBufferMemory(m_logical_device, buffer, out_buffer_memory, 0);
+	return VK_SUCCESS;
+}
+
+VkResult GraphicsApi::Create2dImage(
+	uint32_t width,
+	uint32_t height,
+	VkFormat format,
+	VkImageTiling tiling,
+	VkImageUsageFlags usage,
+	VkMemoryPropertyFlags properties,
+	VkImage & out_image,
+	VkDeviceMemory & out_image_memory) const
+{
+	VkImageCreateInfo image_info{
+		.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+		.imageType = VK_IMAGE_TYPE_2D,
+		.format = format,
+		.extent{
+			.width = width,
+			.height = height,
+			.depth = 1,
+		},
+		.mipLevels = 1,
+		.arrayLayers = 1,
+		.samples = VK_SAMPLE_COUNT_1_BIT,
+		.tiling = tiling,
+		.usage = usage,
+		.sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+		.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+	};
+
+	VkResult result = vkCreateImage(m_logical_device, &image_info, nullptr, &out_image);
+	if (result != VK_SUCCESS)
+	{
+		std::cout << "Failed to create iamge" << std::endl;
+		return result;
+	}
+
+	return CreateImageMemory(out_image, properties, out_image_memory);
+}
+
+VkResult GraphicsApi::CreateImageMemory(
+	VkImage image,
+	VkMemoryPropertyFlags properties,
+	VkDeviceMemory & out_image_memory) const
+{
+	VkMemoryRequirements mem_requirements;
+	vkGetImageMemoryRequirements(m_logical_device, image, &mem_requirements);
+
+	uint32_t mem_type_index = find_memory_type(
+		m_phys_device_info.device,
+		mem_requirements.memoryTypeBits,
+		properties);
+
+	VkMemoryAllocateInfo alloc_info{
+		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+		.allocationSize = mem_requirements.size,
+		.memoryTypeIndex = mem_type_index
+	};
+
+	// TODO: should use something like VulkanMemoryAllocator library for managing memory
+	VkResult result = vkAllocateMemory(m_logical_device, &alloc_info, nullptr, &out_image_memory);
+	if (result != VK_SUCCESS)
+	{
+		std::cout << "Failed to allocate image memory" << std::endl;
+		return result;
+	}
+
+	vkBindImageMemory(m_logical_device, image, out_image_memory, 0);
 	return VK_SUCCESS;
 }
 

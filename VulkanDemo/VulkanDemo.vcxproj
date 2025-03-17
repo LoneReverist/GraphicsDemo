@@ -43,6 +43,12 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>..\stbi\include;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>..\stbi\include;$(IncludePath)</IncludePath>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -95,6 +101,8 @@
     <ClCompile Include="Scene.ixx" />
     <ClCompile Include="GraphicsPipeline.cpp" />
     <ClCompile Include="GraphicsPipeline.ixx" />
+    <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="Texture.ixx" />
     <ClCompile Include="Vertex.ixx" />
     <ClCompile Include="VulkanApp.cpp" />
     <ClCompile Include="VulkanApp.ixx" />
@@ -111,6 +119,9 @@
     <None Include="shaders\light_source.vert" />
     <None Include="shaders\light_source_frag.spv" />
     <None Include="shaders\light_source_vert.spv" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\stbi\include\stb_image.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

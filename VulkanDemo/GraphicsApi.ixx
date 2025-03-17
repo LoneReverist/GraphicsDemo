@@ -70,6 +70,26 @@ public:
 		VkBuffer & out_buffer,
 		VkDeviceMemory & out_buffer_memory) const;
 
+	VkResult CreateBufferMemory(
+		VkBuffer buffer,
+		VkMemoryPropertyFlags properties,
+		VkDeviceMemory & out_buffer_memory) const;
+
+	VkResult Create2dImage(
+		uint32_t width,
+		uint32_t height,
+		VkFormat format,
+		VkImageTiling tiling,
+		VkImageUsageFlags usage,
+		VkMemoryPropertyFlags properties,
+		VkImage & out_image,
+		VkDeviceMemory & out_image_memory) const;
+
+	VkResult CreateImageMemory(
+		VkImage image,
+		VkMemoryPropertyFlags properties,
+		VkDeviceMemory & out_image_memory) const;
+
 	void CopyBuffer(
 		VkBuffer src_buffer,
 		VkBuffer dst_buffer,
