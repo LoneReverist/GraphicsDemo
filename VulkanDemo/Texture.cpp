@@ -52,6 +52,92 @@ private:
 	unsigned char * m_data{ nullptr };
 };
 
+namespace
+{
+	void transition_image_layout(GraphicsApi const & graphics_api, VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout)
+	{
+		graphics_api.DoOneTimeCommand([image, format, old_layout, new_layout](VkCommandBuffer command_buffer)
+			{
+				VkImageMemoryBarrier barrier{
+					.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+					.srcAccessMask = 0,
+					.dstAccessMask = 0,
+					.oldLayout = old_layout,
+					.newLayout = new_layout,
+					.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+					.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+					.image = image,
+					.subresourceRange{
+						.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+						.baseMipLevel = 0,
+						.levelCount = 1,
+						.baseArrayLayer = 0,
+						.layerCount = 1,
+					}
+				};
+
+				VkPipelineStageFlags src_stage;
+				VkPipelineStageFlags dst_stage;
+
+				if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED && new_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+					barrier.srcAccessMask = 0;
+					barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+					src_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+					dst_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+				}
+				else if (old_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+					barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+					barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+					src_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+					dst_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+				}
+				else {
+					throw std::invalid_argument("unsupported layout transition!");
+				}
+
+				vkCmdPipelineBarrier(
+					command_buffer,
+					src_stage, dst_stage,
+					0 /*dependencyFlags*/,
+					0 /*memoryBarrierCount*/, nullptr,
+					0 /*bufferMemoryBarrierCount*/, nullptr,
+					1 /*imageMemoryBarrierCount*/, &barrier
+				);
+			});
+	}
+
+	void copy_buffer_to_image(GraphicsApi const & graphics_api, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height)
+	{
+		graphics_api.DoOneTimeCommand([buffer, image, width, height](VkCommandBuffer command_buffer)
+			{
+				VkBufferImageCopy region{
+					.bufferOffset = 0,
+					.bufferRowLength = 0,
+					.bufferImageHeight = 0,
+					.imageSubresource{
+						.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+						.mipLevel = 0,
+						.baseArrayLayer = 0,
+						.layerCount = 1,
+					},
+					.imageOffset{ 0, 0, 0 },
+					.imageExtent{ width, height, 1 }
+				};
+
+				vkCmdCopyBufferToImage(
+					command_buffer,
+					buffer,
+					image,
+					VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+					1,
+					&region
+				);
+			});
+	}
+}
+
 Texture::Texture(GraphicsApi const & graphics_api, std::filesystem::path const & filepath)
 	: m_graphics_api(graphics_api)
 {
@@ -101,6 +187,24 @@ Texture::Texture(GraphicsApi const & graphics_api, std::filesystem::path const &
 		return;
 	}
 
+	transition_image_layout(
+		m_graphics_api,
+		m_texture_image,
+		VK_FORMAT_R8G8B8A8_SRGB,
+		VK_IMAGE_LAYOUT_UNDEFINED,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+	copy_buffer_to_image(
+		m_graphics_api,
+		staging_buffer,
+		m_texture_image,
+		static_cast<uint32_t>(width),
+		static_cast<uint32_t>(height));
+	transition_image_layout(
+		m_graphics_api,
+		m_texture_image,
+		VK_FORMAT_R8G8B8A8_SRGB,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 
 	vkDestroyBuffer(device, staging_buffer, nullptr);

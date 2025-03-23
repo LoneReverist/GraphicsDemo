@@ -95,6 +95,8 @@ public:
 		VkBuffer dst_buffer,
 		VkDeviceSize size) const;
 
+	void DoOneTimeCommand(std::function<void(VkCommandBuffer)> const & command_fn) const;
+
 	VkDevice GetDevice() const { return m_logical_device; }
 	VkFormat GetSwapChainImageFormat() const { return m_swap_chain_image_format; }
 	VkExtent2D GetSwapChainExtent() const { return m_swap_chain_extent; }

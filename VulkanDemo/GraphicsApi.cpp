@@ -900,11 +900,25 @@ void GraphicsApi::CopyBuffer(
 	VkBuffer dst_buffer,
 	VkDeviceSize size) const
 {
+	DoOneTimeCommand([src_buffer, dst_buffer, size](VkCommandBuffer command_buffer)
+		{
+			VkBufferCopy copy_region{
+				.srcOffset = 0,
+				.dstOffset = 0,
+				.size = size
+			};
+
+			vkCmdCopyBuffer(command_buffer, src_buffer, dst_buffer, 1, &copy_region);
+		});
+}
+
+void GraphicsApi::DoOneTimeCommand(std::function<void(VkCommandBuffer)> const & command_fn) const
+{
 	VkCommandBufferAllocateInfo alloc_info{
-		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-		.commandPool = m_command_pool,
-		.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-		.commandBufferCount = 1
+	.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+	.commandPool = m_command_pool,
+	.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+	.commandBufferCount = 1
 	};
 
 	VkCommandBuffer command_buffer;
@@ -917,13 +931,7 @@ void GraphicsApi::CopyBuffer(
 
 	vkBeginCommandBuffer(command_buffer, &begin_info);
 
-	VkBufferCopy copy_region{
-		.srcOffset = 0,
-		.dstOffset = 0,
-		.size = size
-	};
-
-	vkCmdCopyBuffer(command_buffer, src_buffer, dst_buffer, 1, &copy_region);
+	command_fn(command_buffer);
 
 	vkEndCommandBuffer(command_buffer);
 
