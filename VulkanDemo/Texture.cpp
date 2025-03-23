@@ -136,6 +136,67 @@ namespace
 				);
 			});
 	}
+
+	VkImageView create_texture_image_view(VkDevice device, VkImage image)
+	{
+		VkImageViewCreateInfo create_info{
+			.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+			.image = image,
+			.viewType = VK_IMAGE_VIEW_TYPE_2D,
+			.format = VK_FORMAT_R8G8B8A8_SRGB,
+			.components{
+				.r = VK_COMPONENT_SWIZZLE_IDENTITY,
+				.g = VK_COMPONENT_SWIZZLE_IDENTITY,
+				.b = VK_COMPONENT_SWIZZLE_IDENTITY,
+				.a = VK_COMPONENT_SWIZZLE_IDENTITY
+			},
+			.subresourceRange{
+				.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+				.baseMipLevel = 0,
+				.levelCount = 1,
+				.baseArrayLayer = 0,
+				.layerCount = 1
+			}
+		};
+
+		VkImageView image_view = VK_NULL_HANDLE;
+		VkResult result = vkCreateImageView(device, &create_info, nullptr, &image_view);
+		if (result != VK_SUCCESS)
+			throw std::runtime_error("Failed to create vulkan image view for texture");
+
+		return image_view;
+	}
+
+	VkSampler create_texture_sampler(GraphicsApi const & graphics_api)
+	{
+		VkPhysicalDeviceProperties const & props = graphics_api.GetPhysicalDeviceInfo().properties;
+
+		VkSamplerCreateInfo sampler_info{
+			.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+			.magFilter = VK_FILTER_LINEAR,
+			.minFilter = VK_FILTER_LINEAR,
+			.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+			.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+			.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+			.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+			.mipLodBias = 0.0f,
+			.anisotropyEnable = VK_TRUE,
+			.maxAnisotropy = props.limits.maxSamplerAnisotropy,
+			.compareEnable = VK_FALSE,
+			.compareOp = VK_COMPARE_OP_ALWAYS,
+			.minLod = 0.0f,
+			.maxLod = 0.0f,
+			.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
+			.unnormalizedCoordinates = VK_FALSE
+		};
+
+		VkSampler sampler;
+		VkResult result = vkCreateSampler(graphics_api.GetDevice(), &sampler_info, nullptr, &sampler);
+		if (result != VK_SUCCESS)
+			throw std::runtime_error("Failed to create vulkan sampler for texture");
+
+		return sampler;
+	}
 }
 
 Texture::Texture(GraphicsApi const & graphics_api, std::filesystem::path const & filepath)
@@ -179,8 +240,8 @@ Texture::Texture(GraphicsApi const & graphics_api, std::filesystem::path const &
 		VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		m_texture_image,
-		m_texture_image_memory);
+		m_image,
+		m_image_memory);
 	if (result != VK_SUCCESS)
 	{
 		std::cout << "Texture::LoadTexture() Failed to create image: " << filepath << std::endl;
@@ -189,26 +250,35 @@ Texture::Texture(GraphicsApi const & graphics_api, std::filesystem::path const &
 
 	transition_image_layout(
 		m_graphics_api,
-		m_texture_image,
+		m_image,
 		VK_FORMAT_R8G8B8A8_SRGB,
 		VK_IMAGE_LAYOUT_UNDEFINED,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 	copy_buffer_to_image(
 		m_graphics_api,
 		staging_buffer,
-		m_texture_image,
+		m_image,
 		static_cast<uint32_t>(width),
 		static_cast<uint32_t>(height));
 	transition_image_layout(
 		m_graphics_api,
-		m_texture_image,
+		m_image,
 		VK_FORMAT_R8G8B8A8_SRGB,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
+	m_image_view = create_texture_image_view(device, m_image);
+	m_sampler = create_texture_sampler(m_graphics_api);
 
 	vkDestroyBuffer(device, staging_buffer, nullptr);
 	vkFreeMemory(device, staging_buffer_memory, nullptr);
+}
+
+bool Texture::IsValid() const
+{
+	return m_image != VK_NULL_HANDLE
+		&& m_image_memory != VK_NULL_HANDLE
+		&& m_image_view != VK_NULL_HANDLE;
 }
 
 //bool Texture::LoadCubeMap(std::array<std::filesystem::path, 6> const & filepaths)
@@ -243,8 +313,11 @@ Texture::~Texture()
 {
 	VkDevice device = m_graphics_api.GetDevice();
 
-	vkDestroyImage(device, m_texture_image, nullptr);
-	vkFreeMemory(device, m_texture_image_memory, nullptr);
+	vkDestroySampler(device, m_sampler, nullptr);
+	vkDestroyImageView(device, m_image_view, nullptr);
+
+	vkDestroyImage(device, m_image, nullptr);
+	vkFreeMemory(device, m_image_memory, nullptr);
 }
 
 void Texture::Bind() const

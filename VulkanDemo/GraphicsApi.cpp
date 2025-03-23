@@ -181,6 +181,11 @@ namespace
 		if (swap_chain_support.formats.empty() || swap_chain_support.present_modes.empty())
 			return false;
 
+		VkPhysicalDeviceFeatures supported_features;
+		vkGetPhysicalDeviceFeatures(device, &supported_features);
+		if (!supported_features.samplerAnisotropy)
+			return false;
+
 		out_device_info = PhysicalDeviceInfo{ device, qfis, swap_chain_support };
 		return true;
 	}
@@ -206,6 +211,9 @@ namespace
 			});
 		if (iter == devices.end())
 			throw std::runtime_error("Failed to find a suitable GPU!");
+
+		vkGetPhysicalDeviceMemoryProperties(phys_device_info.device, &phys_device_info.mem_properties);
+		vkGetPhysicalDeviceProperties(phys_device_info.device, &phys_device_info.properties);
 
 		return phys_device_info;
 	}
@@ -234,7 +242,9 @@ namespace
 				};
 			});
 
-		VkPhysicalDeviceFeatures deviceFeatures{};
+		VkPhysicalDeviceFeatures deviceFeatures{
+			.samplerAnisotropy = VK_TRUE
+		};
 
 		VkDeviceCreateInfo createInfo{
 			.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
@@ -428,23 +438,28 @@ namespace
 		std::ranges::transform(images, image_views.begin(),
 			[logical_device, swap_chain_image_format](VkImage image)
 			{
-				VkImageViewCreateInfo createInfo{};
-				createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-				createInfo.image = image;
-				createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-				createInfo.format = swap_chain_image_format;
-				createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-				createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-				createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-				createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-				createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-				createInfo.subresourceRange.baseMipLevel = 0;
-				createInfo.subresourceRange.levelCount = 1;
-				createInfo.subresourceRange.baseArrayLayer = 0;
-				createInfo.subresourceRange.layerCount = 1;
+				VkImageViewCreateInfo create_info{
+					.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+					.image = image,
+					.viewType = VK_IMAGE_VIEW_TYPE_2D,
+					.format = swap_chain_image_format,
+					.components{
+						.r = VK_COMPONENT_SWIZZLE_IDENTITY,
+						.g = VK_COMPONENT_SWIZZLE_IDENTITY,
+						.b = VK_COMPONENT_SWIZZLE_IDENTITY,
+						.a = VK_COMPONENT_SWIZZLE_IDENTITY
+					},
+					.subresourceRange{
+						.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+						.baseMipLevel = 0,
+						.levelCount = 1,
+						.baseArrayLayer = 0,
+						.layerCount = 1
+					}
+				};
 
 				VkImageView image_view = VK_NULL_HANDLE;
-				VkResult result = vkCreateImageView(logical_device, &createInfo, nullptr, &image_view);
+				VkResult result = vkCreateImageView(logical_device, &create_info, nullptr, &image_view);
 				if (result != VK_SUCCESS)
 					throw std::runtime_error("Failed to create vulkan image view for swap chain image");
 
@@ -492,13 +507,14 @@ namespace
 		PhysicalDeviceInfo const & phys_device_info,
 		VkDevice logical_device)
 	{
-		VkCommandPoolCreateInfo poolInfo{};
-		poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-		poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-		poolInfo.queueFamilyIndex = phys_device_info.qfis.graphics_family.value();
+		VkCommandPoolCreateInfo pool_info{
+			.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+			.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
+			.queueFamilyIndex = phys_device_info.qfis.graphics_family.value()
+		};
 
 		VkCommandPool command_pool = VK_NULL_HANDLE;
-		VkResult result = vkCreateCommandPool(logical_device, &poolInfo, nullptr, &command_pool);
+		VkResult result = vkCreateCommandPool(logical_device, &pool_info, nullptr, &command_pool);
 		if (result != VK_SUCCESS)
 			throw std::runtime_error("Failed to create vulkan command pool");
 
@@ -508,14 +524,15 @@ namespace
 	template <uint32_t count>
 	std::array<VkCommandBuffer, count> create_command_buffers(VkCommandPool command_pool, VkDevice logical_device)
 	{
-		VkCommandBufferAllocateInfo allocInfo{};
-		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-		allocInfo.commandPool = command_pool;
-		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-		allocInfo.commandBufferCount = count;
+		VkCommandBufferAllocateInfo alloc_info{
+			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+			.commandPool = command_pool,
+			.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+			.commandBufferCount = count
+		};
 
 		std::array<VkCommandBuffer, count> command_buffers;
-		VkResult result = vkAllocateCommandBuffers(logical_device, &allocInfo, command_buffers.data());
+		VkResult result = vkAllocateCommandBuffers(logical_device, &alloc_info, command_buffers.data());
 		if (result != VK_SUCCESS)
 			throw std::runtime_error("failed to allocate command buffers!");
 
@@ -561,11 +578,9 @@ namespace
 		return fences;
 	}
 
-	uint32_t find_memory_type(VkPhysicalDevice physical_device, uint32_t type_filter, VkMemoryPropertyFlags properties)
+	uint32_t find_memory_type(PhysicalDeviceInfo const & phys_device_info, uint32_t type_filter, VkMemoryPropertyFlags properties)
 	{
-		VkPhysicalDeviceMemoryProperties mem_properties;
-		vkGetPhysicalDeviceMemoryProperties(physical_device, &mem_properties);
-
+		VkPhysicalDeviceMemoryProperties const & mem_properties = phys_device_info.mem_properties;
 		for (uint32_t i = 0; i < mem_properties.memoryTypeCount; i++)
 		{
 			if (type_filter & (1 << i) && (mem_properties.memoryTypes[i].propertyFlags & properties) == properties)
@@ -804,7 +819,7 @@ VkResult GraphicsApi::CreateBufferMemory(
 	vkGetBufferMemoryRequirements(m_logical_device, buffer, &mem_requirements);
 
 	uint32_t mem_type_index = find_memory_type(
-		m_phys_device_info.device,
+		m_phys_device_info,
 		mem_requirements.memoryTypeBits,
 		properties);
 
@@ -873,7 +888,7 @@ VkResult GraphicsApi::CreateImageMemory(
 	vkGetImageMemoryRequirements(m_logical_device, image, &mem_requirements);
 
 	uint32_t mem_type_index = find_memory_type(
-		m_phys_device_info.device,
+		m_phys_device_info,
 		mem_requirements.memoryTypeBits,
 		properties);
 

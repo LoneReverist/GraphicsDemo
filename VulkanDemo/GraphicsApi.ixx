@@ -36,8 +36,12 @@ struct SwapChainSupportDetails
 struct PhysicalDeviceInfo
 {
 	VkPhysicalDevice device = VK_NULL_HANDLE;
+
 	QueueFamilyIndices qfis;
 	SwapChainSupportDetails sws_details;
+
+	VkPhysicalDeviceMemoryProperties mem_properties;
+	VkPhysicalDeviceProperties properties;
 };
 
 export class GraphicsApi
@@ -105,6 +109,8 @@ public:
 	VkFramebuffer GetCurFrameBuffer() const { return m_swap_chain_framebuffers[m_current_image_index]; }
 	VkQueue GetGraphicsQueue() const { return m_graphics_queue; }
 	uint32_t GetCurFrameIndex() const { return m_current_frame; }
+
+	PhysicalDeviceInfo const & GetPhysicalDeviceInfo() const { return m_phys_device_info; }
 
 private:
 	VkInstance m_instance = VK_NULL_HANDLE;
