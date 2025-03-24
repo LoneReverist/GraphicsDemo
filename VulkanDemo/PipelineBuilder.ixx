@@ -11,6 +11,7 @@ export module PipelineBuilder;
 import GraphicsApi;
 import GraphicsPipeline;
 import RenderObject;
+import Texture;
 import Vertex;
 
 export class PipelineBuilder
@@ -36,6 +37,8 @@ public:
 	template <typename... UniformTypes>
 	void SetFSUniformTypes();
 
+	void SetTexture(Texture const & texture) { m_texture = &texture; }
+
 	void SetPerFrameConstantsCallback(PerFrameConstantsCallback callback) { m_per_frame_constants_callback = callback; }
 	void SetPerObjectConstantsCallback(PerObjectConstantsCallback callback) { m_per_object_constants_callback = callback; }
 
@@ -53,6 +56,7 @@ private:
 	std::vector<VkPushConstantRange> m_push_constants_ranges;
 	std::vector<VkDeviceSize> m_vs_uniform_sizes;
 	std::vector<VkDeviceSize> m_fs_uniform_sizes;
+	Texture const * m_texture{ nullptr };
 
 	PerFrameConstantsCallback m_per_frame_constants_callback;
 	PerObjectConstantsCallback m_per_object_constants_callback;

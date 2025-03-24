@@ -154,7 +154,8 @@ namespace
 	VkDescriptorSetLayout create_descriptor_set_layout(
 		VkDevice device,
 		uint32_t vs_descriptor_set_count,
-		uint32_t fs_descriptor_set_count)
+		uint32_t fs_descriptor_set_count,
+		bool has_texture)
 	{
 		std::vector<VkDescriptorSetLayoutBinding> layout_bindings;
 		layout_bindings.reserve(vs_descriptor_set_count + fs_descriptor_set_count);
@@ -182,6 +183,18 @@ namespace
 				});
 		}
 
+		if (has_texture)
+		{
+			layout_bindings.emplace_back(
+				VkDescriptorSetLayoutBinding{
+					.binding = static_cast<uint32_t>(layout_bindings.size()),
+					.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+					.descriptorCount = 1,
+					.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+					.pImmutableSamplers = nullptr
+				});
+		}
+
 		VkDescriptorSetLayoutCreateInfo layout_info{
 			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
 			.bindingCount = static_cast<uint32_t>(layout_bindings.size()),
@@ -196,18 +209,30 @@ namespace
 		return descriptor_set_layout;
 	}
 
-	VkDescriptorPool create_descriptor_pool(VkDevice device, uint32_t descriptor_count, uint32_t descriptor_set_count)
+	VkDescriptorPool create_descriptor_pool(VkDevice device,
+		uint32_t uniform_count, uint32_t descriptor_set_count, bool has_texture)
 	{
-		VkDescriptorPoolSize pool_size{
-			.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-			.descriptorCount = descriptor_count
+		std::vector<VkDescriptorPoolSize> pool_sizes{
+			VkDescriptorPoolSize{
+				.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+				.descriptorCount = uniform_count * descriptor_set_count
+			}
 		};
+
+		if (has_texture)
+		{
+			pool_sizes.emplace_back(
+				VkDescriptorPoolSize{
+					.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+					.descriptorCount = descriptor_set_count
+				});
+		}
 
 		VkDescriptorPoolCreateInfo pool_info{
 			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
 			.maxSets = descriptor_set_count,
-			.poolSizeCount = 1,
-			.pPoolSizes = &pool_size
+			.poolSizeCount = static_cast<uint32_t>(pool_sizes.size()),
+			.pPoolSizes = pool_sizes.data()
 		};
 
 		VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;
@@ -219,12 +244,13 @@ namespace
 	}
 
 	template <uint32_t count>
-	std::array<VkDescriptorSet, count> create_descriptor_set(
+	std::array<VkDescriptorSet, count> create_descriptor_sets(
 		VkDevice device,
 		VkDescriptorSetLayout layout,
 		VkDescriptorPool pool,
 		std::array<std::vector<VkBuffer>, count> uniform_buffers,
-		std::vector<VkDeviceSize> uniform_sizes)
+		std::vector<VkDeviceSize> uniform_sizes,
+		Texture const * texture)
 	{
 		std::array<VkDescriptorSetLayout, count> layouts;
 		layouts.fill(layout);
@@ -242,6 +268,7 @@ namespace
 			throw std::runtime_error("failed to allocate descriptor sets!");
 
 		std::vector<VkDescriptorBufferInfo> buffer_infos;
+		std::vector<VkDescriptorImageInfo> image_infos;
 		for (size_t frame = 0; frame < count; frame++)
 		{
 			for (size_t binding = 0; binding < uniform_sizes.size(); ++binding)
@@ -252,10 +279,19 @@ namespace
 					.range = uniform_sizes[binding] // or VK_WHOLE_SIZE
 					});
 			}
+
+			if (texture != nullptr)
+			{
+				image_infos.emplace_back(VkDescriptorImageInfo{
+					.sampler = texture->GetSampler(),
+					.imageView = texture->GetImageView(),
+					.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+					});
+			}
 		}
 
 		std::vector<VkWriteDescriptorSet> descriptor_writes;
-		for (size_t frame = 0; frame < count; frame++)
+		for (size_t frame = 0; frame < count; ++frame)
 		{
 			for (size_t binding = 0; binding < uniform_sizes.size(); ++binding)
 			{
@@ -270,6 +306,23 @@ namespace
 					.pBufferInfo = &buffer_infos[descriptor_writes.size()],
 					.pTexelBufferView = nullptr
 				});
+			}
+		}
+		if (texture != nullptr)
+		{
+			for (size_t frame = 0; frame < count; ++frame)
+			{
+				descriptor_writes.emplace_back(VkWriteDescriptorSet{
+					.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+					.dstSet = descriptor_sets[frame],
+					.dstBinding = static_cast<uint32_t>(uniform_sizes.size()),
+					.dstArrayElement = 0,
+					.descriptorCount = 1,
+					.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+					.pImageInfo = &image_infos[frame],
+					.pBufferInfo = nullptr,
+					.pTexelBufferView = nullptr
+					});
 			}
 		}
 
@@ -314,6 +367,7 @@ GraphicsPipeline::GraphicsPipeline(GraphicsApi const & graphics_api,
 	std::vector<VkPushConstantRange> push_constants_ranges,
 	std::vector<VkDeviceSize> vs_uniform_sizes,
 	std::vector<VkDeviceSize> fs_uniform_sizes,
+	Texture const * texture,
 	PerFrameConstantsCallback per_frame_constants_callback,
 	PerObjectConstantsCallback per_object_constants_callback)
 	: m_graphics_api(graphics_api)
@@ -324,15 +378,16 @@ GraphicsPipeline::GraphicsPipeline(GraphicsApi const & graphics_api,
 
 	m_descriptor_set_layout = create_descriptor_set_layout(device,
 		static_cast<uint32_t>(vs_uniform_sizes.size()),
-		static_cast<uint32_t>(fs_uniform_sizes.size()));
+		static_cast<uint32_t>(fs_uniform_sizes.size()),
+		texture != nullptr);
 
 	std::vector<VkDeviceSize> uniform_sizes{ vs_uniform_sizes };
 	uniform_sizes.insert(uniform_sizes.end(), fs_uniform_sizes.begin(), fs_uniform_sizes.end());
-	uint32_t total_descriptor_set_count = static_cast<uint32_t>(uniform_sizes.size());
 
 	m_descriptor_pool = create_descriptor_pool(device,
-		GraphicsApi::m_max_frames_in_flight * total_descriptor_set_count /*descriptor_count*/,
-		GraphicsApi::m_max_frames_in_flight /*descriptor_set_count*/);
+		static_cast<uint32_t>(uniform_sizes.size()) /*descriptor_count*/,
+		GraphicsApi::m_max_frames_in_flight /*descriptor_set_count*/,
+		texture != nullptr);
 
 	std::array<std::vector<VkBuffer>, GraphicsApi::m_max_frames_in_flight> uniform_buffers;
 	for (size_t frame = 0; frame < GraphicsApi::m_max_frames_in_flight; ++frame)
@@ -348,8 +403,8 @@ GraphicsPipeline::GraphicsPipeline(GraphicsApi const & graphics_api,
 	}
 
 	std::array<VkDescriptorSet, GraphicsApi::m_max_frames_in_flight> descriptor_sets
-		= create_descriptor_set<GraphicsApi::m_max_frames_in_flight>(device,
-		m_descriptor_set_layout, m_descriptor_pool, uniform_buffers, uniform_sizes);
+		= create_descriptor_sets<GraphicsApi::m_max_frames_in_flight>(device,
+			m_descriptor_set_layout, m_descriptor_pool, uniform_buffers, uniform_sizes, texture);
 
 	for (size_t frame = 0; frame < GraphicsApi::m_max_frames_in_flight; ++frame)
 		m_descriptor_sets[frame].m_descriptor_set = descriptor_sets[frame];

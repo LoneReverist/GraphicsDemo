@@ -4,6 +4,7 @@ module;
 
 #include <array>
 #include <functional>
+#include <optional>
 
 #include <vulkan/vulkan.h>
 
@@ -11,6 +12,7 @@ export module GraphicsPipeline;
 
 import GraphicsApi;
 import RenderObject;
+import Texture;
 
 struct UniformBuffer
 {
@@ -39,6 +41,7 @@ public:
 		std::vector<VkPushConstantRange> push_constants_ranges,
 		std::vector<VkDeviceSize> vs_uniform_sizes,
 		std::vector<VkDeviceSize> fs_uniform_sizes,
+		Texture const * texture,
 		PerFrameConstantsCallback per_frame_constants_callback,
 		PerObjectConstantsCallback per_object_constants_callback);
 	~GraphicsPipeline();

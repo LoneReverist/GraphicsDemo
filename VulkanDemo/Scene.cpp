@@ -17,6 +17,7 @@ import GraphicsApi;
 import GraphicsPipeline;
 import Mesh;
 import PipelineBuilder;
+import Texture;
 import Vertex;
 
 namespace
@@ -76,16 +77,17 @@ namespace
 	{
 		float scale = 30.0f;
 
-		//std::vector<TextureVertex> verts {
-		//	{ { -scale,  scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.0, 1.0 } },
-		//	{ {  scale,  scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 1.0, 1.0 } },
-		//	{ { -scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.0, 0.0 } },
-		//	{ {  scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 1.0, 0.0 } } };
-		std::vector<ColorVertex> verts{
-			{ { -scale,  scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 1.0, 0.0, 0.0 } },
-			{ {  scale,  scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.0, 1.0, 0.0 } },
-			{ { -scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.0, 0.0, 1.0 } },
-			{ {  scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.5, 0.5, 0.5 } } };
+		std::vector<TextureVertex> verts {
+			{ { -scale,  scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.0, 1.0 } },
+			{ {  scale,  scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 1.0, 1.0 } },
+			{ { -scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.0, 0.0 } },
+			{ {  scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 1.0, 0.0 } } };
+		 
+		//std::vector<ColorVertex> verts{
+		//	{ { -scale,  scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 1.0, 0.0, 0.0 } },
+		//	{ {  scale,  scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.0, 1.0, 0.0 } },
+		//	{ { -scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.0, 0.0, 1.0 } },
+		//	{ {  scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.5, 0.5, 0.5 } } };
 
 		std::vector<Mesh::index_t> indices{
 			1, 0, 2,
@@ -122,6 +124,69 @@ namespace
 //
 //		return Mesh{ std::move(verts), std::move(indices) };
 //	}
+
+	std::unique_ptr<GraphicsPipeline> create_texture_pipeline(
+		Renderer const & renderer,
+		std::filesystem::path const & shaders_path,
+		Texture const & texture)
+	{
+		struct VSPushConstant
+		{
+			alignas(16) glm::mat4 model;
+		};
+		struct ViewProjUniform
+		{
+			alignas(16) glm::mat4 view;
+			alignas(16) glm::mat4 proj;
+		};
+		struct LightsUniform
+		{
+			alignas(16) glm::vec3 m_ambient_light_color; // TODO: need light container/manager
+			PointLight m_pointlight_1;
+			PointLight m_pointlight_2;
+			PointLight m_pointlight_3;
+			SpotLight m_spotlight;
+		};
+
+		PipelineBuilder builder{ renderer.GetGraphicsApi() };
+		builder.LoadShaders(
+			shaders_path / "texture_vert.spv",
+			shaders_path / "texture_frag.spv");
+		builder.SetVertexType<ColorVertex>();
+		builder.SetPushConstantTypes<VSPushConstant, std::nullopt_t>();
+		builder.SetVSUniformTypes<ViewProjUniform>();
+		builder.SetFSUniformTypes<LightsUniform>();
+		builder.SetTexture(texture);
+
+		builder.SetPerFrameConstantsCallback(
+			[&renderer](GraphicsPipeline const & pipeline)
+			{
+				pipeline.SetUniform(0 /*binding*/,
+					ViewProjUniform{
+						.view = renderer.GetViewTransform(),
+						.proj = renderer.GetProjTransform()
+					});
+				pipeline.SetUniform(1 /*binding*/,
+					LightsUniform{
+						.m_ambient_light_color = renderer.GetAmbientLightColor(),
+						.m_pointlight_1 = renderer.GetPointLight1(),
+						.m_pointlight_2 = renderer.GetPointLight2(),
+						.m_pointlight_3 = renderer.GetPointLight3(),
+						.m_spotlight = renderer.GetSpotLight()
+					});
+			});
+		builder.SetPerObjectConstantsCallback(
+			[](GraphicsPipeline const & pipeline, RenderObject const & obj)
+			{
+				pipeline.SetPushConstants(
+					VSPushConstant{
+						.model = obj.GetModelTransform()
+					},
+					std::nullopt);
+			});
+
+		return builder.CreatePipeline();
+	}
 
 	std::unique_ptr<GraphicsPipeline> create_color_pipeline(
 		Renderer const & renderer,
@@ -249,11 +314,12 @@ void Scene::Init()
 	const std::filesystem::path resources_path = std::filesystem::path("..") / "resources";
 	const std::filesystem::path shaders_path = "shaders";
 
+	m_ground_tex = std::make_unique<Texture>(m_renderer.GetGraphicsApi(), resources_path / "textures" / "skybox" / "top.jpg");
+
 	const int color_shader_id = m_renderer.AddGraphicsPipeline(
 		std::move(create_color_pipeline(m_renderer, shaders_path)));
-//	const int texture_shader_id = m_renderer.LoadShaderProgram(
-//		shaders_path / "texture_vs.txt",
-//		shaders_path / "texture_fs.txt");
+	const int texture_shader_id = m_renderer.AddGraphicsPipeline(
+		std::move(create_texture_pipeline(m_renderer, shaders_path, *m_ground_tex)));
 	const int light_source_pipeline_id = m_renderer.AddGraphicsPipeline(
 		std::move(create_light_source_pipeline(m_renderer, shaders_path)));
 //	const int skybox_shader_id = m_renderer.LoadShaderProgram(
@@ -262,14 +328,14 @@ void Scene::Init()
 //	const int reflection_shader_id = m_renderer.LoadShaderProgram(
 //		shaders_path / "reflection_vs.txt",
 //		shaders_path / "reflection_fs.txt");
-//
+
 //	const int sword_mesh_id = m_renderer.LoadMesh(resources_path / "objects" / "skullsword.obj");
 	const int red_gem_mesh_id = m_renderer.LoadMesh(resources_path / "objects" / "redgem.obj");
 	const int green_gem_mesh_id = m_renderer.LoadMesh(resources_path / "objects" / "greengem.obj");
 	const int blue_gem_mesh_id = m_renderer.LoadMesh(resources_path / "objects" / "bluegem.obj");
 	const int ground_mesh_id = m_renderer.AddMesh(std::move(create_ground_mesh(m_renderer.GetGraphicsApi())));
 //	const int skybox_mesh_id = m_renderer.AddMesh(std::move(create_skybox_mesh()));
-//
+
 //	const int ground_tex_id = m_renderer.LoadTexture(resources_path / "textures" / "skybox" / "top.jpg");
 //	const int skybox_tex_id = m_renderer.LoadCubeMap(std::array<std::filesystem::path, 6> {
 //		resources_path / "textures" / "skybox" / "right.jpg",
@@ -278,23 +344,24 @@ void Scene::Init()
 //		resources_path / "textures" / "skybox" / "bottom.jpg",
 //		resources_path / "textures" / "skybox" / "front.jpg",
 //		resources_path / "textures" / "skybox" / "back.jpg" });
-//
+
 //	m_sword0 = create_object(sword_mesh_id, reflection_shader_id, skybox_tex_id);
 //	m_sword1 = create_object(sword_mesh_id, reflection_shader_id, skybox_tex_id);
 	m_red_gem = create_object(red_gem_mesh_id, light_source_pipeline_id);
 	m_green_gem = create_object(green_gem_mesh_id, light_source_pipeline_id);
 	m_blue_gem = create_object(blue_gem_mesh_id, light_source_pipeline_id);
-	m_ground = create_object(ground_mesh_id, color_shader_id/*texture_shader_id, ground_tex_id */ );
-//
+	//m_ground = create_object(ground_mesh_id, color_shader_id);
+	m_ground = create_object(ground_mesh_id, texture_shader_id);
+
 //	m_skybox = std::make_shared<RenderObject>(skybox_mesh_id, skybox_shader_id, skybox_tex_id);
 //	m_renderer.SetSkybox(m_skybox);
-//
+
 //	m_sword0->SetColor({ 0.6, 0.6, 0.6 });
 //	m_sword1->SetColor({ 0.6, 0.6, 0.6 });
 	m_red_gem->SetColor({ 1.0, 0.0, 0.0 });
 	m_green_gem->SetColor({ 0.0, 1.0, 0.0 });
 	m_blue_gem->SetColor({ 0.0, 0.0, 1.0 });
-//
+
 //	init_sword_transform(0, m_sword0->ModifyModelTransform());
 //	init_sword_transform(1, m_sword1->ModifyModelTransform());
 	init_gem_transform(0, m_red_gem->ModifyModelTransform());

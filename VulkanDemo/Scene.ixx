@@ -11,6 +11,7 @@ import <memory>;
 import Input;
 import Renderer;
 import RenderObject;
+import Texture;
 
 export class Scene
 {
@@ -27,6 +28,8 @@ private:
 
 private:
 	Renderer & m_renderer;
+
+	std::unique_ptr<Texture> m_ground_tex;
 
 	//std::shared_ptr<RenderObject> m_sword0;
 	//std::shared_ptr<RenderObject> m_sword1;

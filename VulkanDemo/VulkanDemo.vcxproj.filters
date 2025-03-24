@@ -108,6 +108,18 @@
     <None Include="shaders\color_vert.spv">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="shaders\texture.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\texture.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\texture_frag.spv">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\texture_vert.spv">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\stbi\include\stb_image.h">

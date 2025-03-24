@@ -22,6 +22,9 @@ public:
 
 	void Bind() const;
 
+	VkImageView GetImageView() const { return m_image_view; }
+	VkSampler GetSampler() const { return m_sampler; }
+
 private:
 	GraphicsApi const & m_graphics_api;
 
