@@ -152,7 +152,7 @@ namespace
 		builder.LoadShaders(
 			shaders_path / "texture_vert.spv",
 			shaders_path / "texture_frag.spv");
-		builder.SetVertexType<ColorVertex>();
+		builder.SetVertexType<TextureVertex>();
 		builder.SetPushConstantTypes<VSPushConstant, std::nullopt_t>();
 		builder.SetVSUniformTypes<ViewProjUniform>();
 		builder.SetFSUniformTypes<LightsUniform>();
