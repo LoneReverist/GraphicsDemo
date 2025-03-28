@@ -124,6 +124,15 @@ namespace
 			.blendConstants = { 0.0f, 0.0f, 0.0f, 0.0f }
 		};
 
+		VkPipelineDepthStencilStateCreateInfo depth_stencil{
+			.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
+			.depthTestEnable = VK_TRUE,
+			.depthWriteEnable = VK_TRUE,
+			.depthCompareOp = VK_COMPARE_OP_LESS,
+			.depthBoundsTestEnable = VK_FALSE,
+			.stencilTestEnable = VK_FALSE
+		};
+
 		VkGraphicsPipelineCreateInfo pipeline_info{
 			.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
 			.stageCount = static_cast<uint32_t>(shader_stages.size()),
@@ -133,7 +142,7 @@ namespace
 			.pViewportState = &viewport_state,
 			.pRasterizationState = &rasterizer,
 			.pMultisampleState = &multisampling,
-			.pDepthStencilState = nullptr,
+			.pDepthStencilState = &depth_stencil,
 			.pColorBlendState = &color_blending,
 			.pDynamicState = &dynamic_state,
 			.layout = pipeline_layout,

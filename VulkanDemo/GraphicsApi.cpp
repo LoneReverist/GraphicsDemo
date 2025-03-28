@@ -377,7 +377,7 @@ namespace
 		return swap_chain;
 	}
 
-	VkRenderPass create_render_pass(VkDevice logical_device, VkFormat swap_chain_image_format)
+	VkRenderPass create_render_pass(VkDevice logical_device, VkFormat swap_chain_image_format, VkFormat depth_format)
 	{
 		VkAttachmentDescription color_attachment{
 			.format = swap_chain_image_format,
@@ -395,25 +395,43 @@ namespace
 			.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
 		};
 
+		VkAttachmentDescription depth_attachment{
+			.format = depth_format,
+			.samples = VK_SAMPLE_COUNT_1_BIT,
+			.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+			.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+			.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+			.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+			.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+			.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+		};
+
+		VkAttachmentReference depth_attachment_ref{
+			.attachment = 1,
+			.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+		};
+
 		VkSubpassDescription subpass{
 			.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
 			.colorAttachmentCount = 1,
-			.pColorAttachments = &color_attachment_ref
+			.pColorAttachments = &color_attachment_ref,
+			.pDepthStencilAttachment = &depth_attachment_ref
 		};
 
 		VkSubpassDependency dependency{
 			.srcSubpass = VK_SUBPASS_EXTERNAL,
 			.dstSubpass = 0,
-			.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-			.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-			.srcAccessMask = 0,
-			.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
+			.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+			.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+			.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+			.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT
 		};
 
+		std::array<VkAttachmentDescription, 2> attachments = { color_attachment, depth_attachment };
 		VkRenderPassCreateInfo render_pass_info{
 			.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
-			.attachmentCount = 1,
-			.pAttachments = &color_attachment,
+			.attachmentCount = static_cast<uint32_t>(attachments.size()),
+			.pAttachments = attachments.data(),
 			.subpassCount = 1,
 			.pSubpasses = &subpass,
 			.dependencyCount = 1,
@@ -428,79 +446,68 @@ namespace
 		return render_pass;
 	}
 
-	std::vector<VkImageView> create_image_views(
-		std::vector<VkImage> const & images,
-		VkDevice logical_device,
-		VkFormat swap_chain_image_format)
-	{
-		std::vector<VkImageView> image_views(images.size());
-
-		std::ranges::transform(images, image_views.begin(),
-			[logical_device, swap_chain_image_format](VkImage image)
-			{
-				VkImageViewCreateInfo create_info{
-					.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-					.image = image,
-					.viewType = VK_IMAGE_VIEW_TYPE_2D,
-					.format = swap_chain_image_format,
-					.components{
-						.r = VK_COMPONENT_SWIZZLE_IDENTITY,
-						.g = VK_COMPONENT_SWIZZLE_IDENTITY,
-						.b = VK_COMPONENT_SWIZZLE_IDENTITY,
-						.a = VK_COMPONENT_SWIZZLE_IDENTITY
-					},
-					.subresourceRange{
-						.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-						.baseMipLevel = 0,
-						.levelCount = 1,
-						.baseArrayLayer = 0,
-						.layerCount = 1
-					}
-				};
-
-				VkImageView image_view = VK_NULL_HANDLE;
-				VkResult result = vkCreateImageView(logical_device, &create_info, nullptr, &image_view);
-				if (result != VK_SUCCESS)
-					throw std::runtime_error("Failed to create vulkan image view for swap chain image");
-
-				return image_view;
-			});
-
-		return image_views;
-	}
-
-	std::vector<VkFramebuffer> create_framebuffers(
-		std::vector<VkImageView> image_views,
+	VkResult create_framebuffer(
+		VkImageView image_view,
+		VkImageView depth_image_view,
 		VkDevice logical_device,
 		VkRenderPass render_pass,
-		VkExtent2D swap_chain_extent)
+		VkExtent2D swap_chain_extent,
+		VkFramebuffer & out_framebuffer)
 	{
-		std::vector<VkFramebuffer> framebuffers(image_views.size());
+		std::array<VkImageView, 2> attachments = {
+			image_view,
+			depth_image_view
+		};
 
-		std::ranges::transform(image_views, framebuffers.begin(),
-			[logical_device, render_pass, swap_chain_extent](VkImageView image_view)
-			{
-				VkImageView attachments[] = { image_view };
+		VkFramebufferCreateInfo framebuffer_info{
+			.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+			.renderPass = render_pass,
+			.attachmentCount = static_cast<uint32_t>(attachments.size()),
+			.pAttachments = attachments.data(),
+			.width = swap_chain_extent.width,
+			.height = swap_chain_extent.height,
+			.layers = 1
+		};
 
-				VkFramebufferCreateInfo framebuffer_info{
-					.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
-					.renderPass = render_pass,
-					.attachmentCount = 1,
-					.pAttachments = attachments,
-					.width = swap_chain_extent.width,
-					.height = swap_chain_extent.height,
-					.layers = 1
-				};
+		VkResult result = vkCreateFramebuffer(logical_device, &framebuffer_info, nullptr, &out_framebuffer);
+		if (result != VK_SUCCESS)
+			std::cout << "Failed to create vulkan framebuffer";
 
-				VkFramebuffer framebuffer = VK_NULL_HANDLE;
-				VkResult result = vkCreateFramebuffer(logical_device, &framebuffer_info, nullptr, &framebuffer);
-				if (result != VK_SUCCESS)
-					throw std::runtime_error("Failed to create vulkan framebuffer");
+		return result;
+	}
 
-				return framebuffer;
-			});
+	VkFormat find_supported_format(
+		VkPhysicalDevice phys_device,
+		std::vector<VkFormat> const & candidates,
+		VkImageTiling tiling,
+		VkFormatFeatureFlags features)
+	{
+		for (VkFormat format : candidates)
+		{
+			VkFormatProperties props;
+			vkGetPhysicalDeviceFormatProperties(phys_device, format, &props);
 
-		return framebuffers;
+			if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features)
+				return format;
+			else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features)
+				return format;
+		}
+
+		throw std::runtime_error("Failed to find supported format");
+	}
+
+	VkFormat find_depth_format(VkPhysicalDevice phys_device)
+	{
+		return find_supported_format(
+			phys_device,
+			{ VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
+			VK_IMAGE_TILING_OPTIMAL,
+			VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+	}
+
+	bool has_stencil_component(VkFormat format)
+	{
+		return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 	}
 
 	VkCommandPool create_command_pool(
@@ -618,25 +625,30 @@ GraphicsApi::GraphicsApi(
 	if (m_logical_device == VK_NULL_HANDLE)
 		return;
 
-	m_swap_chain = create_swap_chain(m_phys_device_info, width, height, m_surface, m_logical_device,
-		m_swap_chain_images, m_swap_chain_image_format, m_swap_chain_extent);
-	if (m_swap_chain == VK_NULL_HANDLE)
-		return;
-
-	m_render_pass = create_render_pass(m_logical_device, m_swap_chain_image_format);
-	if (m_render_pass == VK_NULL_HANDLE)
-		return;
-
-	m_swap_chain_image_views = create_image_views(m_swap_chain_images, m_logical_device, m_swap_chain_image_format);
-	m_swap_chain_framebuffers = create_framebuffers(
-		m_swap_chain_image_views, m_logical_device, m_render_pass, m_swap_chain_extent);
-
 	m_command_pool = create_command_pool(m_phys_device_info, m_logical_device);
 	if (m_command_pool == VK_NULL_HANDLE)
 		return;
 
 	m_command_buffers = create_command_buffers<m_max_frames_in_flight>(m_command_pool, m_logical_device);
 	if (std::ranges::find(m_command_buffers, VK_NULL_HANDLE) != m_command_buffers.end())
+		return;
+
+	m_swap_chain = create_swap_chain(m_phys_device_info, width, height, m_surface, m_logical_device,
+		m_swap_chain_images, m_swap_chain_image_format, m_swap_chain_extent);
+	if (m_swap_chain == VK_NULL_HANDLE)
+		return;
+
+	m_depth_format = find_depth_format(m_phys_device_info.device);
+	VkResult result = create_depth_resources(m_depth_image, m_depth_image_memory, m_depth_image_view);
+	if (result != VK_SUCCESS)
+		return;
+
+	m_render_pass = create_render_pass(m_logical_device, m_swap_chain_image_format, m_depth_format);
+	if (m_render_pass == VK_NULL_HANDLE)
+		return;
+
+	result = create_swap_chain_framebuffers();
+	if (result != VK_SUCCESS)
 		return;
 
 	m_image_available_semaphores = create_semaphores<m_max_frames_in_flight>(m_logical_device);
@@ -655,7 +667,7 @@ GraphicsApi::~GraphicsApi()
 
 	vkDestroyCommandPool(m_logical_device, m_command_pool, nullptr);
 
-	DestroySwapChain();
+	destroy_swap_chain();
 
 	vkDestroyRenderPass(m_logical_device, m_render_pass, nullptr);
 	vkDestroyDevice(m_logical_device, nullptr);
@@ -663,7 +675,46 @@ GraphicsApi::~GraphicsApi()
 	vkDestroyInstance(m_instance, nullptr);
 }
 
-void GraphicsApi::DestroySwapChain()
+void GraphicsApi::destroy_swap_chain()
+{
+	destroy_swap_chain_framebuffers();
+
+	vkDestroyImageView(m_logical_device, m_depth_image_view, nullptr);
+	vkDestroyImage(m_logical_device, m_depth_image, nullptr);
+	vkFreeMemory(m_logical_device, m_depth_image_memory, nullptr);
+
+	vkDestroySwapchainKHR(m_logical_device, m_swap_chain, nullptr);
+	m_swap_chain = VK_NULL_HANDLE;
+	m_swap_chain_images.clear();
+	m_swap_chain_image_format = VK_FORMAT_UNDEFINED;
+	m_swap_chain_extent = VkExtent2D{ 0, 0 };
+}
+
+VkResult GraphicsApi::create_swap_chain_framebuffers()
+{
+	m_swap_chain_image_views.resize(m_swap_chain_images.size(), VK_NULL_HANDLE);
+	m_swap_chain_framebuffers.resize(m_swap_chain_images.size(), VK_NULL_HANDLE);
+	for (size_t i = 0; i < m_swap_chain_images.size(); ++i)
+	{
+		VkResult result = CreateImageView(
+			m_swap_chain_images[i], m_swap_chain_image_format, VK_IMAGE_ASPECT_COLOR_BIT, m_swap_chain_image_views[i]);
+		if (result != VK_SUCCESS)
+			return result;
+
+		result = create_framebuffer(
+			m_swap_chain_image_views[i],
+			m_depth_image_view,
+			m_logical_device,
+			m_render_pass,
+			m_swap_chain_extent,
+			m_swap_chain_framebuffers[i]);
+		if (result != VK_SUCCESS)
+			return result;
+	}
+	return VK_SUCCESS;
+}
+
+void GraphicsApi::destroy_swap_chain_framebuffers()
 {
 	for (auto framebuffer : m_swap_chain_framebuffers)
 		vkDestroyFramebuffer(m_logical_device, framebuffer, nullptr);
@@ -672,12 +723,6 @@ void GraphicsApi::DestroySwapChain()
 	for (auto image_view : m_swap_chain_image_views)
 		vkDestroyImageView(m_logical_device, image_view, nullptr);
 	m_swap_chain_image_views.clear();
-
-	vkDestroySwapchainKHR(m_logical_device, m_swap_chain, nullptr);
-	m_swap_chain = VK_NULL_HANDLE;
-	m_swap_chain_images.clear();
-	m_swap_chain_image_format = VK_FORMAT_UNDEFINED;
-	m_swap_chain_extent = VkExtent2D{ 0, 0 };
 }
 
 void GraphicsApi::RecreateSwapChain(int width, int height)
@@ -687,7 +732,7 @@ void GraphicsApi::RecreateSwapChain(int width, int height)
 
 	vkDeviceWaitIdle(m_logical_device);
 
-	DestroySwapChain();
+	destroy_swap_chain();
 
 	m_phys_device_info.sws_details = query_swap_chain_support(m_phys_device_info.device, m_surface);
 
@@ -696,9 +741,11 @@ void GraphicsApi::RecreateSwapChain(int width, int height)
 	if (m_swap_chain == VK_NULL_HANDLE)
 		return;
 
-	m_swap_chain_image_views = create_image_views(m_swap_chain_images, m_logical_device, m_swap_chain_image_format);
-	m_swap_chain_framebuffers = create_framebuffers(
-		m_swap_chain_image_views, m_logical_device, m_render_pass, m_swap_chain_extent);
+	VkResult result = create_depth_resources(m_depth_image, m_depth_image_memory, m_depth_image_view);
+	if (result != VK_SUCCESS)
+		return;
+
+	create_swap_chain_framebuffers();
 }
 
 bool GraphicsApi::SwapChainIsValid() const
@@ -906,34 +953,49 @@ VkResult GraphicsApi::CreateImageMemory(
 		return result;
 	}
 
-	vkBindImageMemory(m_logical_device, image, out_image_memory, 0);
-	return VK_SUCCESS;
+	return vkBindImageMemory(m_logical_device, image, out_image_memory, 0);
 }
 
-void GraphicsApi::CopyBuffer(
-	VkBuffer src_buffer,
-	VkBuffer dst_buffer,
-	VkDeviceSize size) const
+VkResult GraphicsApi::CreateImageView(
+	VkImage image,
+	VkFormat format,
+	VkImageAspectFlags aspect_flags,
+	VkImageView & out_image_view) const
 {
-	DoOneTimeCommand([src_buffer, dst_buffer, size](VkCommandBuffer command_buffer)
-		{
-			VkBufferCopy copy_region{
-				.srcOffset = 0,
-				.dstOffset = 0,
-				.size = size
-			};
+	VkImageViewCreateInfo create_info{
+		.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+		.image = image,
+		.viewType = VK_IMAGE_VIEW_TYPE_2D,
+		.format = format,
+		.components{
+			.r = VK_COMPONENT_SWIZZLE_IDENTITY,
+			.g = VK_COMPONENT_SWIZZLE_IDENTITY,
+			.b = VK_COMPONENT_SWIZZLE_IDENTITY,
+			.a = VK_COMPONENT_SWIZZLE_IDENTITY
+		},
+		.subresourceRange{
+			.aspectMask = aspect_flags,
+			.baseMipLevel = 0,
+			.levelCount = 1,
+			.baseArrayLayer = 0,
+			.layerCount = 1
+		}
+	};
 
-			vkCmdCopyBuffer(command_buffer, src_buffer, dst_buffer, 1, &copy_region);
-		});
+	VkResult result = vkCreateImageView(m_logical_device, &create_info, nullptr, &out_image_view);
+	if (result != VK_SUCCESS)
+		std::cout << "Failed to create iamge view" << std::endl;
+
+	return result;
 }
 
 void GraphicsApi::DoOneTimeCommand(std::function<void(VkCommandBuffer)> const & command_fn) const
 {
 	VkCommandBufferAllocateInfo alloc_info{
-	.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-	.commandPool = m_command_pool,
-	.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-	.commandBufferCount = 1
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+		.commandPool = m_command_pool,
+		.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+		.commandBufferCount = 1
 	};
 
 	VkCommandBuffer command_buffer;
@@ -960,4 +1022,154 @@ void GraphicsApi::DoOneTimeCommand(std::function<void(VkCommandBuffer)> const & 
 	vkQueueWaitIdle(m_graphics_queue);
 
 	vkFreeCommandBuffers(m_logical_device, m_command_pool, 1, &command_buffer);
+}
+
+void GraphicsApi::CopyBuffer(
+	VkBuffer src_buffer,
+	VkBuffer dst_buffer,
+	VkDeviceSize size) const
+{
+	DoOneTimeCommand([src_buffer, dst_buffer, size](VkCommandBuffer command_buffer)
+		{
+			VkBufferCopy copy_region{
+				.srcOffset = 0,
+				.dstOffset = 0,
+				.size = size
+			};
+
+			vkCmdCopyBuffer(command_buffer, src_buffer, dst_buffer, 1, &copy_region);
+		});
+}
+
+void GraphicsApi::CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) const
+{
+	DoOneTimeCommand([buffer, image, width, height](VkCommandBuffer command_buffer)
+		{
+			VkBufferImageCopy region{
+				.bufferOffset = 0,
+				.bufferRowLength = 0,
+				.bufferImageHeight = 0,
+				.imageSubresource{
+					.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+					.mipLevel = 0,
+					.baseArrayLayer = 0,
+					.layerCount = 1,
+				},
+				.imageOffset{ 0, 0, 0 },
+				.imageExtent{ width, height, 1 }
+			};
+
+			vkCmdCopyBufferToImage(
+				command_buffer,
+				buffer,
+				image,
+				VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+				1,
+				&region
+			);
+		});
+}
+
+void GraphicsApi::TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout) const
+{
+	DoOneTimeCommand([image, format, old_layout, new_layout](VkCommandBuffer command_buffer)
+		{
+			VkImageMemoryBarrier barrier{
+				.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+				.srcAccessMask = 0,
+				.dstAccessMask = 0,
+				.oldLayout = old_layout,
+				.newLayout = new_layout,
+				.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+				.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+				.image = image,
+				.subresourceRange{
+					.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+					.baseMipLevel = 0,
+					.levelCount = 1,
+					.baseArrayLayer = 0,
+					.layerCount = 1,
+				}
+			};
+
+			if (new_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+			{
+				barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+
+				if (has_stencil_component(format))
+					barrier.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+			}
+
+			VkPipelineStageFlags src_stage;
+			VkPipelineStageFlags dst_stage;
+
+			if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED && new_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+			{
+				barrier.srcAccessMask = 0;
+				barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+				src_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+				dst_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+			}
+			else if (old_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+			{
+				barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+				barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+				src_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+				dst_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+			}
+			else if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED && new_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+			{
+				barrier.srcAccessMask = 0;
+				barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+				src_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+				dst_stage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+			}
+			else
+			{
+				throw std::invalid_argument("unsupported layout transition!");
+			}
+
+			vkCmdPipelineBarrier(
+				command_buffer,
+				src_stage, dst_stage,
+				0 /*dependencyFlags*/,
+				0 /*memoryBarrierCount*/, nullptr,
+				0 /*bufferMemoryBarrierCount*/, nullptr,
+				1 /*imageMemoryBarrierCount*/, &barrier
+			);
+		});
+}
+
+VkResult GraphicsApi::create_depth_resources(
+	VkImage & out_image,
+	VkDeviceMemory & out_image_memory,
+	VkImageView & out_image_view) const
+{
+	VkResult result = Create2dImage(
+		m_swap_chain_extent.width,
+		m_swap_chain_extent.height,
+		m_depth_format,
+		VK_IMAGE_TILING_OPTIMAL,
+		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		out_image,
+		out_image_memory);
+	if (result != VK_SUCCESS)
+		return result;
+
+	result = CreateImageView(out_image, m_depth_format, VK_IMAGE_ASPECT_DEPTH_BIT, out_image_view);
+	if (result != VK_SUCCESS)
+		return result;
+
+	// not technically required
+	TransitionImageLayout(
+		out_image,
+		m_depth_format,
+		VK_IMAGE_LAYOUT_UNDEFINED,
+		VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+
+	return result;
 }

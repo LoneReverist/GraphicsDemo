@@ -60,7 +60,6 @@ public:
 
 	~GraphicsApi();
 
-	void DestroySwapChain();
 	void RecreateSwapChain(int width, int height);
 	bool SwapChainIsValid() const;
 
@@ -94,12 +93,16 @@ public:
 		VkMemoryPropertyFlags properties,
 		VkDeviceMemory & out_image_memory) const;
 
-	void CopyBuffer(
-		VkBuffer src_buffer,
-		VkBuffer dst_buffer,
-		VkDeviceSize size) const;
+	VkResult CreateImageView(
+		VkImage image,
+		VkFormat format,
+		VkImageAspectFlags aspect_flags,
+		VkImageView & out_image_view) const;
 
 	void DoOneTimeCommand(std::function<void(VkCommandBuffer)> const & command_fn) const;
+	void CopyBuffer(VkBuffer src_buffer,VkBuffer dst_buffer,VkDeviceSize size) const;
+	void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) const;
+	void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout) const;
 
 	VkDevice GetDevice() const { return m_logical_device; }
 	VkFormat GetSwapChainImageFormat() const { return m_swap_chain_image_format; }
@@ -113,25 +116,41 @@ public:
 	PhysicalDeviceInfo const & GetPhysicalDeviceInfo() const { return m_phys_device_info; }
 
 private:
-	VkInstance m_instance = VK_NULL_HANDLE;
-	VkSurfaceKHR m_surface = VK_NULL_HANDLE;
+	void destroy_swap_chain();
+
+	VkResult create_swap_chain_framebuffers();
+	void destroy_swap_chain_framebuffers();
+
+	VkResult create_depth_resources(
+		VkImage & out_image,
+		VkDeviceMemory & out_image_memory,
+		VkImageView & out_image_view) const;
+
+private:
+	VkInstance m_instance{ VK_NULL_HANDLE };
+	VkSurfaceKHR m_surface{ VK_NULL_HANDLE };
 
 	PhysicalDeviceInfo m_phys_device_info; // Automatically cleaned up when m_instance is destroyed
-	VkDevice m_logical_device = VK_NULL_HANDLE;
-	VkQueue m_graphics_queue = VK_NULL_HANDLE; // Automatically cleaned up when m_logical_device is destroyed
-	VkQueue m_present_queue = VK_NULL_HANDLE; // Automatically cleaned up when m_logical_device is destroyed
+	VkDevice m_logical_device{ VK_NULL_HANDLE };
+	VkQueue m_graphics_queue{ VK_NULL_HANDLE }; // Automatically cleaned up when m_logical_device is destroyed
+	VkQueue m_present_queue{ VK_NULL_HANDLE }; // Automatically cleaned up when m_logical_device is destroyed
 
-	VkSwapchainKHR m_swap_chain = VK_NULL_HANDLE;
-	std::vector<VkImage> m_swap_chain_images; // Automatically cleaned up when m_swap_chain is destroyed
-	VkFormat m_swap_chain_image_format = VK_FORMAT_UNDEFINED;
+	VkSwapchainKHR m_swap_chain{ VK_NULL_HANDLE };
+	VkFormat m_swap_chain_image_format{ VK_FORMAT_UNDEFINED };
 	VkExtent2D m_swap_chain_extent{ 0, 0 };
-
-	VkRenderPass m_render_pass = VK_NULL_HANDLE;
+	std::vector<VkImage> m_swap_chain_images; // Automatically cleaned up when m_swap_chain is destroyed
 	std::vector<VkImageView> m_swap_chain_image_views;
 	std::vector<VkFramebuffer> m_swap_chain_framebuffers;
 	uint32_t m_current_image_index = 0;
 
-	VkCommandPool m_command_pool = VK_NULL_HANDLE;
+	VkRenderPass m_render_pass{ VK_NULL_HANDLE };
+
+	VkFormat m_depth_format{ VK_FORMAT_UNDEFINED };
+	VkImage m_depth_image{ VK_NULL_HANDLE };
+	VkDeviceMemory m_depth_image_memory{ VK_NULL_HANDLE };
+	VkImageView m_depth_image_view{ VK_NULL_HANDLE };
+
+	VkCommandPool m_command_pool{ VK_NULL_HANDLE };
 	std::array<VkCommandBuffer, m_max_frames_in_flight> m_command_buffers; // Automatically cleaned up when m_comand_pool is destroyed
 
 	std::array<VkSemaphore, m_max_frames_in_flight> m_image_available_semaphores;

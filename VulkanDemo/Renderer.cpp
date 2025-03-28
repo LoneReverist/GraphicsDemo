@@ -81,7 +81,10 @@ void Renderer::Render() const
 	if (result != VK_SUCCESS)
 		throw std::runtime_error("failed to begin recording command buffer!");
 
-	VkClearValue clear_color = { .color = { m_clear_color.r, m_clear_color.g, m_clear_color.b, 1.0f } };
+	std::array<VkClearValue, 2> clear_values = {
+		VkClearValue{ .color{ m_clear_color.r, m_clear_color.g, m_clear_color.b, 1.0f } },
+		VkClearValue{ .depthStencil{ 1.0f, 0 } }
+	};
 
 	VkViewport viewport{
 		.x = 0.0f,
@@ -102,8 +105,8 @@ void Renderer::Render() const
 		.renderPass = m_graphics_api.GetRenderPass(),
 		.framebuffer = m_graphics_api.GetCurFrameBuffer(),
 		.renderArea = scissor,
-		.clearValueCount = 1,
-		.pClearValues = &clear_color
+		.clearValueCount = static_cast<uint32_t>(clear_values.size()),
+		.pClearValues = clear_values.data()
 	};
 
 	vkCmdBeginRenderPass(command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
