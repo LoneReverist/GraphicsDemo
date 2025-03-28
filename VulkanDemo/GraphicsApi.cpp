@@ -45,12 +45,12 @@ namespace
 		std::vector<char const *> const & validation_layers)
 	{
 		VkApplicationInfo app_info{
-		.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
-		.pApplicationName = app_title.c_str(),
-		.applicationVersion = VK_MAKE_VERSION(1, 0, 0),
-		.pEngineName = "No Engine",
-		.engineVersion = VK_MAKE_VERSION(1, 0, 0),
-		.apiVersion = VK_API_VERSION_1_0
+			.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
+			.pApplicationName = app_title.c_str(),
+			.applicationVersion = VK_MAKE_VERSION(1, 0, 0),
+			.pEngineName = "No Engine",
+			.engineVersion = VK_MAKE_VERSION(1, 0, 0),
+			.apiVersion = VK_API_VERSION_1_0
 		};
 
 		VkInstanceCreateInfo create_info{
@@ -697,7 +697,12 @@ VkResult GraphicsApi::create_swap_chain_framebuffers()
 	for (size_t i = 0; i < m_swap_chain_images.size(); ++i)
 	{
 		VkResult result = CreateImageView(
-			m_swap_chain_images[i], m_swap_chain_image_format, VK_IMAGE_ASPECT_COLOR_BIT, m_swap_chain_image_views[i]);
+			m_swap_chain_images[i],
+			VK_IMAGE_VIEW_TYPE_2D,
+			m_swap_chain_image_format,
+			VK_IMAGE_ASPECT_COLOR_BIT,
+			1 /*layers*/,
+			m_swap_chain_image_views[i]);
 		if (result != VK_SUCCESS)
 			return result;
 
@@ -891,15 +896,18 @@ VkResult GraphicsApi::CreateBufferMemory(
 VkResult GraphicsApi::Create2dImage(
 	uint32_t width,
 	uint32_t height,
+	uint32_t layers,
 	VkFormat format,
 	VkImageTiling tiling,
 	VkImageUsageFlags usage,
+	VkImageCreateFlags flags,
 	VkMemoryPropertyFlags properties,
 	VkImage & out_image,
 	VkDeviceMemory & out_image_memory) const
 {
 	VkImageCreateInfo image_info{
 		.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+		.flags = flags,
 		.imageType = VK_IMAGE_TYPE_2D,
 		.format = format,
 		.extent{
@@ -908,12 +916,12 @@ VkResult GraphicsApi::Create2dImage(
 			.depth = 1,
 		},
 		.mipLevels = 1,
-		.arrayLayers = 1,
+		.arrayLayers = layers,
 		.samples = VK_SAMPLE_COUNT_1_BIT,
 		.tiling = tiling,
 		.usage = usage,
 		.sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-		.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+		.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
 	};
 
 	VkResult result = vkCreateImage(m_logical_device, &image_info, nullptr, &out_image);
@@ -958,14 +966,16 @@ VkResult GraphicsApi::CreateImageMemory(
 
 VkResult GraphicsApi::CreateImageView(
 	VkImage image,
+	VkImageViewType view_type,
 	VkFormat format,
 	VkImageAspectFlags aspect_flags,
+	uint32_t layers,
 	VkImageView & out_image_view) const
 {
 	VkImageViewCreateInfo create_info{
 		.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
 		.image = image,
-		.viewType = VK_IMAGE_VIEW_TYPE_2D,
+		.viewType = view_type,
 		.format = format,
 		.components{
 			.r = VK_COMPONENT_SWIZZLE_IDENTITY,
@@ -978,7 +988,7 @@ VkResult GraphicsApi::CreateImageView(
 			.baseMipLevel = 0,
 			.levelCount = 1,
 			.baseArrayLayer = 0,
-			.layerCount = 1
+			.layerCount = layers
 		}
 	};
 
@@ -1041,9 +1051,9 @@ void GraphicsApi::CopyBuffer(
 		});
 }
 
-void GraphicsApi::CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) const
+void GraphicsApi::CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, uint32_t layers) const
 {
-	DoOneTimeCommand([buffer, image, width, height](VkCommandBuffer command_buffer)
+	DoOneTimeCommand([buffer, image, width, height, layers](VkCommandBuffer command_buffer)
 		{
 			VkBufferImageCopy region{
 				.bufferOffset = 0,
@@ -1053,7 +1063,7 @@ void GraphicsApi::CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t wid
 					.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 					.mipLevel = 0,
 					.baseArrayLayer = 0,
-					.layerCount = 1,
+					.layerCount = layers,
 				},
 				.imageOffset{ 0, 0, 0 },
 				.imageExtent{ width, height, 1 }
@@ -1070,9 +1080,9 @@ void GraphicsApi::CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t wid
 		});
 }
 
-void GraphicsApi::TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout) const
+void GraphicsApi::TransitionImageLayout(VkImage image, uint32_t layers, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout) const
 {
-	DoOneTimeCommand([image, format, old_layout, new_layout](VkCommandBuffer command_buffer)
+	DoOneTimeCommand([image, layers, format, old_layout, new_layout](VkCommandBuffer command_buffer)
 		{
 			VkImageMemoryBarrier barrier{
 				.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
@@ -1088,7 +1098,7 @@ void GraphicsApi::TransitionImageLayout(VkImage image, VkFormat format, VkImageL
 					.baseMipLevel = 0,
 					.levelCount = 1,
 					.baseArrayLayer = 0,
-					.layerCount = 1,
+					.layerCount = layers,
 				}
 			};
 
@@ -1151,22 +1161,31 @@ VkResult GraphicsApi::create_depth_resources(
 	VkResult result = Create2dImage(
 		m_swap_chain_extent.width,
 		m_swap_chain_extent.height,
+		1 /*layers*/,
 		m_depth_format,
 		VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+		0 /*flags*/,
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		out_image,
 		out_image_memory);
 	if (result != VK_SUCCESS)
 		return result;
 
-	result = CreateImageView(out_image, m_depth_format, VK_IMAGE_ASPECT_DEPTH_BIT, out_image_view);
+	result = CreateImageView(
+		out_image,
+		VK_IMAGE_VIEW_TYPE_2D,
+		m_depth_format,
+		VK_IMAGE_ASPECT_DEPTH_BIT,
+		1 /*layers*/,
+		out_image_view);
 	if (result != VK_SUCCESS)
 		return result;
 
 	// not technically required
 	TransitionImageLayout(
 		out_image,
+		1 /*layers*/,
 		m_depth_format,
 		VK_IMAGE_LAYOUT_UNDEFINED,
 		VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);

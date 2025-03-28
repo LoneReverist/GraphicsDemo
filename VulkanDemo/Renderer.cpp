@@ -30,41 +30,7 @@ void Renderer::Init(int width, int height)
 {
 	m_view_transform = glm::mat4(1.0);
 	OnViewportResized(width, height);
-
-//	glEnable(GL_DEPTH_TEST);
-//	glEnable(GL_CULL_FACE); // cull back facing facets. by default, front facing facets have counter-clockwise vertex windings.
 }
-
-//void Renderer::render_skybox() const
-//{
-//	std::shared_ptr<RenderObject> skybox = m_skybox.lock();
-//	if (!skybox)
-//		return;
-//
-//	int mesh_id = skybox->GetMeshId();
-//	int shader_id = skybox->GetShaderId();
-//	int tex_id = skybox->GetTextureId();
-//	if (mesh_id == -1 || shader_id == -1 || tex_id == -1)
-//		return;
-//
-//	glDepthMask(GL_FALSE);
-//
-//	ShaderProgram const & shader_program = m_shader_programs[shader_id];
-//	shader_program.Activate();
-//
-//	// vertex shader uniforms
-//	glm::mat4 view_transform = glm::mat4(glm::mat3(m_view_transform)); // drop the translation
-//	shader_program.SetUniform("view_transform", view_transform);
-//	shader_program.SetUniform("proj_transform", m_proj_transform);
-//
-//	Texture const & texture = m_textures[tex_id];
-//	texture.Bind();
-//
-//	Mesh const & mesh = m_meshes[mesh_id];
-//	mesh.Render(skybox->GetDrawWireframe());
-//
-//	glDepthMask(GL_TRUE);
-//}
 
 void Renderer::Render() const
 {
@@ -114,6 +80,20 @@ void Renderer::Render() const
 	vkCmdSetViewport(command_buffer, 0, 1, &viewport);
 	vkCmdSetScissor(command_buffer, 0, 1, &scissor);
 
+	if (m_skybox_container.m_pipeline)
+	{
+		GraphicsPipeline const & pipeline = *m_skybox_container.m_pipeline;
+		pipeline.Activate();
+		pipeline.UpdatePerFrameConstants();
+		std::shared_ptr<RenderObject> skybox = m_skybox_container.m_render_objects[0].lock();
+		if (skybox)
+		{
+			int mesh_id = skybox->GetMeshId();
+			if (mesh_id != -1)
+				m_meshes[mesh_id].Render(skybox->GetDrawWireframe());
+		}
+	}
+
 	for (PipelineContainer const & container : m_pipeline_containers)
 	{
 		GraphicsPipeline const & pipeline = *container.m_pipeline;
@@ -142,62 +122,6 @@ void Renderer::Render() const
 	result = vkEndCommandBuffer(command_buffer);
 	if (result != VK_SUCCESS)
 		throw std::runtime_error("failed to record command buffer!");
-
-//	glClearColor(m_clear_color.r, m_clear_color.g, m_clear_color.b, 1.0);
-//	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-//
-//	render_skybox();
-//
-//	for (std::weak_ptr<RenderObject> render_object : m_render_objects)
-//	{
-//		std::shared_ptr<RenderObject> obj = render_object.lock();
-//		if (!obj)
-//			continue;
-//
-//		int mesh_id = obj->GetMeshId();
-//		int shader_id = obj->GetShaderId();
-//		if (mesh_id == -1 || shader_id == -1)
-//			continue;
-//
-//		ShaderProgram const & shader_program = m_shader_programs[shader_id];
-//		shader_program.Activate();
-//
-//		// vertex shader uniforms
-//		shader_program.SetUniform("world_transform", obj->GetModelTransform());
-//		shader_program.SetUniform("view_transform", m_view_transform);
-//		shader_program.SetUniform("proj_transform", m_proj_transform);
-//
-//		// fragment shader uniforms
-//		shader_program.SetUniform("object_color", obj->GetColor());
-//
-//		shader_program.SetUniform("ambient_light_color", m_ambient_light_color);
-//		shader_program.SetUniform("pointlight_1.pos", m_pointlight_1.m_pos);
-//		shader_program.SetUniform("pointlight_1.color", m_pointlight_1.m_color);
-//		shader_program.SetUniform("pointlight_1.radius", m_pointlight_1.m_radius);
-//		shader_program.SetUniform("pointlight_2.pos", m_pointlight_2.m_pos);
-//		shader_program.SetUniform("pointlight_2.color", m_pointlight_2.m_color);
-//		shader_program.SetUniform("pointlight_2.radius", m_pointlight_2.m_radius);
-//		shader_program.SetUniform("pointlight_3.pos", m_pointlight_3.m_pos);
-//		shader_program.SetUniform("pointlight_3.color", m_pointlight_3.m_color);
-//		shader_program.SetUniform("pointlight_3.radius", m_pointlight_3.m_radius);
-//		shader_program.SetUniform("spotlight_1.pos", m_spotlight.m_pos);
-//		shader_program.SetUniform("spotlight_1.dir", m_spotlight.m_dir);
-//		shader_program.SetUniform("spotlight_1.color", m_spotlight.m_color);
-//		shader_program.SetUniform("spotlight_1.inner_radius", m_spotlight.m_inner_radius);
-//		shader_program.SetUniform("spotlight_1.outer_radius", m_spotlight.m_outer_radius);
-//
-//		shader_program.SetUniform("camera_pos_world", m_camera_pos);
-//
-//		int tex_id = obj->GetTextureId();
-//		if (tex_id != -1)
-//		{
-//			Texture const & texture = m_textures[tex_id];
-//			texture.Bind();
-//		}
-//
-//		Mesh const & mesh = m_meshes[mesh_id];
-//		mesh.Render(obj->GetDrawWireframe());
-//	}
 }
 
 void Renderer::OnViewportResized(int width, int height)
@@ -226,6 +150,12 @@ int Renderer::AddGraphicsPipeline(std::unique_ptr<GraphicsPipeline> pipeline)
 	return static_cast<int>(m_pipeline_containers.size() - 1);
 }
 
+void Renderer::SetSkybox(std::unique_ptr<GraphicsPipeline> pipeline, std::weak_ptr<RenderObject> skybox)
+{
+	m_skybox_container.m_pipeline = std::move(pipeline);
+	m_skybox_container.m_render_objects.push_back(skybox);
+}
+
 int Renderer::LoadMesh(std::filesystem::path const & mesh_path)
 {
 	std::vector<NormalVertex> vertices;
@@ -249,26 +179,6 @@ int Renderer::AddMesh(Mesh && mesh)
 	m_meshes.push_back(std::move(mesh));
 	return static_cast<int>(m_meshes.size() - 1);
 }
-
-//int Renderer::LoadTexture(std::filesystem::path const & tex_path)
-//{
-//	Texture texture;
-//	if (!texture.LoadTexture(tex_path))
-//		return -1;
-//
-//	m_textures.push_back(std::move(texture));
-//	return static_cast<int>(m_textures.size() - 1);
-//}
-//
-//int Renderer::LoadCubeMap(std::array<std::filesystem::path, 6> const & filepaths)
-//{
-//	Texture texture;
-//	if (!texture.LoadCubeMap(filepaths))
-//		return -1;
-//
-//	m_textures.push_back(std::move(texture));
-//	return static_cast<int>(m_textures.size() - 1);
-//}
 
 void Renderer::AddRenderObject(std::weak_ptr<RenderObject> render_object)
 {

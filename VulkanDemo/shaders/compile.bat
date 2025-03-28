@@ -4,4 +4,6 @@ C:\VulkanSDK\1.4.304.0\Bin\glslc.exe color.vert -o color_vert.spv
 C:\VulkanSDK\1.4.304.0\Bin\glslc.exe color.frag -o color_frag.spv
 C:\VulkanSDK\1.4.304.0\Bin\glslc.exe texture.vert -o texture_vert.spv
 C:\VulkanSDK\1.4.304.0\Bin\glslc.exe texture.frag -o texture_frag.spv
+C:\VulkanSDK\1.4.304.0\Bin\glslc.exe skybox.vert -o skybox_vert.spv
+C:\VulkanSDK\1.4.304.0\Bin\glslc.exe skybox.frag -o skybox_frag.spv
 pause

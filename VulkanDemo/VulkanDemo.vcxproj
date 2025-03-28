@@ -119,6 +119,10 @@
     <None Include="shaders\light_source.vert" />
     <None Include="shaders\light_source_frag.spv" />
     <None Include="shaders\light_source_vert.spv" />
+    <None Include="shaders\skybox.frag" />
+    <None Include="shaders\skybox.vert" />
+    <None Include="shaders\skybox_frag.spv" />
+    <None Include="shaders\skybox_vert.spv" />
     <None Include="shaders\texture.frag" />
     <None Include="shaders\texture.vert" />
     <None Include="shaders\texture_frag.spv" />

@@ -2,6 +2,7 @@
 
 module;
 
+#include <algorithm>
 #include <array>
 #include <iostream>
 
@@ -84,6 +85,102 @@ namespace
 
 		return sampler;
 	}
+
+	VkResult load_image_into_buffer(
+		GraphicsApi const & graphics_api,
+		std::filesystem::path const & filepath,
+		VkBuffer & out_buffer,
+		VkDeviceMemory & out_buffer_memory,
+		VkExtent2D & out_extents)
+	{
+		ImageData image{ filepath };
+		if (!image.IsValid())
+		{
+			std::cout << "load_image_into_buffer() Failed to load image: " << filepath << std::endl;
+			return VK_ERROR_UNKNOWN;
+		}
+
+		out_extents = VkExtent2D{
+			.width = static_cast<uint32_t>(image.GetWidth()),
+			.height = static_cast<uint32_t>(image.GetHeight())
+		};
+
+		VkDeviceSize buffer_size = static_cast<VkDeviceSize>(image.GetSize());
+
+		VkResult result = graphics_api.CreateBuffer(
+			buffer_size,
+			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			out_buffer,
+			out_buffer_memory);
+		if (result != VK_SUCCESS)
+		{
+			std::cout << "load_image_into_buffer() Failed to create staging buffer: " << filepath << std::endl;
+			return result;
+		}
+
+		VkDevice device = graphics_api.GetDevice();
+
+		void * data = nullptr;
+		vkMapMemory(device, out_buffer_memory, 0, buffer_size, 0, &data);
+		memcpy(data, image.GetData(), image.GetSize());
+		vkUnmapMemory(device, out_buffer_memory);
+
+		return VK_SUCCESS; // image goes out of scope and frees memory
+	}
+
+	VkResult load_images_into_buffer(
+		GraphicsApi const & graphics_api,
+		std::array<std::filesystem::path, 6> const & filepaths,
+		VkBuffer & out_buffer,
+		VkDeviceMemory & out_buffer_memory,
+		VkExtent2D & out_extents)
+	{
+		std::array<ImageData, 6> images;
+		for (size_t i = 0; i < filepaths.size(); ++i)
+		{
+			images[i].LoadImage(filepaths[i]);
+
+			if (!images[i].IsValid())
+			{
+				std::cout << "load_images_into_buffer() Failed to load image: " << filepaths[i] << std::endl;
+				return VK_ERROR_UNKNOWN;
+			}
+		}
+
+		out_extents = VkExtent2D{
+			.width = static_cast<uint32_t>(images[0].GetWidth()),
+			.height = static_cast<uint32_t>(images[0].GetHeight())
+		};
+
+		VkDeviceSize buffer_size = 0;
+		for (ImageData const & image : images)
+			buffer_size += static_cast<VkDeviceSize>(image.GetSize());
+
+		VkResult result = graphics_api.CreateBuffer(
+			buffer_size,
+			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			out_buffer,
+			out_buffer_memory);
+		if (result != VK_SUCCESS)
+		{
+			std::cout << "load_images_into_buffer() Failed to create staging buffer" << std::endl;
+			return result;
+		}
+
+		VkDevice device = graphics_api.GetDevice();
+
+		void * data = nullptr;
+		vkMapMemory(device, out_buffer_memory, 0, buffer_size, 0, &data);
+		for (ImageData const & image : images)
+		{
+			memcpy(data, image.GetData(), image.GetSize());
+			data = static_cast<unsigned char *>(data) + image.GetSize();
+		}
+		vkUnmapMemory(device, out_buffer_memory);
+		return VK_SUCCESS;
+	}
 }
 
 Texture::Texture(GraphicsApi const & graphics_api, std::filesystem::path const & filepath)
@@ -93,65 +190,54 @@ Texture::Texture(GraphicsApi const & graphics_api, std::filesystem::path const &
 
 	VkBuffer staging_buffer = VK_NULL_HANDLE;
 	VkDeviceMemory staging_buffer_memory = VK_NULL_HANDLE;
-	uint32_t width = 0;
-	uint32_t height = 0;
-	{
-		ImageData image{ filepath };
-		if (!image.IsValid())
-			return;
+	VkExtent2D extents;
+	VkResult result = load_image_into_buffer(graphics_api, filepath, staging_buffer, staging_buffer_memory, extents);
+	if (result != VK_SUCCESS)
+		return;
 
-		width = static_cast<uint32_t>(image.GetWidth());
-		height = static_cast<uint32_t>(image.GetHeight());
-
-		VkResult result = graphics_api.CreateBuffer(static_cast<VkDeviceSize>(image.GetSize()),
-			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-			staging_buffer,
-			staging_buffer_memory);
-		if (result != VK_SUCCESS)
-		{
-			std::cout << "Texture::LoadTexture() Failed to create staging buffer: " << filepath << std::endl;
-			return;
-		}
-
-		void * data = nullptr;
-		vkMapMemory(device, staging_buffer_memory, 0, static_cast<VkDeviceSize>(image.GetSize()), 0, &data);
-		memcpy(data, image.GetData(), image.GetSize());
-		vkUnmapMemory(device, staging_buffer_memory);
-	} // image goes out of scope and frees memory
-
-	VkResult result = graphics_api.Create2dImage(
-		width,
-		height,
+	result = graphics_api.Create2dImage(
+		extents.width,
+		extents.height,
+		1 /*layers*/,
 		VK_FORMAT_R8G8B8A8_SRGB,
 		VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+		0 /*flags*/,
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		m_image,
 		m_image_memory);
 	if (result != VK_SUCCESS)
 	{
-		std::cout << "Texture::LoadTexture() Failed to create image: " << filepath << std::endl;
+		std::cout << "Texture() Failed to create image: " << filepath << std::endl;
 		return;
 	}
 
 	m_graphics_api.TransitionImageLayout(
 		m_image,
+		1 /*layers*/,
 		VK_FORMAT_R8G8B8A8_SRGB,
 		VK_IMAGE_LAYOUT_UNDEFINED,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 	m_graphics_api.CopyBufferToImage(
 		staging_buffer,
 		m_image,
-		static_cast<uint32_t>(width),
-		static_cast<uint32_t>(height));
+		extents.width,
+		extents.height,
+		1 /*layers*/);
 	m_graphics_api.TransitionImageLayout(
 		m_image,
+		1 /*layers*/,
 		VK_FORMAT_R8G8B8A8_SRGB,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-	result = m_graphics_api.CreateImageView(m_image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, m_image_view);
+	result = m_graphics_api.CreateImageView(
+		m_image,
+		VK_IMAGE_VIEW_TYPE_2D,
+		VK_FORMAT_R8G8B8A8_SRGB,
+		VK_IMAGE_ASPECT_COLOR_BIT,
+		1 /*layers*/,
+		m_image_view);
 	if (result != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create vulkan image view for texture");
@@ -164,11 +250,72 @@ Texture::Texture(GraphicsApi const & graphics_api, std::filesystem::path const &
 	vkFreeMemory(device, staging_buffer_memory, nullptr);
 }
 
-bool Texture::IsValid() const
+Texture::Texture(GraphicsApi const & graphics_api, std::array<std::filesystem::path, 6> const & filepaths)
+	: m_graphics_api(graphics_api)
 {
-	return m_image != VK_NULL_HANDLE
-		&& m_image_memory != VK_NULL_HANDLE
-		&& m_image_view != VK_NULL_HANDLE;
+	VkBuffer staging_buffer = VK_NULL_HANDLE;
+	VkDeviceMemory staging_buffer_memory = VK_NULL_HANDLE;
+	VkExtent2D extents;
+	VkResult result = load_images_into_buffer(graphics_api, filepaths, staging_buffer, staging_buffer_memory, extents);
+	if (result != VK_SUCCESS)
+		return;
+
+	result = graphics_api.Create2dImage(
+		extents.width,
+		extents.height,
+		6 /*layers*/,
+		VK_FORMAT_R8G8B8A8_SRGB,
+		VK_IMAGE_TILING_OPTIMAL,
+		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+		VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		m_image,
+		m_image_memory);
+	if (result != VK_SUCCESS)
+	{
+		std::cout << "Texture() Failed to create cubemap: " << filepaths[0] << std::endl;
+		return;
+	}
+
+	m_graphics_api.TransitionImageLayout(
+		m_image,
+		6 /*layers*/,
+		VK_FORMAT_R8G8B8A8_SRGB,
+		VK_IMAGE_LAYOUT_UNDEFINED,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+	m_graphics_api.CopyBufferToImage(
+		staging_buffer,
+		m_image,
+		extents.width,
+		extents.height,
+		6 /*layers*/);
+
+	m_graphics_api.TransitionImageLayout(
+		m_image,
+		6 /*layers*/,
+		VK_FORMAT_R8G8B8A8_SRGB,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+	result = m_graphics_api.CreateImageView(
+		m_image,
+		VK_IMAGE_VIEW_TYPE_CUBE,
+		VK_FORMAT_R8G8B8A8_SRGB,
+		VK_IMAGE_ASPECT_COLOR_BIT,
+		6 /*layers*/,
+		m_image_view);
+	if (result != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to create vulkan image view for texture");
+		return;
+	}
+
+	m_sampler = create_texture_sampler(m_graphics_api);
+
+	VkDevice device = m_graphics_api.GetDevice();
+	vkDestroyBuffer(device, staging_buffer, nullptr);
+	vkFreeMemory(device, staging_buffer_memory, nullptr);
 }
 
 //bool Texture::LoadCubeMap(std::array<std::filesystem::path, 6> const & filepaths)
@@ -210,7 +357,9 @@ Texture::~Texture()
 	vkFreeMemory(device, m_image_memory, nullptr);
 }
 
-void Texture::Bind() const
+bool Texture::IsValid() const
 {
-	//glBindTexture(m_type, m_tex_id);
+	return m_image != VK_NULL_HANDLE
+		&& m_image_memory != VK_NULL_HANDLE
+		&& m_image_view != VK_NULL_HANDLE;
 }

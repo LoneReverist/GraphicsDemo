@@ -54,11 +54,9 @@ public:
 
 	int LoadMesh(std::filesystem::path const & mesh_path);
 	int AddMesh(Mesh && mesh_var);
-//	int LoadTexture(std::filesystem::path const & tex_path);
-//	int LoadCubeMap(std::array<std::filesystem::path, 6> const & filepaths);
 
 	void AddRenderObject(std::weak_ptr<RenderObject> render_object);
-//	void SetSkybox(std::weak_ptr<RenderObject> skybox) { m_skybox = skybox; }
+	void SetSkybox(std::unique_ptr<GraphicsPipeline> pipeline, std::weak_ptr<RenderObject> skybox);
 
 	void SetCamera(glm::vec3 const & pos, glm::vec3 const & dir);
 
@@ -82,17 +80,12 @@ public:
 	glm::vec3 const & GetCameraPos() const { return m_camera_pos; }
 
 private:
-//	void render_skybox() const;
-
-private:
 	GraphicsApi const & m_graphics_api;
 
+	PipelineContainer m_skybox_container;
 	std::vector<PipelineContainer> m_pipeline_containers;
 
 	std::vector<Mesh> m_meshes; // TODO: need asset manager
-//	std::vector<Texture> m_textures;
-
-//	std::weak_ptr<RenderObject> m_skybox;
 
 	glm::vec3 m_camera_pos; // TODO: need camera class
 

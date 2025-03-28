@@ -42,6 +42,7 @@ public:
 		std::vector<VkDeviceSize> vs_uniform_sizes,
 		std::vector<VkDeviceSize> fs_uniform_sizes,
 		Texture const * texture,
+		bool enable_depth_test,
 		PerFrameConstantsCallback per_frame_constants_callback,
 		PerObjectConstantsCallback per_object_constants_callback);
 	~GraphicsPipeline();

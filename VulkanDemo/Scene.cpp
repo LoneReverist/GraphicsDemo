@@ -96,34 +96,34 @@ namespace
 		return Mesh{ graphics_api, std::move(verts), std::move(indices) };
 	}
 
-//	Mesh create_skybox_mesh()
-//	{
-//		std::vector<PositionVertex> verts {
-//			{ { -1.0f,  1.0f, -1.0f } },
-//			{ { -1.0f, -1.0f, -1.0f } },
-//			{ {  1.0f, -1.0f, -1.0f } },
-//			{ {  1.0f,  1.0f, -1.0f } },
-//			{ { -1.0f,  1.0f,  1.0f } },
-//			{ { -1.0f, -1.0f,  1.0f } },
-//			{ {  1.0f, -1.0f,  1.0f } },
-//			{ {  1.0f,  1.0f,  1.0f } } };
-//
-//		std::vector<Mesh::index_t> indices{
-//			0, 1, 2,
-//			2, 3, 0,
-//			5, 1, 0,
-//			0, 4, 5,
-//			2, 6, 7,
-//			7, 3, 2,
-//			5, 4, 7,
-//			7, 6, 5,
-//			0, 3, 7,
-//			7, 4, 0,
-//			1, 5, 2,
-//			2, 5, 6 };
-//
-//		return Mesh{ std::move(verts), std::move(indices) };
-//	}
+	Mesh create_skybox_mesh(GraphicsApi const & graphics_api)
+	{
+		std::vector<PositionVertex> verts {
+			{ { -1.0f,  1.0f, -1.0f } },
+			{ { -1.0f, -1.0f, -1.0f } },
+			{ {  1.0f, -1.0f, -1.0f } },
+			{ {  1.0f,  1.0f, -1.0f } },
+			{ { -1.0f,  1.0f,  1.0f } },
+			{ { -1.0f, -1.0f,  1.0f } },
+			{ {  1.0f, -1.0f,  1.0f } },
+			{ {  1.0f,  1.0f,  1.0f } } };
+
+		std::vector<Mesh::index_t> indices{
+			0, 1, 2,
+			2, 3, 0,
+			5, 1, 0,
+			0, 4, 5,
+			2, 6, 7,
+			7, 3, 2,
+			5, 4, 7,
+			7, 6, 5,
+			0, 3, 7,
+			7, 4, 0,
+			1, 5, 2,
+			2, 5, 6 };
+
+		return Mesh{ graphics_api, std::move(verts), std::move(indices) };
+	}
 
 	std::unique_ptr<GraphicsPipeline> create_texture_pipeline(
 		Renderer const & renderer,
@@ -183,6 +183,39 @@ namespace
 						.model = obj.GetModelTransform()
 					},
 					std::nullopt);
+			});
+
+		return builder.CreatePipeline();
+	}
+
+	std::unique_ptr<GraphicsPipeline> create_skybox_pipeline(
+		Renderer const & renderer,
+		std::filesystem::path const & shaders_path,
+		Texture const & skybox)
+	{
+		struct ViewProjUniform
+		{
+			alignas(16) glm::mat4 view;
+			alignas(16) glm::mat4 proj;
+		};
+
+		PipelineBuilder builder{ renderer.GetGraphicsApi() };
+		builder.LoadShaders(
+			shaders_path / "skybox_vert.spv",
+			shaders_path / "skybox_frag.spv");
+		builder.SetVertexType<PositionVertex>();
+		builder.SetVSUniformTypes<ViewProjUniform>();
+		builder.SetTexture(skybox);
+		builder.EnableDepthTest(false);
+
+		builder.SetPerFrameConstantsCallback(
+			[&renderer](GraphicsPipeline const & pipeline)
+			{
+				pipeline.SetUniform(0 /*binding*/,
+					ViewProjUniform{
+						.view = renderer.GetViewTransform(),
+						.proj = renderer.GetProjTransform()
+					});
 			});
 
 		return builder.CreatePipeline();
@@ -314,36 +347,34 @@ void Scene::Init()
 	const std::filesystem::path resources_path = std::filesystem::path("..") / "resources";
 	const std::filesystem::path shaders_path = "shaders";
 
-	m_ground_tex = std::make_unique<Texture>(m_renderer.GetGraphicsApi(), resources_path / "textures" / "skybox" / "top.jpg");
+	m_ground_tex = std::make_unique<Texture>(m_renderer.GetGraphicsApi(),
+		resources_path / "textures" / "skybox" / "top.jpg");
+	m_skybox_tex = std::make_unique<Texture>(m_renderer.GetGraphicsApi(), std::array<std::filesystem::path, 6>{
+		resources_path / "textures" / "skybox" / "right.jpg",
+		resources_path / "textures" / "skybox" / "left.jpg",
+		resources_path / "textures" / "skybox" / "top.jpg",
+		resources_path / "textures" / "skybox" / "bottom.jpg",
+		resources_path / "textures" / "skybox" / "front.jpg",
+		resources_path / "textures" / "skybox" / "back.jpg"
+	});
 
-	const int color_shader_id = m_renderer.AddGraphicsPipeline(
-		std::move(create_color_pipeline(m_renderer, shaders_path)));
+	//const int color_shader_id = m_renderer.AddGraphicsPipeline(
+	//	std::move(create_color_pipeline(m_renderer, shaders_path)));
 	const int texture_shader_id = m_renderer.AddGraphicsPipeline(
 		std::move(create_texture_pipeline(m_renderer, shaders_path, *m_ground_tex)));
 	const int light_source_pipeline_id = m_renderer.AddGraphicsPipeline(
 		std::move(create_light_source_pipeline(m_renderer, shaders_path)));
-//	const int skybox_shader_id = m_renderer.LoadShaderProgram(
-//		shaders_path / "skybox_vs.txt",
-//		shaders_path / "skybox_fs.txt");
 //	const int reflection_shader_id = m_renderer.LoadShaderProgram(
 //		shaders_path / "reflection_vs.txt",
 //		shaders_path / "reflection_fs.txt");
+	std::unique_ptr<GraphicsPipeline> skybox_pipeline = create_skybox_pipeline(m_renderer, shaders_path, *m_skybox_tex);
 
 //	const int sword_mesh_id = m_renderer.LoadMesh(resources_path / "objects" / "skullsword.obj");
 	const int red_gem_mesh_id = m_renderer.LoadMesh(resources_path / "objects" / "redgem.obj");
 	const int green_gem_mesh_id = m_renderer.LoadMesh(resources_path / "objects" / "greengem.obj");
 	const int blue_gem_mesh_id = m_renderer.LoadMesh(resources_path / "objects" / "bluegem.obj");
 	const int ground_mesh_id = m_renderer.AddMesh(std::move(create_ground_mesh(m_renderer.GetGraphicsApi())));
-//	const int skybox_mesh_id = m_renderer.AddMesh(std::move(create_skybox_mesh()));
-
-//	const int ground_tex_id = m_renderer.LoadTexture(resources_path / "textures" / "skybox" / "top.jpg");
-//	const int skybox_tex_id = m_renderer.LoadCubeMap(std::array<std::filesystem::path, 6> {
-//		resources_path / "textures" / "skybox" / "right.jpg",
-//		resources_path / "textures" / "skybox" / "left.jpg",
-//		resources_path / "textures" / "skybox" / "top.jpg",
-//		resources_path / "textures" / "skybox" / "bottom.jpg",
-//		resources_path / "textures" / "skybox" / "front.jpg",
-//		resources_path / "textures" / "skybox" / "back.jpg" });
+	const int skybox_mesh_id = m_renderer.AddMesh(std::move(create_skybox_mesh(m_renderer.GetGraphicsApi())));
 
 //	m_sword0 = create_object(sword_mesh_id, reflection_shader_id, skybox_tex_id);
 //	m_sword1 = create_object(sword_mesh_id, reflection_shader_id, skybox_tex_id);
@@ -352,9 +383,7 @@ void Scene::Init()
 	m_blue_gem = create_object(blue_gem_mesh_id, light_source_pipeline_id);
 	//m_ground = create_object(ground_mesh_id, color_shader_id);
 	m_ground = create_object(ground_mesh_id, texture_shader_id);
-
-//	m_skybox = std::make_shared<RenderObject>(skybox_mesh_id, skybox_shader_id, skybox_tex_id);
-//	m_renderer.SetSkybox(m_skybox);
+	m_skybox = std::make_shared<RenderObject>(skybox_mesh_id, -1);
 
 //	m_sword0->SetColor({ 0.6, 0.6, 0.6 });
 //	m_sword1->SetColor({ 0.6, 0.6, 0.6 });
@@ -367,6 +396,8 @@ void Scene::Init()
 	init_gem_transform(0, m_red_gem->ModifyModelTransform());
 	init_gem_transform(1, m_green_gem->ModifyModelTransform());
 	init_gem_transform(2, m_blue_gem->ModifyModelTransform());
+
+	m_renderer.SetSkybox(std::move(skybox_pipeline), m_skybox);
 
 	m_renderer.SetAmbientLightColor(glm::vec3(0.5, 0.5, 0.5));
 

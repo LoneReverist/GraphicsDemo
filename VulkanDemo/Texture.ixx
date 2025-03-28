@@ -2,6 +2,7 @@
 
 module;
 
+#include <array>
 #include <filesystem>
 
 #include <vulkan/vulkan.h>
@@ -14,13 +15,10 @@ export class Texture
 {
 public:
 	Texture(GraphicsApi const & graphics_api, std::filesystem::path const & filepath);
+	Texture(GraphicsApi const & graphics_api, std::array<std::filesystem::path, 6> const & filepaths); // cubemap
 	~Texture();
 
 	bool IsValid() const;
-
-	//bool LoadCubeMap(std::array<std::filesystem::path, 6> const & filepaths);
-
-	void Bind() const;
 
 	VkImageView GetImageView() const { return m_image_view; }
 	VkSampler GetSampler() const { return m_sampler; }
@@ -32,7 +30,4 @@ private:
 	VkDeviceMemory m_image_memory{ VK_NULL_HANDLE };
 	VkImageView m_image_view{ VK_NULL_HANDLE };
 	VkSampler m_sampler{ VK_NULL_HANDLE };
-
-	int m_type{ -1 };
-	unsigned int m_tex_id{ 0 };
 };

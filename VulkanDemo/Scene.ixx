@@ -30,6 +30,7 @@ private:
 	Renderer & m_renderer;
 
 	std::unique_ptr<Texture> m_ground_tex;
+	std::unique_ptr<Texture> m_skybox_tex;
 
 	//std::shared_ptr<RenderObject> m_sword0;
 	//std::shared_ptr<RenderObject> m_sword1;
@@ -37,7 +38,7 @@ private:
 	std::shared_ptr<RenderObject> m_green_gem;
 	std::shared_ptr<RenderObject> m_blue_gem;
 	std::shared_ptr<RenderObject> m_ground;
-	//std::shared_ptr<RenderObject> m_skybox;
+	std::shared_ptr<RenderObject> m_skybox;
 
 	float m_timer{ 0.0 };
 

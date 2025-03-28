@@ -81,9 +81,11 @@ public:
 	VkResult Create2dImage(
 		uint32_t width,
 		uint32_t height,
+		uint32_t layers,
 		VkFormat format,
 		VkImageTiling tiling,
 		VkImageUsageFlags usage,
+		VkImageCreateFlags flags,
 		VkMemoryPropertyFlags properties,
 		VkImage & out_image,
 		VkDeviceMemory & out_image_memory) const;
@@ -95,14 +97,16 @@ public:
 
 	VkResult CreateImageView(
 		VkImage image,
+		VkImageViewType view_type,
 		VkFormat format,
 		VkImageAspectFlags aspect_flags,
+		uint32_t layers,
 		VkImageView & out_image_view) const;
 
 	void DoOneTimeCommand(std::function<void(VkCommandBuffer)> const & command_fn) const;
 	void CopyBuffer(VkBuffer src_buffer,VkBuffer dst_buffer,VkDeviceSize size) const;
-	void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) const;
-	void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout) const;
+	void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, uint32_t layers) const;
+	void TransitionImageLayout(VkImage image, uint32_t layers, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout) const;
 
 	VkDevice GetDevice() const { return m_logical_device; }
 	VkFormat GetSwapChainImageFormat() const { return m_swap_chain_image_format; }
