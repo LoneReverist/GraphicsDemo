@@ -112,25 +112,15 @@
     <None Include="packages.config" />
     <None Include="shaders\color.frag" />
     <None Include="shaders\color.vert" />
-    <None Include="shaders\color_frag.spv" />
-    <None Include="shaders\color_vert.spv" />
     <None Include="shaders\compile.bat" />
     <None Include="shaders\light_source.frag" />
     <None Include="shaders\light_source.vert" />
-    <None Include="shaders\light_source_frag.spv" />
-    <None Include="shaders\light_source_vert.spv" />
     <None Include="shaders\reflection.frag" />
     <None Include="shaders\reflection.vert" />
-    <None Include="shaders\reflection_frag.spv" />
-    <None Include="shaders\reflection_vert.spv" />
     <None Include="shaders\skybox.frag" />
     <None Include="shaders\skybox.vert" />
-    <None Include="shaders\skybox_frag.spv" />
-    <None Include="shaders\skybox_vert.spv" />
     <None Include="shaders\texture.frag" />
     <None Include="shaders\texture.vert" />
-    <None Include="shaders\texture_frag.spv" />
-    <None Include="shaders\texture_vert.spv" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\stbi\include\stb_image.h" />
