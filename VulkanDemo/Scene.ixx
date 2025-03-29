@@ -32,8 +32,8 @@ private:
 	std::unique_ptr<Texture> m_ground_tex;
 	std::unique_ptr<Texture> m_skybox_tex;
 
-	//std::shared_ptr<RenderObject> m_sword0;
-	//std::shared_ptr<RenderObject> m_sword1;
+	std::shared_ptr<RenderObject> m_sword0;
+	std::shared_ptr<RenderObject> m_sword1;
 	std::shared_ptr<RenderObject> m_red_gem;
 	std::shared_ptr<RenderObject> m_green_gem;
 	std::shared_ptr<RenderObject> m_blue_gem;

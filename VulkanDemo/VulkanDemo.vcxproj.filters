@@ -132,6 +132,18 @@
     <None Include="shaders\skybox_vert.spv">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="shaders\reflection.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\reflection.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\reflection_frag.spv">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\reflection_vert.spv">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\stbi\include\stb_image.h">
