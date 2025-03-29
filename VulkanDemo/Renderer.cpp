@@ -80,20 +80,6 @@ void Renderer::Render() const
 	vkCmdSetViewport(command_buffer, 0, 1, &viewport);
 	vkCmdSetScissor(command_buffer, 0, 1, &scissor);
 
-	if (m_skybox_container.m_pipeline)
-	{
-		GraphicsPipeline const & pipeline = *m_skybox_container.m_pipeline;
-		pipeline.Activate();
-		pipeline.UpdatePerFrameConstants();
-		std::shared_ptr<RenderObject> skybox = m_skybox_container.m_render_objects[0].lock();
-		if (skybox)
-		{
-			int mesh_id = skybox->GetMeshId();
-			if (mesh_id != -1)
-				m_meshes[mesh_id].Render(skybox->GetDrawWireframe());
-		}
-	}
-
 	for (PipelineContainer const & container : m_pipeline_containers)
 	{
 		GraphicsPipeline const & pipeline = *container.m_pipeline;
@@ -148,12 +134,6 @@ int Renderer::AddGraphicsPipeline(std::unique_ptr<GraphicsPipeline> pipeline)
 		});
 
 	return static_cast<int>(m_pipeline_containers.size() - 1);
-}
-
-void Renderer::SetSkybox(std::unique_ptr<GraphicsPipeline> pipeline, std::weak_ptr<RenderObject> skybox)
-{
-	m_skybox_container.m_pipeline = std::move(pipeline);
-	m_skybox_container.m_render_objects.push_back(skybox);
 }
 
 int Renderer::LoadMesh(std::filesystem::path const & mesh_path)

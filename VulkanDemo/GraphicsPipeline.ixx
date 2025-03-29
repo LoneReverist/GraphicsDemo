@@ -27,6 +27,25 @@ struct DescriptorSet
 	std::vector<UniformBuffer> m_uniform_buffers;
 };
 
+export enum class DepthCompareOp
+{
+	NEVER = VK_COMPARE_OP_NEVER,
+	LESS = VK_COMPARE_OP_LESS,
+	EQUAL = VK_COMPARE_OP_EQUAL,
+	LESS_OR_EQUAL = VK_COMPARE_OP_LESS_OR_EQUAL,
+	GREATER = VK_COMPARE_OP_GREATER,
+	NOT_EQUAL = VK_COMPARE_OP_NOT_EQUAL,
+	GREATER_OR_EQUAL = VK_COMPARE_OP_GREATER_OR_EQUAL,
+	ALWAYS = VK_COMPARE_OP_ALWAYS
+};
+
+export struct DepthTestOptions
+{
+	bool m_enable_depth_test{ true };
+	bool m_enable_depth_write{ true };
+	DepthCompareOp m_depth_compare_op{ DepthCompareOp::LESS };
+};
+
 export class GraphicsPipeline
 {
 public:
@@ -42,7 +61,7 @@ public:
 		std::vector<VkDeviceSize> vs_uniform_sizes,
 		std::vector<VkDeviceSize> fs_uniform_sizes,
 		Texture const * texture,
-		bool enable_depth_test,
+		DepthTestOptions const & depth_options,
 		PerFrameConstantsCallback per_frame_constants_callback,
 		PerObjectConstantsCallback per_object_constants_callback);
 	~GraphicsPipeline();

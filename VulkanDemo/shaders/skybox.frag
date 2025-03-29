@@ -8,5 +8,6 @@ layout(location = 0) out vec4 out_frag_color;
 
 void main()
 {
+	gl_FragDepth = 1.0;
 	out_frag_color = texture(cube_map_sampler, in_tex_coord);
 }

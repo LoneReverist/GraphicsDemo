@@ -277,7 +277,11 @@ namespace
 		builder.SetVertexType<PositionVertex>();
 		builder.SetVSUniformTypes<ViewProjUniform>();
 		builder.SetTexture(skybox);
-		builder.EnableDepthTest(false);
+		builder.SetDepthTestOptions(DepthTestOptions{
+			.m_enable_depth_test = true,
+			.m_enable_depth_write = false,
+			.m_depth_compare_op = DepthCompareOp::EQUAL
+			});
 
 		builder.SetPerFrameConstantsCallback(
 			[&renderer](GraphicsPipeline const & pipeline)
@@ -437,7 +441,8 @@ void Scene::Init()
 		std::move(create_light_source_pipeline(m_renderer, shaders_path)));
 	const int reflection_shader_id = m_renderer.AddGraphicsPipeline(
 		std::move(create_reflection_pipeline(m_renderer, shaders_path, *m_skybox_tex)));
-	std::unique_ptr<GraphicsPipeline> skybox_pipeline = create_skybox_pipeline(m_renderer, shaders_path, *m_skybox_tex);
+	const int skybox_pipeline_id = m_renderer.AddGraphicsPipeline(
+		std::move(create_skybox_pipeline(m_renderer, shaders_path, *m_skybox_tex)));
 
 	const int sword_mesh_id = m_renderer.LoadMesh(resources_path / "objects" / "skullsword.obj");
 	const int red_gem_mesh_id = m_renderer.LoadMesh(resources_path / "objects" / "redgem.obj");
@@ -453,7 +458,7 @@ void Scene::Init()
 	m_blue_gem = create_object(blue_gem_mesh_id, light_source_pipeline_id);
 	//m_ground = create_object(ground_mesh_id, color_shader_id);
 	m_ground = create_object(ground_mesh_id, texture_shader_id);
-	m_skybox = std::make_shared<RenderObject>(skybox_mesh_id, -1);
+	m_skybox = create_object(skybox_mesh_id, skybox_pipeline_id);
 
 	//m_sword0->SetColor({ 0.6, 0.6, 0.6 });
 	//m_sword1->SetColor({ 0.6, 0.6, 0.6 });
@@ -466,8 +471,6 @@ void Scene::Init()
 	init_gem_transform(0, m_red_gem->ModifyModelTransform());
 	init_gem_transform(1, m_green_gem->ModifyModelTransform());
 	init_gem_transform(2, m_blue_gem->ModifyModelTransform());
-
-	m_renderer.SetSkybox(std::move(skybox_pipeline), m_skybox);
 
 	m_renderer.SetAmbientLightColor(glm::vec3(0.5, 0.5, 0.5));
 

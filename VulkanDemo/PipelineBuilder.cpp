@@ -104,7 +104,7 @@ std::unique_ptr<GraphicsPipeline> PipelineBuilder::CreatePipeline() const
 		m_vs_uniform_sizes,
 		m_fs_uniform_sizes,
 		m_texture,
-		m_enable_depth_test,
+		m_depth_test_options,
 		m_per_frame_constants_callback,
 		m_per_object_constants_callback);
 }

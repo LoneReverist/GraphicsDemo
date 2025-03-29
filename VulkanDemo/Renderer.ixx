@@ -56,7 +56,6 @@ public:
 	int AddMesh(Mesh && mesh_var);
 
 	void AddRenderObject(std::weak_ptr<RenderObject> render_object);
-	void SetSkybox(std::unique_ptr<GraphicsPipeline> pipeline, std::weak_ptr<RenderObject> skybox);
 
 	void SetCamera(glm::vec3 const & pos, glm::vec3 const & dir);
 
@@ -82,7 +81,6 @@ public:
 private:
 	GraphicsApi const & m_graphics_api;
 
-	PipelineContainer m_skybox_container;
 	std::vector<PipelineContainer> m_pipeline_containers;
 
 	std::vector<Mesh> m_meshes; // TODO: need asset manager

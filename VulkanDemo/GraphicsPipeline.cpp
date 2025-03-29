@@ -41,7 +41,7 @@ namespace
 		std::vector<VkPipelineShaderStageCreateInfo> const & shader_stages,
 		VkVertexInputBindingDescription const & binding_desc,
 		std::vector<VkVertexInputAttributeDescription> const & attrib_descs,
-		bool enable_depth_test)
+		DepthTestOptions const & depth_options)
 	{
 		std::vector<VkDynamicState> dynamic_states = {
 			VK_DYNAMIC_STATE_VIEWPORT,
@@ -127,9 +127,9 @@ namespace
 
 		VkPipelineDepthStencilStateCreateInfo depth_stencil{
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
-			.depthTestEnable = enable_depth_test ? VK_TRUE : VK_FALSE,
-			.depthWriteEnable = enable_depth_test ? VK_TRUE : VK_FALSE,
-			.depthCompareOp = VK_COMPARE_OP_LESS,
+			.depthTestEnable = depth_options.m_enable_depth_test ? VK_TRUE : VK_FALSE,
+			.depthWriteEnable = depth_options.m_enable_depth_write ? VK_TRUE : VK_FALSE,
+			.depthCompareOp = static_cast<VkCompareOp>(depth_options.m_depth_compare_op),
 			.depthBoundsTestEnable = VK_FALSE,
 			.stencilTestEnable = VK_FALSE
 		};
@@ -378,7 +378,7 @@ GraphicsPipeline::GraphicsPipeline(GraphicsApi const & graphics_api,
 	std::vector<VkDeviceSize> vs_uniform_sizes,
 	std::vector<VkDeviceSize> fs_uniform_sizes,
 	Texture const * texture,
-	bool enable_depth_test,
+	DepthTestOptions const & depth_options,
 	PerFrameConstantsCallback per_frame_constants_callback,
 	PerObjectConstantsCallback per_object_constants_callback)
 	: m_graphics_api(graphics_api)
@@ -450,7 +450,7 @@ GraphicsPipeline::GraphicsPipeline(GraphicsApi const & graphics_api,
 		shader_stages,
 		binding_desc,
 		attrib_descs,
-		enable_depth_test);
+		depth_options);
 }
 
 GraphicsPipeline::~GraphicsPipeline()
