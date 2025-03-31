@@ -20,7 +20,7 @@ public:
 	using PerFrameConstantsCallback = GraphicsPipeline::PerFrameConstantsCallback;
 	using PerObjectConstantsCallback = GraphicsPipeline::PerObjectConstantsCallback;
 
-	PipelineBuilder(GraphicsApi const & graphics_api);
+	explicit PipelineBuilder(GraphicsApi const & graphics_api);
 	~PipelineBuilder();
 
 	void LoadShaders(std::filesystem::path const & vs_path, std::filesystem::path const & fs_path);

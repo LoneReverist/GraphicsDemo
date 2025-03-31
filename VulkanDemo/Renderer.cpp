@@ -28,7 +28,6 @@ Renderer::~Renderer()
 
 void Renderer::Init(int width, int height)
 {
-	m_view_transform = glm::mat4(1.0);
 	OnViewportResized(width, height);
 }
 
@@ -165,10 +164,4 @@ void Renderer::AddRenderObject(std::weak_ptr<RenderObject> render_object)
 	std::shared_ptr<RenderObject> obj = render_object.lock();
 	if (obj)
 		m_pipeline_containers[obj->GetPipelineId()].m_render_objects.push_back(obj);
-}
-
-void Renderer::SetCamera(glm::vec3 const & pos, glm::vec3 const & dir)
-{
-	m_camera_pos = pos;
-	m_view_transform = glm::lookAt(pos, pos + dir, glm::vec3(0.0, 0.0, 1.0));
 }

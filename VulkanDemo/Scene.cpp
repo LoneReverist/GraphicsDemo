@@ -126,7 +126,7 @@ namespace
 	}
 
 	std::unique_ptr<GraphicsPipeline> create_texture_pipeline(
-		Renderer const & renderer,
+		Scene const & scene,
 		std::filesystem::path const & shaders_path,
 		Texture const & texture)
 	{
@@ -148,7 +148,7 @@ namespace
 			SpotLight m_spotlight;
 		};
 
-		PipelineBuilder builder{ renderer.GetGraphicsApi() };
+		PipelineBuilder builder{ scene.GetRenderer().GetGraphicsApi() };
 		builder.LoadShaders(
 			shaders_path / "texture_vert.spv",
 			shaders_path / "texture_frag.spv");
@@ -159,20 +159,20 @@ namespace
 		builder.SetTexture(texture);
 
 		builder.SetPerFrameConstantsCallback(
-			[&renderer](GraphicsPipeline const & pipeline)
+			[&scene](GraphicsPipeline const & pipeline)
 			{
 				pipeline.SetUniform(0 /*binding*/,
 					ViewProjUniform{
-						.view = renderer.GetViewTransform(),
-						.proj = renderer.GetProjTransform()
+						.view = scene.GetViewTransform(),
+						.proj = scene.GetRenderer().GetProjTransform()
 					});
 				pipeline.SetUniform(1 /*binding*/,
 					LightsUniform{
-						.m_ambient_light_color = renderer.GetAmbientLightColor(),
-						.m_pointlight_1 = renderer.GetPointLight1(),
-						.m_pointlight_2 = renderer.GetPointLight2(),
-						.m_pointlight_3 = renderer.GetPointLight3(),
-						.m_spotlight = renderer.GetSpotLight()
+						.m_ambient_light_color = scene.GetAmbientLightColor(),
+						.m_pointlight_1 = scene.GetPointLight1(),
+						.m_pointlight_2 = scene.GetPointLight2(),
+						.m_pointlight_3 = scene.GetPointLight3(),
+						.m_spotlight = scene.GetSpotLight()
 					});
 			});
 		builder.SetPerObjectConstantsCallback(
@@ -189,7 +189,7 @@ namespace
 	}
 
 	std::unique_ptr<GraphicsPipeline> create_reflection_pipeline(
-		Renderer const & renderer,
+		Scene const & scene,
 		std::filesystem::path const & shaders_path,
 		Texture const & texture)
 	{
@@ -215,7 +215,7 @@ namespace
 			alignas(16) glm::vec3 camera_pos_world;
 		};
 
-		PipelineBuilder builder{ renderer.GetGraphicsApi() };
+		PipelineBuilder builder{ scene.GetRenderer().GetGraphicsApi()};
 		builder.LoadShaders(
 			shaders_path / "reflection_vert.spv",
 			shaders_path / "reflection_frag.spv");
@@ -226,24 +226,24 @@ namespace
 		builder.SetTexture(texture);
 
 		builder.SetPerFrameConstantsCallback(
-			[&renderer](GraphicsPipeline const & pipeline)
+			[&scene](GraphicsPipeline const & pipeline)
 			{
 				pipeline.SetUniform(0 /*binding*/,
 					ViewProjUniform{
-						.view = renderer.GetViewTransform(),
-						.proj = renderer.GetProjTransform()
+						.view = scene.GetViewTransform(),
+						.proj = scene.GetRenderer().GetProjTransform()
 					});
 				pipeline.SetUniform(1 /*binding*/,
 					LightsUniform{
-						.m_ambient_light_color = renderer.GetAmbientLightColor(),
-						.m_pointlight_1 = renderer.GetPointLight1(),
-						.m_pointlight_2 = renderer.GetPointLight2(),
-						.m_pointlight_3 = renderer.GetPointLight3(),
-						.m_spotlight = renderer.GetSpotLight()
+						.m_ambient_light_color = scene.GetAmbientLightColor(),
+						.m_pointlight_1 = scene.GetPointLight1(),
+						.m_pointlight_2 = scene.GetPointLight2(),
+						.m_pointlight_3 = scene.GetPointLight3(),
+						.m_spotlight = scene.GetSpotLight()
 					});
 				pipeline.SetUniform(2 /*binding*/,
 					CameraUniform{
-						.camera_pos_world = renderer.GetCameraPos()
+						.camera_pos_world = scene.GetCameraPos()
 					});
 			});
 		builder.SetPerObjectConstantsCallback(
@@ -260,7 +260,7 @@ namespace
 	}
 
 	std::unique_ptr<GraphicsPipeline> create_skybox_pipeline(
-		Renderer const & renderer,
+		Scene const & scene,
 		std::filesystem::path const & shaders_path,
 		Texture const & skybox)
 	{
@@ -270,7 +270,7 @@ namespace
 			alignas(16) glm::mat4 proj;
 		};
 
-		PipelineBuilder builder{ renderer.GetGraphicsApi() };
+		PipelineBuilder builder{ scene.GetRenderer().GetGraphicsApi()};
 		builder.LoadShaders(
 			shaders_path / "skybox_vert.spv",
 			shaders_path / "skybox_frag.spv");
@@ -284,12 +284,12 @@ namespace
 			});
 
 		builder.SetPerFrameConstantsCallback(
-			[&renderer](GraphicsPipeline const & pipeline)
+			[&scene](GraphicsPipeline const & pipeline)
 			{
 				pipeline.SetUniform(0 /*binding*/,
 					ViewProjUniform{
-						.view = renderer.GetViewTransform(),
-						.proj = renderer.GetProjTransform()
+						.view = scene.GetViewTransform(),
+						.proj = scene.GetRenderer().GetProjTransform()
 					});
 			});
 
@@ -297,7 +297,7 @@ namespace
 	}
 
 	std::unique_ptr<GraphicsPipeline> create_color_pipeline(
-		Renderer const & renderer,
+		Scene const & scene,
 		std::filesystem::path const & shaders_path)
 	{
 		struct VSPushConstant
@@ -318,7 +318,7 @@ namespace
 			SpotLight m_spotlight;
 		};
 
-		PipelineBuilder builder{ renderer.GetGraphicsApi() };
+		PipelineBuilder builder{ scene.GetRenderer().GetGraphicsApi() };
 		builder.LoadShaders(
 			shaders_path / "color_vert.spv",
 			shaders_path / "color_frag.spv");
@@ -328,20 +328,20 @@ namespace
 		builder.SetFSUniformTypes<LightsUniform>();
 
 		builder.SetPerFrameConstantsCallback(
-			[&renderer](GraphicsPipeline const & pipeline)
+			[&scene](GraphicsPipeline const & pipeline)
 			{
 				pipeline.SetUniform(0 /*binding*/,
 					ViewProjUniform{
-						.view = renderer.GetViewTransform(),
-						.proj = renderer.GetProjTransform()
+						.view = scene.GetViewTransform(),
+						.proj = scene.GetRenderer().GetProjTransform()
 					});
 				pipeline.SetUniform(1 /*binding*/,
 					LightsUniform{
-						.m_ambient_light_color = renderer.GetAmbientLightColor(),
-						.m_pointlight_1 = renderer.GetPointLight1(),
-						.m_pointlight_2 = renderer.GetPointLight2(),
-						.m_pointlight_3 = renderer.GetPointLight3(),
-						.m_spotlight = renderer.GetSpotLight()
+						.m_ambient_light_color = scene.GetAmbientLightColor(),
+						.m_pointlight_1 = scene.GetPointLight1(),
+						.m_pointlight_2 = scene.GetPointLight2(),
+						.m_pointlight_3 = scene.GetPointLight3(),
+						.m_spotlight = scene.GetSpotLight()
 					});
 			});
 		builder.SetPerObjectConstantsCallback(
@@ -358,7 +358,7 @@ namespace
 	}
 
 	std::unique_ptr<GraphicsPipeline> create_light_source_pipeline(
-		Renderer const & renderer,
+		Scene const & scene,
 		std::filesystem::path const & shaders_path)
 	{
 		struct VSPushConstant
@@ -379,7 +379,7 @@ namespace
 			alignas(16) glm::vec3 camera_pos_world;
 		};
 
-		PipelineBuilder builder{ renderer.GetGraphicsApi() };
+		PipelineBuilder builder{ scene.GetRenderer().GetGraphicsApi() };
 		builder.LoadShaders(
 			shaders_path / "light_source_vert.spv",
 			shaders_path / "light_source_frag.spv");
@@ -389,16 +389,16 @@ namespace
 		builder.SetFSUniformTypes<CameraPosUniform>();
 
 		builder.SetPerFrameConstantsCallback(
-			[&renderer](GraphicsPipeline const & pipeline)
+			[&scene](GraphicsPipeline const & pipeline)
 			{
 				pipeline.SetUniform(0 /*binding*/,
 					ViewProjUniform{
-						.view = renderer.GetViewTransform(),
-						.proj = renderer.GetProjTransform()
+						.view = scene.GetViewTransform(),
+						.proj = scene.GetRenderer().GetProjTransform()
 					});
 				pipeline.SetUniform(1 /*binding*/,
 					CameraPosUniform{
-						.camera_pos_world = renderer.GetCameraPos()
+						.camera_pos_world = scene.GetCameraPos()
 					});
 			});
 		builder.SetPerObjectConstantsCallback(
@@ -434,15 +434,15 @@ void Scene::Init()
 	});
 
 	//const int color_shader_id = m_renderer.AddGraphicsPipeline(
-	//	std::move(create_color_pipeline(m_renderer, shaders_path)));
+	//	std::move(create_color_pipeline(*this, shaders_path)));
 	const int texture_shader_id = m_renderer.AddGraphicsPipeline(
-		std::move(create_texture_pipeline(m_renderer, shaders_path, *m_ground_tex)));
+		std::move(create_texture_pipeline(*this, shaders_path, *m_ground_tex)));
 	const int light_source_pipeline_id = m_renderer.AddGraphicsPipeline(
-		std::move(create_light_source_pipeline(m_renderer, shaders_path)));
+		std::move(create_light_source_pipeline(*this, shaders_path)));
 	const int reflection_shader_id = m_renderer.AddGraphicsPipeline(
-		std::move(create_reflection_pipeline(m_renderer, shaders_path, *m_skybox_tex)));
+		std::move(create_reflection_pipeline(*this, shaders_path, *m_skybox_tex)));
 	const int skybox_pipeline_id = m_renderer.AddGraphicsPipeline(
-		std::move(create_skybox_pipeline(m_renderer, shaders_path, *m_skybox_tex)));
+		std::move(create_skybox_pipeline(*this, shaders_path, *m_skybox_tex)));
 
 	const int sword_mesh_id = m_renderer.LoadMesh(resources_path / "objects" / "skullsword.obj");
 	const int red_gem_mesh_id = m_renderer.LoadMesh(resources_path / "objects" / "redgem.obj");
@@ -472,18 +472,19 @@ void Scene::Init()
 	init_gem_transform(1, m_green_gem->ModifyModelTransform());
 	init_gem_transform(2, m_blue_gem->ModifyModelTransform());
 
-	m_renderer.SetAmbientLightColor(glm::vec3(0.5, 0.5, 0.5));
+	m_ambient_light_color = glm::vec3(0.5, 0.5, 0.5);
 
-	m_renderer.SetSpotLight(SpotLight{
+	m_spotlight = SpotLight{
 		.m_pos{ 0.0f, 0.0f, 25.0f },
 		.m_dir{ 0.0f, 0.0f, -1.0f },
 		.m_color{ 1.0f, 1.0f, 1.0f },
 		.m_inner_radius{ 0.988f },
-		.m_outer_radius{ 0.986f } });
+		.m_outer_radius{ 0.986f }
+	};
 
 	m_camera_pos = glm::vec3{ 0.0f, -10.0f, 5.0f };
 	m_camera_dir = glm::normalize(glm::vec3{ 0.0f, 0.0f, 2.5f } - m_camera_pos);
-	m_renderer.SetCamera(m_camera_pos, m_camera_dir);
+	m_view_transform = glm::lookAt(m_camera_pos, m_camera_pos + m_camera_dir, glm::vec3(0.0, 0.0, 1.0));
 }
 
 void Scene::Update(double delta_time, Input const & input)
@@ -506,22 +507,22 @@ void Scene::Update(double delta_time, Input const & input)
 	update_gem_transform(m_blue_gem->ModifyModelTransform(), dt);
 
 	glm::mat4 const & red_gem_transform = m_red_gem->GetModelTransform();
-	m_renderer.SetPointLight1(PointLight{
+	m_pointlight_1 = PointLight{
 		.m_pos{ red_gem_transform[3][0], red_gem_transform[3][1], red_gem_transform[3][2] },
 		.m_color{ 1.0, 0.0, 0.0 },
-		.m_radius{ 20.0f } });
+		.m_radius{ 20.0f } };
 
 	glm::mat4 const & green_gem_transform = m_green_gem->GetModelTransform();
-	m_renderer.SetPointLight2(PointLight{
+	m_pointlight_2 = PointLight{
 		.m_pos{ green_gem_transform[3][0], green_gem_transform[3][1], green_gem_transform[3][2] },
 		.m_color{ 0.0, 1.0, 0.0 },
-		.m_radius{ 20.0f } });
+		.m_radius{ 20.0f } };
 
 	glm::mat4 const & blue_gem_transform = m_blue_gem->GetModelTransform();
-	m_renderer.SetPointLight3(PointLight{
+	m_pointlight_3 = PointLight{
 		.m_pos{ blue_gem_transform[3][0], blue_gem_transform[3][1], blue_gem_transform[3][2] },
 		.m_color{ 0.0, 0.0, 1.0 },
-		.m_radius{ 20.0f } });
+		.m_radius{ 20.0f } };
 }
 
 std::shared_ptr<RenderObject> Scene::create_object(int mesh_id, int pipeline_id, int tex_id /*= -1*/) const
@@ -576,5 +577,5 @@ void Scene::update_camera(float dt, Input const & input)
 	}
 
 	if (move || rotate)
-		m_renderer.SetCamera(m_camera_pos, m_camera_dir);
+		m_view_transform = glm::lookAt(m_camera_pos, m_camera_pos + m_camera_dir, glm::vec3(0.0, 0.0, 1.0));
 }
