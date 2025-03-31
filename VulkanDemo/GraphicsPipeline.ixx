@@ -114,7 +114,7 @@ void GraphicsPipeline::SetPushConstants(VSConstantData const & vs_data, FSConsta
 		vkCmdPushConstants(command_buffer, m_pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT,
 			offset, sizeof(VSConstantData), &vs_data);
 
-		offset += sizeof(VSConstantData);
+		offset += static_cast<uint32_t>(sizeof(VSConstantData));
 	}
 
 	if constexpr (!std::same_as<FSConstantData, std::nullopt_t>)

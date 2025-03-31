@@ -28,7 +28,7 @@ public:
 	template <IsVertex Vert>
 	void SetVertexType();
 
-	template <typename VSConstantData, typename FSConstantData = std::nullopt_t>
+	template <typename VSConstantData = std::nullopt_t, typename FSConstantData = std::nullopt_t>
 	void SetPushConstantTypes();
 
 	template <typename... UniformTypes>
@@ -72,22 +72,32 @@ void PipelineBuilder::SetVertexType()
 	m_vert_attrib_descs = Vertex::GetAttribDescs<Vert>();
 }
 
-template <typename VSConstantData, typename FSConstantData /*= std::nullopt_t*/>
+template <typename VSConstantData /*= std::nullopt_t*/, typename FSConstantData /*= std::nullopt_t*/>
 void PipelineBuilder::SetPushConstantTypes()
 {
-	m_push_constants_ranges.emplace_back(
-		VkPushConstantRange{
-			.stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-			.offset = 0,
-			.size = static_cast<uint32_t>(sizeof(VSConstantData)),
-		});
+	static_assert(!std::same_as<VSConstantData, std::nullopt_t> || !std::same_as<FSConstantData, std::nullopt_t>,
+		"At least one push constant data must be provided");
+
+	uint32_t offset = 0;
+
+	if constexpr (!std::same_as<VSConstantData, std::nullopt_t>)
+	{
+		m_push_constants_ranges.emplace_back(
+			VkPushConstantRange{
+				.stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+				.offset = offset,
+				.size = static_cast<uint32_t>(sizeof(VSConstantData)),
+			});
+
+		offset = static_cast<uint32_t>(sizeof(VSConstantData));
+	}
 
 	if constexpr (!std::same_as<FSConstantData, std::nullopt_t>)
 	{
 		m_push_constants_ranges.emplace_back(
 			VkPushConstantRange{
 				.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
-				.offset = static_cast<uint32_t>(sizeof(VSConstantData)),
+				.offset = offset,
 				.size = static_cast<uint32_t>(sizeof(FSConstantData)),
 			});
 	}
