@@ -2,8 +2,6 @@
 
 #include <iostream>
 
-//import <iostream>;
-
 import VulkanApp;
 
 int main()

@@ -2,14 +2,14 @@
 
 module;
 
+#include <atomic>
+#include <optional>
+#include <string>
+
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
 export module VulkanApp;
-
-import <atomic>;
-import <optional>;
-import <string>;
 
 import Input;
 

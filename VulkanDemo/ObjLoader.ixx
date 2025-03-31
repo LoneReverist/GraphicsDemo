@@ -1,8 +1,10 @@
 // ObjLoader.ixx
 
-export module ObjLoader;
+module;
 
-import <filesystem>;
+#include <filesystem>
+
+export module ObjLoader;
 
 import Mesh;
 import Vertex;

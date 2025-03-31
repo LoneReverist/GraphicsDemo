@@ -1,9 +1,11 @@
 // Input.ixx
 
-export module Input;
+module;
 
-import <mutex>;
-import <unordered_set>;
+#include <mutex>
+#include <unordered_set>
+
+export module Input;
 
 export class Input
 {

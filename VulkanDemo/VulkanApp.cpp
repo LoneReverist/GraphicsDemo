@@ -10,9 +10,6 @@ module;
 
 module VulkanApp;
 
-//import <iostream>;
-//import <thread>;
-
 import GraphicsApi;
 import Renderer;
 import Scene;

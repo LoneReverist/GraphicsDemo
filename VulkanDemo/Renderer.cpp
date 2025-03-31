@@ -10,8 +10,6 @@ module;
 
 module Renderer;
 
-//import <iostream>;
-
 import ObjLoader;
 import Vertex;
 

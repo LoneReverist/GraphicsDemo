@@ -2,12 +2,12 @@
 
 module;
 
+#include <memory>
+
 #include <glm/vec3.hpp>
 #include <glm/ext/matrix_float4x4.hpp>
 
 export module Scene;
-
-import <memory>;
 
 import Input;
 import Renderer;

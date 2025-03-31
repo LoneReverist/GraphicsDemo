@@ -2,17 +2,16 @@
 
 module;
 
+#include <algorithm>
 #include <array>
+#include <charconv>
+#include <filesystem>
 #include <fstream>
 #include <ranges>
+#include <string>
 #include <unordered_map>
 
 module ObjLoader;
-
-//import <array>;
-//import <fstream>; // not working?
-//import <ranges>;
-//import <unordered_map>;
 
 namespace
 {
@@ -63,7 +62,7 @@ namespace ObjLoader
 		return result;
 	}
 
-	bool read_obj_file(std::filesystem::path filepath,
+	bool read_obj_file(std::filesystem::path const & filepath,
 		std::vector<std::array<float, 3>> & positions,
 		std::vector<std::array<float, 3>> & normals,
 		std::vector<ObjFaceVerts> & face_verts)
