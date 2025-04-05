@@ -6,8 +6,6 @@ module;
 
 #include <vulkan/vulkan.h>
 
-#include <glm/gtc/matrix_transform.hpp>
-
 module Renderer;
 
 import ObjLoader;
@@ -22,11 +20,6 @@ Renderer::~Renderer()
 {
 	for (Mesh & mesh : m_meshes)
 		mesh.DeleteBuffers();
-}
-
-void Renderer::Init(int width, int height)
-{
-	OnViewportResized(width, height);
 }
 
 void Renderer::Render() const
@@ -107,17 +100,6 @@ void Renderer::Render() const
 		throw std::runtime_error("failed to record command buffer!");
 }
 
-void Renderer::OnViewportResized(int width, int height)
-{
-	constexpr float field_of_view = glm::radians(45.0f);
-	const float aspect_ratio = static_cast<float>(width) / static_cast<float>(height);
-	constexpr float near_plane = 0.1f;
-	constexpr float far_plane = 100.0f;
-	m_proj_transform = glm::perspective(field_of_view, aspect_ratio, near_plane, far_plane);
-
-	m_proj_transform[1][1] *= -1; // account for vulkan having flipped y-axis compared to opengl
-}
-
 int Renderer::AddGraphicsPipeline(std::unique_ptr<GraphicsPipeline> pipeline)
 {
 	if (!pipeline || !pipeline->IsValid())
@@ -157,9 +139,11 @@ int Renderer::AddMesh(Mesh && mesh)
 	return static_cast<int>(m_meshes.size() - 1);
 }
 
-void Renderer::AddRenderObject(std::weak_ptr<RenderObject> render_object)
+std::shared_ptr<RenderObject> Renderer::CreateRenderObject(int mesh_id, int pipeline_id)
 {
-	std::shared_ptr<RenderObject> obj = render_object.lock();
-	if (obj)
-		m_pipeline_containers[obj->GetPipelineId()].m_render_objects.push_back(obj);
+	// Right now it's up to the developer to ensure the Vertex type of the mesh is the same as
+	// the Vertex type for the pipeline, but at some point a static_assert would be good
+	std::shared_ptr<RenderObject> obj = std::make_shared<RenderObject>(mesh_id, pipeline_id);
+	m_pipeline_containers[pipeline_id].m_render_objects.push_back(obj);
+	return obj;
 }

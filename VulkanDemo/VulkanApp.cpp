@@ -68,10 +68,9 @@ void VulkanApp::Run()
 				m_window, size.m_width, size.m_height,
 				m_title, extension_count, extensions };
 
-			Renderer renderer{ graphics_api };
-			renderer.Init(size.m_width, size.m_height);
-			Scene scene{ renderer };
+			Scene scene{ graphics_api };
 			scene.Init();
+			scene.OnViewportResized(size.m_width, size.m_height);
 
 			double last_update_time = glfwGetTime();
 
@@ -85,7 +84,7 @@ void VulkanApp::Run()
 
 				bool swap_chain_out_of_date = false;
 				if (graphics_api.SwapChainIsValid())
-					graphics_api.DrawFrame([&renderer]() { renderer.Render(); }, swap_chain_out_of_date);
+					graphics_api.DrawFrame([&scene]() { scene.Render(); }, swap_chain_out_of_date);
 				else
 					swap_chain_out_of_date = true;
 
@@ -93,7 +92,7 @@ void VulkanApp::Run()
 				if (swap_chain_out_of_date || new_size != size)
 				{
 					graphics_api.RecreateSwapChain(new_size.m_width, new_size.m_height);
-					renderer.OnViewportResized(new_size.m_width, new_size.m_height);
+					scene.OnViewportResized(new_size.m_width, new_size.m_height);
 					size = new_size;
 				}
 			}

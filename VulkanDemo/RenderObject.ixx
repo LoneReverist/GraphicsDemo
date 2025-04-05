@@ -41,5 +41,5 @@ private:
 
 	bool m_draw_wireframe{ false };
 
-	glm::mat4 m_model_transform{ glm::mat4(1.0) };
+	glm::mat4 m_model_transform{ 1.0 };
 };

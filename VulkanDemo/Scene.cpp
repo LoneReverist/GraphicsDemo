@@ -145,7 +145,7 @@ namespace
 			SpotLight m_spotlight;
 		};
 
-		PipelineBuilder builder{ scene.GetRenderer().GetGraphicsApi() };
+		PipelineBuilder builder{ scene.GetGraphicsApi() };
 		builder.LoadShaders(
 			shaders_path / "texture_vert.spv",
 			shaders_path / "texture_frag.spv");
@@ -160,8 +160,8 @@ namespace
 			{
 				pipeline.SetUniform(0 /*binding*/,
 					ViewProjUniform{
-						.view = scene.GetViewTransform(),
-						.proj = scene.GetRenderer().GetProjTransform()
+						.view = scene.GetCamera().GetViewTransform(),
+						.proj = scene.GetCamera().GetProjTransform()
 					});
 				pipeline.SetUniform(1 /*binding*/,
 					LightsUniform{
@@ -212,7 +212,7 @@ namespace
 			alignas(16) glm::vec3 camera_pos_world;
 		};
 
-		PipelineBuilder builder{ scene.GetRenderer().GetGraphicsApi()};
+		PipelineBuilder builder{ scene.GetGraphicsApi() };
 		builder.LoadShaders(
 			shaders_path / "reflection_vert.spv",
 			shaders_path / "reflection_frag.spv");
@@ -227,8 +227,8 @@ namespace
 			{
 				pipeline.SetUniform(0 /*binding*/,
 					ViewProjUniform{
-						.view = scene.GetViewTransform(),
-						.proj = scene.GetRenderer().GetProjTransform()
+						.view = scene.GetCamera().GetViewTransform(),
+						.proj = scene.GetCamera().GetProjTransform()
 					});
 				pipeline.SetUniform(1 /*binding*/,
 					LightsUniform{
@@ -240,7 +240,7 @@ namespace
 					});
 				pipeline.SetUniform(2 /*binding*/,
 					CameraUniform{
-						.camera_pos_world = scene.GetCameraPos()
+						.camera_pos_world = scene.GetCamera().GetPos()
 					});
 			});
 		builder.SetPerObjectConstantsCallback(
@@ -267,7 +267,7 @@ namespace
 			alignas(16) glm::mat4 proj;
 		};
 
-		PipelineBuilder builder{ scene.GetRenderer().GetGraphicsApi()};
+		PipelineBuilder builder{ scene.GetGraphicsApi() };
 		builder.LoadShaders(
 			shaders_path / "skybox_vert.spv",
 			shaders_path / "skybox_frag.spv");
@@ -285,8 +285,8 @@ namespace
 			{
 				pipeline.SetUniform(0 /*binding*/,
 					ViewProjUniform{
-						.view = scene.GetViewTransform(),
-						.proj = scene.GetRenderer().GetProjTransform()
+						.view = scene.GetCamera().GetViewTransform(),
+						.proj = scene.GetCamera().GetProjTransform()
 					});
 			});
 
@@ -315,7 +315,7 @@ namespace
 			SpotLight m_spotlight;
 		};
 
-		PipelineBuilder builder{ scene.GetRenderer().GetGraphicsApi() };
+		PipelineBuilder builder{ scene.GetGraphicsApi() };
 		builder.LoadShaders(
 			shaders_path / "color_vert.spv",
 			shaders_path / "color_frag.spv");
@@ -329,8 +329,8 @@ namespace
 			{
 				pipeline.SetUniform(0 /*binding*/,
 					ViewProjUniform{
-						.view = scene.GetViewTransform(),
-						.proj = scene.GetRenderer().GetProjTransform()
+						.view = scene.GetCamera().GetViewTransform(),
+						.proj = scene.GetCamera().GetProjTransform()
 					});
 				pipeline.SetUniform(1 /*binding*/,
 					LightsUniform{
@@ -376,7 +376,7 @@ namespace
 			alignas(16) glm::vec3 camera_pos_world;
 		};
 
-		PipelineBuilder builder{ scene.GetRenderer().GetGraphicsApi() };
+		PipelineBuilder builder{ scene.GetGraphicsApi() };
 		builder.LoadShaders(
 			shaders_path / "light_source_vert.spv",
 			shaders_path / "light_source_frag.spv");
@@ -390,12 +390,12 @@ namespace
 			{
 				pipeline.SetUniform(0 /*binding*/,
 					ViewProjUniform{
-						.view = scene.GetViewTransform(),
-						.proj = scene.GetRenderer().GetProjTransform()
+						.view = scene.GetCamera().GetViewTransform(),
+						.proj = scene.GetCamera().GetProjTransform()
 					});
 				pipeline.SetUniform(1 /*binding*/,
 					CameraPosUniform{
-						.camera_pos_world = scene.GetCameraPos()
+						.camera_pos_world = scene.GetCamera().GetPos()
 					});
 			});
 		builder.SetPerObjectConstantsCallback(
@@ -419,9 +419,9 @@ void Scene::Init()
 	const std::filesystem::path resources_path = std::filesystem::path("..") / "resources";
 	const std::filesystem::path shaders_path = "shaders";
 
-	m_ground_tex = std::make_unique<Texture>(m_renderer.GetGraphicsApi(),
+	m_ground_tex = std::make_unique<Texture>(m_graphics_api,
 		resources_path / "textures" / "skybox" / "top.jpg");
-	m_skybox_tex = std::make_unique<Texture>(m_renderer.GetGraphicsApi(), std::array<std::filesystem::path, 6>{
+	m_skybox_tex = std::make_unique<Texture>(m_graphics_api, std::array<std::filesystem::path, 6>{
 		resources_path / "textures" / "skybox" / "right.jpg",
 		resources_path / "textures" / "skybox" / "left.jpg",
 		resources_path / "textures" / "skybox" / "top.jpg",
@@ -445,17 +445,17 @@ void Scene::Init()
 	const int red_gem_mesh_id = m_renderer.LoadMesh(resources_path / "objects" / "redgem.obj");
 	const int green_gem_mesh_id = m_renderer.LoadMesh(resources_path / "objects" / "greengem.obj");
 	const int blue_gem_mesh_id = m_renderer.LoadMesh(resources_path / "objects" / "bluegem.obj");
-	const int ground_mesh_id = m_renderer.AddMesh(std::move(create_ground_mesh(m_renderer.GetGraphicsApi())));
-	const int skybox_mesh_id = m_renderer.AddMesh(std::move(create_skybox_mesh(m_renderer.GetGraphicsApi())));
+	const int ground_mesh_id = m_renderer.AddMesh(std::move(create_ground_mesh(m_graphics_api)));
+	const int skybox_mesh_id = m_renderer.AddMesh(std::move(create_skybox_mesh(m_graphics_api)));
 
-	m_sword0 = create_object(sword_mesh_id, reflection_shader_id);
-	m_sword1 = create_object(sword_mesh_id, reflection_shader_id);
-	m_red_gem = create_object(red_gem_mesh_id, light_source_pipeline_id);
-	m_green_gem = create_object(green_gem_mesh_id, light_source_pipeline_id);
-	m_blue_gem = create_object(blue_gem_mesh_id, light_source_pipeline_id);
-	//m_ground = create_object(ground_mesh_id, color_shader_id);
-	m_ground = create_object(ground_mesh_id, texture_shader_id);
-	m_skybox = create_object(skybox_mesh_id, skybox_pipeline_id);
+	m_sword0 = m_renderer.CreateRenderObject(sword_mesh_id, reflection_shader_id);
+	m_sword1 = m_renderer.CreateRenderObject(sword_mesh_id, reflection_shader_id);
+	m_red_gem = m_renderer.CreateRenderObject(red_gem_mesh_id, light_source_pipeline_id);
+	m_green_gem = m_renderer.CreateRenderObject(green_gem_mesh_id, light_source_pipeline_id);
+	m_blue_gem = m_renderer.CreateRenderObject(blue_gem_mesh_id, light_source_pipeline_id);
+	//m_ground = m_renderer.CreateRenderObject(ground_mesh_id, color_shader_id);
+	m_ground = m_renderer.CreateRenderObject(ground_mesh_id, texture_shader_id);
+	m_skybox = m_renderer.CreateRenderObject(skybox_mesh_id, skybox_pipeline_id);
 
 	//m_sword0->SetColor({ 0.6, 0.6, 0.6 });
 	//m_sword1->SetColor({ 0.6, 0.6, 0.6 });
@@ -479,9 +479,14 @@ void Scene::Init()
 		.m_outer_radius{ 0.986f }
 	};
 
-	m_camera_pos = glm::vec3{ 0.0f, -10.0f, 5.0f };
-	m_camera_dir = glm::normalize(glm::vec3{ 0.0f, 0.0f, 2.5f } - m_camera_pos);
-	m_view_transform = glm::lookAt(m_camera_pos, m_camera_pos + m_camera_dir, glm::vec3(0.0, 0.0, 1.0));
+	glm::vec3 camera_pos{ 0.0f, -10.0f, 5.0f };
+	glm::vec3 camera_dir = glm::normalize(glm::vec3{ 0.0f, 0.0f, 2.5f } - camera_pos);
+	m_camera.Init(camera_pos, camera_dir);
+}
+
+void Scene::OnViewportResized(int width, int height)
+{
+	m_camera.OnViewportResized(width, height);
 }
 
 void Scene::Update(double delta_time, Input const & input)
@@ -489,7 +494,7 @@ void Scene::Update(double delta_time, Input const & input)
 	const float dt = static_cast<float>(delta_time);
 	m_timer += dt;
 
-	update_camera(dt, input);
+	m_camera.Update(delta_time, input);
 
 	glm::vec3 bg_color;
 	bg_color.r = std::sin(m_timer) / 2.0f + 0.5f;
@@ -522,57 +527,7 @@ void Scene::Update(double delta_time, Input const & input)
 		.m_radius{ 20.0f } };
 }
 
-std::shared_ptr<RenderObject> Scene::create_object(int mesh_id, int pipeline_id, int tex_id /*= -1*/) const
+void Scene::Render() const
 {
-	// Right now it's up to the developer to ensure the Vertex type of the mesh is the same as
-	// the Vertex type for the pipeline, but at some point a static_assert would be good
-	auto obj = std::make_shared<RenderObject>(mesh_id, pipeline_id, tex_id);
-	m_renderer.AddRenderObject(obj);
-	return obj;
-}
-
-void Scene::update_camera(float dt, Input const & input)
-{
-	glm::vec3 up_dir{ 0.0f, 0.0f, 1.0f };
-	glm::vec3 right_dir = glm::cross(m_camera_dir, up_dir);
-	glm::vec3 forward_dir = glm::cross(up_dir, right_dir);
-
-	glm::vec3 dir_velocity{ 0.0f, 0.0f, 0.0f };
-	if (input.KeyIsPressed(Input::Key::Up))
-		dir_velocity += glm::vec3{ 1.0, 0.0, 0.0 };
-	if (input.KeyIsPressed(Input::Key::Down))
-		dir_velocity += glm::vec3{ -1.0, 0.0, 0.0 };
-	if (input.KeyIsPressed(Input::Key::Right))
-		dir_velocity += glm::vec3{ 0.0, 0.0, -1.0 };
-	if (input.KeyIsPressed(Input::Key::Left))
-		dir_velocity += glm::vec3{ 0.0, 0.0, 1.0 };
-
-	bool rotate = glm::length(dir_velocity) > 0.0;
-	if (rotate)
-	{
-		const float rot_speed = std::numbers::pi_v<float>;
-		dir_velocity = glm::normalize(dir_velocity);
-		m_camera_dir = glm::rotate(glm::mat4(1.0), dir_velocity.x * rot_speed * dt, right_dir) * glm::vec4(m_camera_dir, 0.0);
-		m_camera_dir = glm::rotate(glm::mat4(1.0), dir_velocity.z * rot_speed * dt, up_dir) * glm::vec4(m_camera_dir, 0.0);
-	}
-
-	glm::vec3 velocity{ 0.0f, 0.0f, 0.0f };
-	if (input.KeyIsPressed('W'))
-		velocity += forward_dir;
-	if (input.KeyIsPressed('S'))
-		velocity -= forward_dir;
-	if (input.KeyIsPressed('D'))
-		velocity += right_dir;
-	if (input.KeyIsPressed('A'))
-		velocity -= right_dir;
-
-	bool move = glm::length(velocity) > 0.0;
-	if (move)
-	{
-		const float speed = 10.0f;
-		m_camera_pos += glm::normalize(velocity) * (speed * dt);
-	}
-
-	if (move || rotate)
-		m_view_transform = glm::lookAt(m_camera_pos, m_camera_pos + m_camera_dir, glm::vec3(0.0, 0.0, 1.0));
+	m_renderer.Render();
 }

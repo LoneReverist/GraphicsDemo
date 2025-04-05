@@ -9,6 +9,8 @@ module;
 
 export module Scene;
 
+import Camera;
+import GraphicsApi;
 import Input;
 import Renderer;
 import RenderObject;
@@ -33,11 +35,18 @@ struct SpotLight
 export class Scene
 {
 public:
-	explicit Scene(Renderer & renderer) : m_renderer(renderer) {}
+	explicit Scene(GraphicsApi const & graphics_api)
+		: m_graphics_api{ graphics_api }
+		, m_renderer{ graphics_api }
+	{}
 
 	void Init();
-	void Update(double delta_time, Input const & input);
+	void OnViewportResized(int width, int height);
 
+	void Update(double delta_time, Input const & input);
+	void Render() const;
+
+	GraphicsApi const & GetGraphicsApi() const { return m_graphics_api; }
 	Renderer const & GetRenderer() const { return m_renderer; }
 
 	glm::vec3 const & GetAmbientLightColor() const { return m_ambient_light_color; }
@@ -46,16 +55,13 @@ public:
 	PointLight const & GetPointLight3() const { return m_pointlight_3; }
 	SpotLight const & GetSpotLight() const { return m_spotlight; }
 
-	glm::vec3 const & GetCameraPos() const { return m_camera_pos; }
-	glm::mat4 const & GetViewTransform() const { return m_view_transform; }
+	Camera const & GetCamera() const { return m_camera; }
 
 private:
-	std::shared_ptr<RenderObject> create_object(int mesh_id, int pipeline_id, int tex_id = -1) const;
+	GraphicsApi const & m_graphics_api;
 
-	void update_camera(float dt, Input const & input);
-
-private:
-	Renderer & m_renderer;
+	Renderer m_renderer;
+	Camera m_camera;
 
 	std::unique_ptr<Texture> m_ground_tex;
 	std::unique_ptr<Texture> m_skybox_tex;
@@ -75,8 +81,4 @@ private:
 	SpotLight m_spotlight;
 
 	float m_timer{ 0.0 };
-
-	glm::vec3 m_camera_pos;
-	glm::vec3 m_camera_dir;
-	glm::mat4 m_view_transform;
 };

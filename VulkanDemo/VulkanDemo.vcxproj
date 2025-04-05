@@ -86,6 +86,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Camera.ixx" />
     <ClCompile Include="GraphicsApi.cpp" />
     <ClCompile Include="GraphicsApi.ixx" />
     <ClCompile Include="Input.ixx" />
