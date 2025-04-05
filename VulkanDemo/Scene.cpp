@@ -138,7 +138,7 @@ namespace
 		};
 		struct LightsUniform
 		{
-			alignas(16) glm::vec3 m_ambient_light_color; // TODO: need light container/manager
+			alignas(16) glm::vec3 m_ambient_light_color;
 			PointLight m_pointlight_1;
 			PointLight m_pointlight_2;
 			PointLight m_pointlight_3;
@@ -201,7 +201,7 @@ namespace
 		};
 		struct LightsUniform
 		{
-			alignas(16) glm::vec3 m_ambient_light_color; // TODO: need light container/manager
+			alignas(16) glm::vec3 m_ambient_light_color;
 			PointLight m_pointlight_1;
 			PointLight m_pointlight_2;
 			PointLight m_pointlight_3;
@@ -308,7 +308,7 @@ namespace
 		};
 		struct LightsUniform
 		{
-			alignas(16) glm::vec3 m_ambient_light_color; // TODO: need light container/manager
+			alignas(16) glm::vec3 m_ambient_light_color;
 			PointLight m_pointlight_1;
 			PointLight m_pointlight_2;
 			PointLight m_pointlight_3;
