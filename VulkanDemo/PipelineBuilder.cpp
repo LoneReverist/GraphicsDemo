@@ -43,7 +43,7 @@ namespace
 			std::cout << "File was empty: " << shader_path << std::endl;
 			return VK_NULL_HANDLE;
 		}
-		if (file_data.size() % sizeof(uint32_t) != 0) // SPIR-V files should be 32-bit
+		if (file_data.size() % sizeof(std::uint32_t) != 0) // SPIR-V files should be 32-bit
 		{
 			std::cout << "File is not 32-bit: " << shader_path << std::endl;
 			return VK_NULL_HANDLE;
@@ -52,7 +52,7 @@ namespace
 		VkShaderModuleCreateInfo create_info{
 			.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
 			.codeSize = file_data.size(),
-			.pCode = reinterpret_cast<const uint32_t *>(file_data.data())
+			.pCode = reinterpret_cast<const std::uint32_t *>(file_data.data())
 		};
 
 		VkShaderModule shader_module = VK_NULL_HANDLE;

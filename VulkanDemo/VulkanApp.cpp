@@ -61,7 +61,7 @@ void VulkanApp::Run()
 	std::jthread update_render_loop([this](std::stop_token s_token)
 		{
 			WindowSize size = m_window_size.load();
-			uint32_t extension_count = 0;
+			std::uint32_t extension_count = 0;
 			const char ** extensions = glfwGetRequiredInstanceExtensions(&extension_count);
 
 			GraphicsApi graphics_api{

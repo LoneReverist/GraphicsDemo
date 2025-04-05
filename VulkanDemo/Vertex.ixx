@@ -67,7 +67,7 @@ namespace Vertex
 		std::vector<VkVertexInputAttributeDescription> attrib_descs;
 
 		attrib_descs.emplace_back(VkVertexInputAttributeDescription{
-			.location = static_cast<uint32_t>(attrib_descs.size()),
+			.location = static_cast<std::uint32_t>(attrib_descs.size()),
 			.binding = 0,
 			.format = VK_FORMAT_R32G32B32_SFLOAT,
 			.offset = offsetof(Vert, m_pos)
@@ -76,7 +76,7 @@ namespace Vertex
 		if constexpr (VertexSupportsNormal<Vert>)
 		{
 			attrib_descs.emplace_back(VkVertexInputAttributeDescription{
-				.location = static_cast<uint32_t>(attrib_descs.size()),
+				.location = static_cast<std::uint32_t>(attrib_descs.size()),
 				.binding = 0,
 				.format = VK_FORMAT_R32G32B32_SFLOAT,
 				.offset = offsetof(Vert, m_normal),
@@ -86,7 +86,7 @@ namespace Vertex
 		if constexpr (VertexSupportsTexCoord<Vert>)
 		{
 			attrib_descs.emplace_back(VkVertexInputAttributeDescription{
-				.location = static_cast<uint32_t>(attrib_descs.size()),
+				.location = static_cast<std::uint32_t>(attrib_descs.size()),
 				.binding = 0,
 				.format = VK_FORMAT_R32G32_SFLOAT,
 				.offset = offsetof(Vert, m_tex_coord)
@@ -96,7 +96,7 @@ namespace Vertex
 		if constexpr (VertexSupportsColor<Vert>)
 		{
 			attrib_descs.emplace_back(VkVertexInputAttributeDescription{
-				.location = static_cast<uint32_t>(attrib_descs.size()),
+				.location = static_cast<std::uint32_t>(attrib_descs.size()),
 				.binding = 0,
 				.format = VK_FORMAT_R32G32B32_SFLOAT,
 				.offset = offsetof(Vert, m_color)

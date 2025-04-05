@@ -78,7 +78,7 @@ void PipelineBuilder::SetPushConstantTypes()
 	static_assert(!std::same_as<VSConstantData, std::nullopt_t> || !std::same_as<FSConstantData, std::nullopt_t>,
 		"At least one push constant data must be provided");
 
-	uint32_t offset = 0;
+	std::uint32_t offset = 0;
 
 	if constexpr (!std::same_as<VSConstantData, std::nullopt_t>)
 	{
@@ -86,10 +86,10 @@ void PipelineBuilder::SetPushConstantTypes()
 			VkPushConstantRange{
 				.stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
 				.offset = offset,
-				.size = static_cast<uint32_t>(sizeof(VSConstantData)),
+				.size = static_cast<std::uint32_t>(sizeof(VSConstantData)),
 			});
 
-		offset = static_cast<uint32_t>(sizeof(VSConstantData));
+		offset = static_cast<std::uint32_t>(sizeof(VSConstantData));
 	}
 
 	if constexpr (!std::same_as<FSConstantData, std::nullopt_t>)
@@ -98,7 +98,7 @@ void PipelineBuilder::SetPushConstantTypes()
 			VkPushConstantRange{
 				.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
 				.offset = offset,
-				.size = static_cast<uint32_t>(sizeof(FSConstantData)),
+				.size = static_cast<std::uint32_t>(sizeof(FSConstantData)),
 			});
 	}
 }

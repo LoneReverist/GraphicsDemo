@@ -22,7 +22,7 @@ namespace
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
 			.setLayoutCount = 1,
 			.pSetLayouts = &descriptor_set_layout,
-			.pushConstantRangeCount = static_cast<uint32_t>(push_constants_ranges.size()),
+			.pushConstantRangeCount = static_cast<std::uint32_t>(push_constants_ranges.size()),
 			.pPushConstantRanges = push_constants_ranges.data(),
 		};
 
@@ -50,7 +50,7 @@ namespace
 
 		VkPipelineDynamicStateCreateInfo dynamic_state{
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
-			.dynamicStateCount = static_cast<uint32_t>(dynamic_states.size()),
+			.dynamicStateCount = static_cast<std::uint32_t>(dynamic_states.size()),
 			.pDynamicStates = dynamic_states.data()
 		};
 
@@ -64,7 +64,7 @@ namespace
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
 			.vertexBindingDescriptionCount = 1,
 			.pVertexBindingDescriptions = &binding_desc,
-			.vertexAttributeDescriptionCount = static_cast<uint32_t>(attrib_descs.size()),
+			.vertexAttributeDescriptionCount = static_cast<std::uint32_t>(attrib_descs.size()),
 			.pVertexAttributeDescriptions = attrib_descs.data()
 		};
 
@@ -136,7 +136,7 @@ namespace
 
 		VkGraphicsPipelineCreateInfo pipeline_info{
 			.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-			.stageCount = static_cast<uint32_t>(shader_stages.size()),
+			.stageCount = static_cast<std::uint32_t>(shader_stages.size()),
 			.pStages = shader_stages.data(),
 			.pVertexInputState = &vertex_input_info,
 			.pInputAssemblyState = &input_assembly,
@@ -163,29 +163,29 @@ namespace
 
 	VkDescriptorSetLayout create_descriptor_set_layout(
 		VkDevice device,
-		uint32_t vs_descriptor_set_count,
-		uint32_t fs_descriptor_set_count,
+		std::uint32_t vs_descriptor_set_count,
+		std::uint32_t fs_descriptor_set_count,
 		bool has_texture)
 	{
 		std::vector<VkDescriptorSetLayoutBinding> layout_bindings;
 		layout_bindings.reserve(vs_descriptor_set_count + fs_descriptor_set_count);
 
-		for (uint32_t i = 0; i < vs_descriptor_set_count; ++i)
+		for (std::uint32_t i = 0; i < vs_descriptor_set_count; ++i)
 		{
 			layout_bindings.emplace_back(
 				VkDescriptorSetLayoutBinding{
-					.binding = static_cast<uint32_t>(layout_bindings.size()),
+					.binding = static_cast<std::uint32_t>(layout_bindings.size()),
 					.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 					.descriptorCount = 1,
 					.stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
 					.pImmutableSamplers = nullptr
 				});
 		}
-		for (uint32_t i = 0; i < fs_descriptor_set_count; ++i)
+		for (std::uint32_t i = 0; i < fs_descriptor_set_count; ++i)
 		{
 			layout_bindings.emplace_back(
 				VkDescriptorSetLayoutBinding{
-					.binding = static_cast<uint32_t>(layout_bindings.size()),
+					.binding = static_cast<std::uint32_t>(layout_bindings.size()),
 					.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 					.descriptorCount = 1,
 					.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
@@ -197,7 +197,7 @@ namespace
 		{
 			layout_bindings.emplace_back(
 				VkDescriptorSetLayoutBinding{
-					.binding = static_cast<uint32_t>(layout_bindings.size()),
+					.binding = static_cast<std::uint32_t>(layout_bindings.size()),
 					.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 					.descriptorCount = 1,
 					.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
@@ -207,7 +207,7 @@ namespace
 
 		VkDescriptorSetLayoutCreateInfo layout_info{
 			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-			.bindingCount = static_cast<uint32_t>(layout_bindings.size()),
+			.bindingCount = static_cast<std::uint32_t>(layout_bindings.size()),
 			.pBindings = layout_bindings.data()
 		};
 
@@ -220,7 +220,7 @@ namespace
 	}
 
 	VkDescriptorPool create_descriptor_pool(VkDevice device,
-		uint32_t uniform_count, uint32_t descriptor_set_count, bool has_texture)
+		std::uint32_t uniform_count, std::uint32_t descriptor_set_count, bool has_texture)
 	{
 		std::vector<VkDescriptorPoolSize> pool_sizes{
 			VkDescriptorPoolSize{
@@ -241,7 +241,7 @@ namespace
 		VkDescriptorPoolCreateInfo pool_info{
 			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
 			.maxSets = descriptor_set_count,
-			.poolSizeCount = static_cast<uint32_t>(pool_sizes.size()),
+			.poolSizeCount = static_cast<std::uint32_t>(pool_sizes.size()),
 			.pPoolSizes = pool_sizes.data()
 		};
 
@@ -253,7 +253,7 @@ namespace
 		return descriptor_pool;
 	}
 
-	template <uint32_t count>
+	template <std::uint32_t count>
 	std::array<VkDescriptorSet, count> create_descriptor_sets(
 		VkDevice device,
 		VkDescriptorSetLayout layout,
@@ -268,7 +268,7 @@ namespace
 		VkDescriptorSetAllocateInfo alloc_info{
 			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
 			.descriptorPool = pool,
-			.descriptorSetCount = static_cast<uint32_t>(layouts.size()),
+			.descriptorSetCount = static_cast<std::uint32_t>(layouts.size()),
 			.pSetLayouts = layouts.data()
 		};
 
@@ -308,7 +308,7 @@ namespace
 				descriptor_writes.emplace_back(VkWriteDescriptorSet{
 					.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 					.dstSet = descriptor_sets[frame],
-					.dstBinding = static_cast<uint32_t>(binding),
+					.dstBinding = static_cast<std::uint32_t>(binding),
 					.dstArrayElement = 0,
 					.descriptorCount = 1,
 					.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -325,7 +325,7 @@ namespace
 				descriptor_writes.emplace_back(VkWriteDescriptorSet{
 					.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 					.dstSet = descriptor_sets[frame],
-					.dstBinding = static_cast<uint32_t>(uniform_sizes.size()),
+					.dstBinding = static_cast<std::uint32_t>(uniform_sizes.size()),
 					.dstArrayElement = 0,
 					.descriptorCount = 1,
 					.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
@@ -337,7 +337,7 @@ namespace
 		}
 
 		vkUpdateDescriptorSets(device,
-			static_cast<uint32_t>(descriptor_writes.size()),
+			static_cast<std::uint32_t>(descriptor_writes.size()),
 			descriptor_writes.data(),
 			0 /*descriptorCopyCount*/,
 			nullptr);
@@ -388,15 +388,15 @@ GraphicsPipeline::GraphicsPipeline(GraphicsApi const & graphics_api,
 	VkDevice device = m_graphics_api.GetDevice();
 
 	m_descriptor_set_layout = create_descriptor_set_layout(device,
-		static_cast<uint32_t>(vs_uniform_sizes.size()),
-		static_cast<uint32_t>(fs_uniform_sizes.size()),
+		static_cast<std::uint32_t>(vs_uniform_sizes.size()),
+		static_cast<std::uint32_t>(fs_uniform_sizes.size()),
 		texture != nullptr);
 
 	std::vector<VkDeviceSize> uniform_sizes{ vs_uniform_sizes };
 	uniform_sizes.insert(uniform_sizes.end(), fs_uniform_sizes.begin(), fs_uniform_sizes.end());
 
 	m_descriptor_pool = create_descriptor_pool(device,
-		static_cast<uint32_t>(uniform_sizes.size()) /*descriptor_count*/,
+		static_cast<std::uint32_t>(uniform_sizes.size()) /*descriptor_count*/,
 		GraphicsApi::m_max_frames_in_flight /*descriptor_set_count*/,
 		texture != nullptr);
 

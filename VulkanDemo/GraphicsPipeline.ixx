@@ -73,7 +73,7 @@ public:
 	void UpdatePerObjectConstants(RenderObject const & obj) const;
 
 	template <typename UniformData>
-	void SetUniform(uint32_t binding, UniformData const & data) const;
+	void SetUniform(std::uint32_t binding, UniformData const & data) const;
 
 	template <typename VSConstantData = std::nullopt_t, typename FSConstantData = std::nullopt_t>
 	void SetPushConstants(VSConstantData const & vs_data, FSConstantData const & fs_data) const;
@@ -94,7 +94,7 @@ private:
 };
 
 template <typename UniformData>
-void GraphicsPipeline::SetUniform(uint32_t binding, UniformData const & data) const
+void GraphicsPipeline::SetUniform(std::uint32_t binding, UniformData const & data) const
 {
 	UniformBuffer const & buffer = m_descriptor_sets[m_graphics_api.GetCurFrameIndex()].m_uniform_buffers[binding];
 	memcpy(buffer.m_mapping, &data, sizeof(data));
@@ -107,14 +107,14 @@ void GraphicsPipeline::SetPushConstants(VSConstantData const & vs_data, FSConsta
 		"At least one push constant data must be provided");
 
 	VkCommandBuffer command_buffer = m_graphics_api.GetCurCommandBuffer();
-	uint32_t offset = 0;
+	std::uint32_t offset = 0;
 
 	if constexpr (!std::same_as<VSConstantData, std::nullopt_t>)
 	{
 		vkCmdPushConstants(command_buffer, m_pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT,
 			offset, sizeof(VSConstantData), &vs_data);
 
-		offset += static_cast<uint32_t>(sizeof(VSConstantData));
+		offset += static_cast<std::uint32_t>(sizeof(VSConstantData));
 	}
 
 	if constexpr (!std::same_as<FSConstantData, std::nullopt_t>)

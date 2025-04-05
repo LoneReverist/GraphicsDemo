@@ -101,8 +101,8 @@ namespace
 		}
 
 		out_extents = VkExtent2D{
-			.width = static_cast<uint32_t>(image.GetWidth()),
-			.height = static_cast<uint32_t>(image.GetHeight())
+			.width = static_cast<std::uint32_t>(image.GetWidth()),
+			.height = static_cast<std::uint32_t>(image.GetHeight())
 		};
 
 		VkDeviceSize buffer_size = static_cast<VkDeviceSize>(image.GetSize());
@@ -149,8 +149,8 @@ namespace
 		}
 
 		out_extents = VkExtent2D{
-			.width = static_cast<uint32_t>(images[0].GetWidth()),
-			.height = static_cast<uint32_t>(images[0].GetHeight())
+			.width = static_cast<std::uint32_t>(images[0].GetWidth()),
+			.height = static_cast<std::uint32_t>(images[0].GetHeight())
 		};
 
 		VkDeviceSize buffer_size = 0;

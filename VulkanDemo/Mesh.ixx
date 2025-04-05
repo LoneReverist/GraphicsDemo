@@ -15,7 +15,7 @@ import Vertex;
 export class Mesh
 {
 public:
-	using index_t = uint16_t;
+	using index_t = std::uint16_t;
 
 	template <IsVertex Vert>
 	Mesh(
@@ -41,7 +41,7 @@ private:
 	VkBuffer m_index_buffer = VK_NULL_HANDLE;
 	VkDeviceMemory m_index_buffer_memory = VK_NULL_HANDLE;
 
-	uint32_t m_index_count = 0;
+	std::uint32_t m_index_count = 0;
 };
 
 namespace
@@ -141,7 +141,7 @@ Mesh::Mesh(
 		return;
 	}
 
-	m_index_count = static_cast<uint32_t>(indices.size());
+	m_index_count = static_cast<std::uint32_t>(indices.size());
 }
 
 Mesh::Mesh(Mesh && other)
@@ -194,7 +194,7 @@ void Mesh::Render(bool /*wireframe*/) const
 		vertex_buffers,
 		offsets);
 
-	static_assert(std::same_as<index_t, uint16_t>);
+	static_assert(std::same_as<index_t, std::uint16_t>);
 	vkCmdBindIndexBuffer(
 		command_buffer,
 		m_index_buffer,

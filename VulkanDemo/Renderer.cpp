@@ -55,7 +55,7 @@ void Renderer::Render() const
 		.renderPass = m_graphics_api.GetRenderPass(),
 		.framebuffer = m_graphics_api.GetCurFrameBuffer(),
 		.renderArea = scissor,
-		.clearValueCount = static_cast<uint32_t>(clear_values.size()),
+		.clearValueCount = static_cast<std::uint32_t>(clear_values.size()),
 		.pClearValues = clear_values.data()
 	};
 

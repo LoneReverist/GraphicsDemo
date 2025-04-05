@@ -20,7 +20,7 @@ namespace
 {
 	bool validation_layers_are_supported(std::vector<char const *> const & desired_layers)
 	{
-		uint32_t layer_count;
+		std::uint32_t layer_count;
 		vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
 
 		std::vector<VkLayerProperties> available_layers(layer_count);
@@ -39,7 +39,7 @@ namespace
 
 	VkInstance create_instance(
 		std::string const & app_title,
-		uint32_t extension_count,
+		std::uint32_t extension_count,
 		char const ** extensions,
 		bool enable_validation_layers,
 		std::vector<char const *> const & validation_layers)
@@ -63,7 +63,7 @@ namespace
 
 		if (enable_validation_layers)
 		{
-			create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
+			create_info.enabledLayerCount = static_cast<std::uint32_t>(validation_layers.size());
 			create_info.ppEnabledLayerNames = validation_layers.data();
 		}
 
@@ -89,13 +89,13 @@ namespace
 	{
 		QueueFamilyIndices indices;
 		
-		uint32_t queue_family_count = 0;
+		std::uint32_t queue_family_count = 0;
 		vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, nullptr);
 
 		std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
 		vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, queue_families.data());
 
-		for (uint32_t i = 0; i < static_cast<uint32_t>(queue_families.size()); ++i)
+		for (std::uint32_t i = 0; i < static_cast<std::uint32_t>(queue_families.size()); ++i)
 		{
 			if (queue_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
 				indices.graphics_family = i;
@@ -118,7 +118,7 @@ namespace
 
 		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &sws_details.capabilities);
 
-		uint32_t format_count;
+		std::uint32_t format_count;
 		vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &format_count, nullptr);
 
 		if (format_count != 0)
@@ -127,7 +127,7 @@ namespace
 			vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &format_count, sws_details.formats.data());
 		}
 
-		uint32_t present_mode_count;
+		std::uint32_t present_mode_count;
 		vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &present_mode_count, nullptr);
 
 		if (present_mode_count != 0) {
@@ -140,7 +140,7 @@ namespace
 
 	bool device_supports_extensions(VkPhysicalDevice device, std::vector<const char *> const & required_extensions)
 	{
-		uint32_t extension_count;
+		std::uint32_t extension_count;
 		vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, nullptr);
 
 		std::vector<VkExtensionProperties> available_extensions(extension_count);
@@ -195,7 +195,7 @@ namespace
 		VkSurfaceKHR surface,
 		std::vector<const char *> const & device_extensions)
 	{
-		uint32_t device_count = 0;
+		std::uint32_t device_count = 0;
 		vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
 		if (device_count == 0)
 			throw std::runtime_error("Failed to find GPUs with Vulkan support!");
@@ -224,14 +224,14 @@ namespace
 		VkQueue & out_graphics_queue,
 		VkQueue & out_present_queue)
 	{
-		std::set<uint32_t> unique_queue_families = {
+		std::set<std::uint32_t> unique_queue_families = {
 			phys_device_info.qfis.graphics_family.value(),
 			phys_device_info.qfis.present_family.value()
 		};
 		
 		std::vector<VkDeviceQueueCreateInfo> queue_create_infos(unique_queue_families.size());
 		std::ranges::transform(unique_queue_families, queue_create_infos.begin(),
-			[](uint32_t qfi)
+			[](std::uint32_t qfi)
 			{
 				constexpr float queue_priority = 1.0f;
 				return VkDeviceQueueCreateInfo{
@@ -248,9 +248,9 @@ namespace
 
 		VkDeviceCreateInfo createInfo{
 			.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
-			.queueCreateInfoCount = static_cast<uint32_t>(queue_create_infos.size()),
+			.queueCreateInfoCount = static_cast<std::uint32_t>(queue_create_infos.size()),
 			.pQueueCreateInfos = queue_create_infos.data(),
-			.enabledExtensionCount = static_cast<uint32_t>(device_extensions.size()),
+			.enabledExtensionCount = static_cast<std::uint32_t>(device_extensions.size()),
 			.ppEnabledExtensionNames = device_extensions.data(),
 			.pEnabledFeatures = &deviceFeatures
 		};
@@ -294,15 +294,15 @@ namespace
 
 	VkExtent2D choose_swap_extent(const VkSurfaceCapabilitiesKHR & capabilities, int width, int height)
 	{
-		if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
+		if (capabilities.currentExtent.width != std::numeric_limits<std::uint32_t>::max())
 		{
 			return capabilities.currentExtent;
 		}
 		else
 		{
 			VkExtent2D actualExtent = {
-				std::clamp(static_cast<uint32_t>(width), capabilities.minImageExtent.width, capabilities.maxImageExtent.width),
-				std::clamp(static_cast<uint32_t>(height), capabilities.minImageExtent.height, capabilities.maxImageExtent.height)
+				std::clamp(static_cast<std::uint32_t>(width), capabilities.minImageExtent.width, capabilities.maxImageExtent.width),
+				std::clamp(static_cast<std::uint32_t>(height), capabilities.minImageExtent.height, capabilities.maxImageExtent.height)
 			};
 
 			return actualExtent;
@@ -328,7 +328,7 @@ namespace
 		if (extent.width == 0 || extent.height == 0)
 			return VK_NULL_HANDLE;
 
-		uint32_t image_count = sws.capabilities.minImageCount + 1;
+		std::uint32_t image_count = sws.capabilities.minImageCount + 1;
 		if (sws.capabilities.maxImageCount > 0)
 			image_count = std::min(image_count, sws.capabilities.maxImageCount);
 
@@ -351,7 +351,7 @@ namespace
 			.oldSwapchain = VK_NULL_HANDLE
 		};
 
-		uint32_t qfis_array[] = {
+		std::uint32_t qfis_array[] = {
 			qfis.graphics_family.value(),
 			qfis.present_family.value()
 		};
@@ -430,7 +430,7 @@ namespace
 		std::array<VkAttachmentDescription, 2> attachments = { color_attachment, depth_attachment };
 		VkRenderPassCreateInfo render_pass_info{
 			.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
-			.attachmentCount = static_cast<uint32_t>(attachments.size()),
+			.attachmentCount = static_cast<std::uint32_t>(attachments.size()),
 			.pAttachments = attachments.data(),
 			.subpassCount = 1,
 			.pSubpasses = &subpass,
@@ -462,7 +462,7 @@ namespace
 		VkFramebufferCreateInfo framebuffer_info{
 			.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
 			.renderPass = render_pass,
-			.attachmentCount = static_cast<uint32_t>(attachments.size()),
+			.attachmentCount = static_cast<std::uint32_t>(attachments.size()),
 			.pAttachments = attachments.data(),
 			.width = swap_chain_extent.width,
 			.height = swap_chain_extent.height,
@@ -528,7 +528,7 @@ namespace
 		return command_pool;
 	}
 
-	template <uint32_t count>
+	template <std::uint32_t count>
 	std::array<VkCommandBuffer, count> create_command_buffers(VkCommandPool command_pool, VkDevice logical_device)
 	{
 		VkCommandBufferAllocateInfo alloc_info{
@@ -547,7 +547,7 @@ namespace
 	}
 
 	// VkSemaphore is used for synchronizing commands on the gpu
-	template <uint32_t count>
+	template <std::uint32_t count>
 	std::array<VkSemaphore, count> create_semaphores(VkDevice logical_device)
 	{
 		VkSemaphoreCreateInfo semaphore_info{
@@ -555,7 +555,7 @@ namespace
 		};
 
 		std::array<VkSemaphore, count> semaphores;
-		for (uint32_t i = 0; i < count; ++i)
+		for (std::uint32_t i = 0; i < count; ++i)
 		{
 			VkResult result = vkCreateSemaphore(logical_device, &semaphore_info, nullptr, &semaphores[i]);
 			if (result != VK_SUCCESS)
@@ -566,7 +566,7 @@ namespace
 	}
 
 	// VkFence is used for synchronizing the cpu with the gpu
-	template <uint32_t count>
+	template <std::uint32_t count>
 	std::array<VkFence, count> create_fences(VkDevice logical_device, bool create_signaled)
 	{
 		VkFenceCreateInfo fence_info{
@@ -575,7 +575,7 @@ namespace
 		};
 
 		std::array<VkFence, count> fences;
-		for (uint32_t i = 0; i < count; ++i)
+		for (std::uint32_t i = 0; i < count; ++i)
 		{
 			VkResult result = vkCreateFence(logical_device, &fence_info, nullptr, &fences[i]);
 			if (result != VK_SUCCESS)
@@ -585,10 +585,10 @@ namespace
 		return fences;
 	}
 
-	uint32_t find_memory_type(PhysicalDeviceInfo const & phys_device_info, uint32_t type_filter, VkMemoryPropertyFlags properties)
+	std::uint32_t find_memory_type(PhysicalDeviceInfo const & phys_device_info, std::uint32_t type_filter, VkMemoryPropertyFlags properties)
 	{
 		VkPhysicalDeviceMemoryProperties const & mem_properties = phys_device_info.mem_properties;
-		for (uint32_t i = 0; i < mem_properties.memoryTypeCount; i++)
+		for (std::uint32_t i = 0; i < mem_properties.memoryTypeCount; i++)
 		{
 			if (type_filter & (1 << i) && (mem_properties.memoryTypes[i].propertyFlags & properties) == properties)
 				return i;
@@ -603,7 +603,7 @@ GraphicsApi::GraphicsApi(
 	int width,
 	int height,
 	std::string const & app_title,
-	uint32_t extension_count,
+	std::uint32_t extension_count,
 	char const ** extensions)
 {
 	if (m_enable_validation_layers && !validation_layers_are_supported(m_validation_layers))
@@ -870,7 +870,7 @@ VkResult GraphicsApi::CreateBufferMemory(
 	VkMemoryRequirements mem_requirements;
 	vkGetBufferMemoryRequirements(m_logical_device, buffer, &mem_requirements);
 
-	uint32_t mem_type_index = find_memory_type(
+	std::uint32_t mem_type_index = find_memory_type(
 		m_phys_device_info,
 		mem_requirements.memoryTypeBits,
 		properties);
@@ -894,9 +894,9 @@ VkResult GraphicsApi::CreateBufferMemory(
 }
 
 VkResult GraphicsApi::Create2dImage(
-	uint32_t width,
-	uint32_t height,
-	uint32_t layers,
+	std::uint32_t width,
+	std::uint32_t height,
+	std::uint32_t layers,
 	VkFormat format,
 	VkImageTiling tiling,
 	VkImageUsageFlags usage,
@@ -942,7 +942,7 @@ VkResult GraphicsApi::CreateImageMemory(
 	VkMemoryRequirements mem_requirements;
 	vkGetImageMemoryRequirements(m_logical_device, image, &mem_requirements);
 
-	uint32_t mem_type_index = find_memory_type(
+	std::uint32_t mem_type_index = find_memory_type(
 		m_phys_device_info,
 		mem_requirements.memoryTypeBits,
 		properties);
@@ -969,7 +969,7 @@ VkResult GraphicsApi::CreateImageView(
 	VkImageViewType view_type,
 	VkFormat format,
 	VkImageAspectFlags aspect_flags,
-	uint32_t layers,
+	std::uint32_t layers,
 	VkImageView & out_image_view) const
 {
 	VkImageViewCreateInfo create_info{
@@ -1051,7 +1051,7 @@ void GraphicsApi::CopyBuffer(
 		});
 }
 
-void GraphicsApi::CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, uint32_t layers) const
+void GraphicsApi::CopyBufferToImage(VkBuffer buffer, VkImage image, std::uint32_t width, std::uint32_t height, std::uint32_t layers) const
 {
 	DoOneTimeCommand([buffer, image, width, height, layers](VkCommandBuffer command_buffer)
 		{
@@ -1080,7 +1080,7 @@ void GraphicsApi::CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t wid
 		});
 }
 
-void GraphicsApi::TransitionImageLayout(VkImage image, uint32_t layers, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout) const
+void GraphicsApi::TransitionImageLayout(VkImage image, std::uint32_t layers, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout) const
 {
 	DoOneTimeCommand([image, layers, format, old_layout, new_layout](VkCommandBuffer command_buffer)
 		{
