@@ -34,6 +34,9 @@ public:
 	void Render(bool wireframe) const;
 
 private:
+	void destroy_buffers();
+
+private:
 	GraphicsApi const & m_graphics_api;
 
 	VkBuffer m_vertex_buffer = VK_NULL_HANDLE;
@@ -147,14 +150,27 @@ Mesh::Mesh(
 Mesh::Mesh(Mesh && other)
 	: m_graphics_api(other.m_graphics_api)
 {
-	std::swap(m_vertex_buffer, other.m_vertex_buffer);
-	std::swap(m_vertex_buffer_memory, other.m_vertex_buffer_memory);
-	std::swap(m_index_buffer, other.m_index_buffer);
-	std::swap(m_index_buffer_memory, other.m_index_buffer_memory);
-	std::swap(m_index_count, other.m_index_count);
+	destroy_buffers();
+
+	m_vertex_buffer = other.m_vertex_buffer;
+	m_vertex_buffer_memory = other.m_vertex_buffer_memory;
+	m_index_buffer = other.m_index_buffer;
+	m_index_buffer_memory = other.m_index_buffer_memory;
+	m_index_count = other.m_index_count;
+
+	other.m_vertex_buffer = VK_NULL_HANDLE;
+	other.m_vertex_buffer_memory = VK_NULL_HANDLE;
+	other.m_index_buffer = VK_NULL_HANDLE;
+	other.m_index_buffer_memory = VK_NULL_HANDLE;
+	other.m_index_count = 0;
 }
 
 Mesh::~Mesh()
+{
+	destroy_buffers();
+}
+
+void Mesh::destroy_buffers()
 {
 	VkDevice device = m_graphics_api.GetDevice();
 
