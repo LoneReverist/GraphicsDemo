@@ -448,14 +448,14 @@ void Scene::Init()
 	const int ground_mesh_id = m_renderer.AddMesh(std::move(create_ground_mesh(m_graphics_api)));
 	const int skybox_mesh_id = m_renderer.AddMesh(std::move(create_skybox_mesh(m_graphics_api)));
 
-	m_sword0 = m_renderer.CreateRenderObject(sword_mesh_id, reflection_shader_id);
-	m_sword1 = m_renderer.CreateRenderObject(sword_mesh_id, reflection_shader_id);
-	m_red_gem = m_renderer.CreateRenderObject(red_gem_mesh_id, light_source_pipeline_id);
-	m_green_gem = m_renderer.CreateRenderObject(green_gem_mesh_id, light_source_pipeline_id);
-	m_blue_gem = m_renderer.CreateRenderObject(blue_gem_mesh_id, light_source_pipeline_id);
-	//m_ground = m_renderer.CreateRenderObject(ground_mesh_id, color_shader_id);
-	m_ground = m_renderer.CreateRenderObject(ground_mesh_id, texture_shader_id);
-	m_skybox = m_renderer.CreateRenderObject(skybox_mesh_id, skybox_pipeline_id);
+	m_sword0 = m_renderer.CreateRenderObject("sword0", sword_mesh_id, reflection_shader_id);
+	m_sword1 = m_renderer.CreateRenderObject("sword1", sword_mesh_id, reflection_shader_id);
+	m_red_gem = m_renderer.CreateRenderObject("red gem", red_gem_mesh_id, light_source_pipeline_id);
+	m_green_gem = m_renderer.CreateRenderObject("green gem", green_gem_mesh_id, light_source_pipeline_id);
+	m_blue_gem = m_renderer.CreateRenderObject("blue gem", blue_gem_mesh_id, light_source_pipeline_id);
+	//m_ground = m_renderer.CreateRenderObject("ground", ground_mesh_id, color_shader_id);
+	m_ground = m_renderer.CreateRenderObject("ground", ground_mesh_id, texture_shader_id);
+	m_skybox = m_renderer.CreateRenderObject("skybox", skybox_mesh_id, skybox_pipeline_id);
 
 	//m_sword0->SetColor({ 0.6, 0.6, 0.6 });
 	//m_sword1->SetColor({ 0.6, 0.6, 0.6 });

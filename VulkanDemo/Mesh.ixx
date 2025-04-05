@@ -22,7 +22,12 @@ public:
 		GraphicsApi const & graphics_api,
 		std::vector<Vert> const & vertices,
 		std::vector<index_t> const & indices);
+	Mesh(Mesh && other);
 	~Mesh();
+
+	Mesh(Mesh &) = delete;
+	Mesh & operator=(Mesh &) = delete;
+	Mesh & operator=(Mesh &&) = delete;
 
 	bool IsInitialized() const;
 
@@ -137,6 +142,16 @@ Mesh::Mesh(
 	}
 
 	m_index_count = static_cast<uint32_t>(indices.size());
+}
+
+Mesh::Mesh(Mesh && other)
+	: m_graphics_api(other.m_graphics_api)
+{
+	std::swap(m_vertex_buffer, other.m_vertex_buffer);
+	std::swap(m_vertex_buffer_memory, other.m_vertex_buffer_memory);
+	std::swap(m_index_buffer, other.m_index_buffer);
+	std::swap(m_index_buffer_memory, other.m_index_buffer_memory);
+	std::swap(m_index_count, other.m_index_count);
 }
 
 Mesh::~Mesh()

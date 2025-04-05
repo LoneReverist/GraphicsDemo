@@ -129,11 +129,11 @@ int Renderer::AddMesh(Mesh && mesh)
 	return static_cast<int>(m_meshes.size() - 1);
 }
 
-std::shared_ptr<RenderObject> Renderer::CreateRenderObject(int mesh_id, int pipeline_id)
+std::shared_ptr<RenderObject> Renderer::CreateRenderObject(std::string name, int mesh_id, int pipeline_id)
 {
 	// Right now it's up to the developer to ensure the Vertex type of the mesh is the same as
 	// the Vertex type for the pipeline, but at some point a static_assert would be good
-	std::shared_ptr<RenderObject> obj = std::make_shared<RenderObject>(mesh_id, pipeline_id);
+	std::shared_ptr<RenderObject> obj = std::make_shared<RenderObject>(name, mesh_id, pipeline_id);
 	m_pipeline_containers[pipeline_id].m_render_objects.push_back(obj);
 	return obj;
 }

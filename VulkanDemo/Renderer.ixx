@@ -33,7 +33,7 @@ public:
 	int LoadMesh(std::filesystem::path const & mesh_path);
 	int AddMesh(Mesh && mesh_var);
 
-	std::shared_ptr<RenderObject> CreateRenderObject(int mesh_id, int pipeline_id);
+	std::shared_ptr<RenderObject> CreateRenderObject(std::string name, int mesh_id, int pipeline_id);
 
 	void SetClearColor(glm::vec3 const & color) { m_clear_color = color; }
 

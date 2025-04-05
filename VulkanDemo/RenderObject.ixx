@@ -2,6 +2,8 @@
 
 module;
 
+#include <string>
+
 #include <glm/vec3.hpp>
 #include <glm/ext/matrix_float4x4.hpp>
 
@@ -10,8 +12,9 @@ export module RenderObject;
 export class RenderObject
 {
 public:
-	RenderObject(int mesh_id, int pipeline_id, int tex_id = -1)
-		: m_mesh_id(mesh_id)
+	RenderObject(std::string name, int mesh_id, int pipeline_id, int tex_id = -1)
+		: m_name(name)
+		, m_mesh_id(mesh_id)
 		, m_pipeline_id(pipeline_id)
 		, m_tex_id(tex_id)
 		, m_color({ 1.0, 1.0, 1.0 })
@@ -33,6 +36,8 @@ public:
 	glm::mat4 const & GetModelTransform() const { return m_model_transform; }
 
 private:
+	std::string m_name; // for debugging
+
 	int m_mesh_id{ -1 };
 	int m_pipeline_id{ -1 };
 	int m_tex_id{ -1 };
