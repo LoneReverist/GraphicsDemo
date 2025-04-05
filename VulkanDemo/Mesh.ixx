@@ -3,32 +3,26 @@
 module;
 
 #include <iostream>
-#include <variant>
 #include <vector>
 
 #include <vulkan/vulkan.h>
-
-#include <glm/vec2.hpp>
-#include <glm/vec3.hpp>
 
 export module Mesh;
 
 import GraphicsApi;
 import Vertex;
 
-template <IsVertex Vert>
-class MeshImpl
+export class Mesh
 {
 public:
 	using index_t = uint16_t;
 
-	MeshImpl(
+	template <IsVertex Vert>
+	Mesh(
 		GraphicsApi const & graphics_api,
-		std::vector<Vert> && vertices,
-		std::vector<index_t> && indices);
-
-	void InitBuffers();
-	void DeleteBuffers();
+		std::vector<Vert> const & vertices,
+		std::vector<index_t> const & indices);
+	~Mesh();
 
 	bool IsInitialized() const;
 
@@ -37,63 +31,13 @@ public:
 private:
 	GraphicsApi const & m_graphics_api;
 
-	std::vector<Vert> m_vertices;
-	std::vector<index_t> m_indices;
-
 	VkBuffer m_vertex_buffer = VK_NULL_HANDLE;
 	VkDeviceMemory m_vertex_buffer_memory = VK_NULL_HANDLE;
 	VkBuffer m_index_buffer = VK_NULL_HANDLE;
 	VkDeviceMemory m_index_buffer_memory = VK_NULL_HANDLE;
+
+	uint32_t m_index_count = 0;
 };
-
-export class Mesh
-{
-public:
-	using index_t = uint16_t;
-
-	template<IsVertex Vert>
-	Mesh(
-		GraphicsApi const & graphics_api,
-		std::vector<Vert> && vertices,
-		std::vector<index_t> && indices);
-
-	void InitBuffers();
-	void DeleteBuffers();
-
-	void Render(bool wireframe) const;
-
-private:
-	using mesh_variant_t = std::variant<
-		MeshImpl<PositionVertex>,
-		MeshImpl<NormalVertex>,
-		MeshImpl<TextureVertex>,
-		MeshImpl<ColorVertex>>;
-
-	mesh_variant_t m_mesh_var;
-};
-
-template<IsVertex Vert>
-Mesh::Mesh(
-	GraphicsApi const & graphics_api,
-	std::vector<Vert> && vertices,
-	std::vector<index_t> && indices)
-	: m_mesh_var(MeshImpl<Vert>{ graphics_api, std::move(vertices), std::move(indices) })
-{}
-
-void Mesh::InitBuffers()
-{
-	std::visit([](auto & mesh) { mesh.InitBuffers(); }, m_mesh_var);
-}
-
-void Mesh::DeleteBuffers()
-{
-	std::visit([](auto & mesh) { mesh.DeleteBuffers(); }, m_mesh_var);
-}
-
-void Mesh::Render(bool wireframe) const
-{
-	std::visit([wireframe](auto & mesh) { mesh.Render(wireframe); }, m_mesh_var);
-}
 
 namespace
 {
@@ -151,32 +95,26 @@ namespace
 }
 
 template<IsVertex Vert>
-MeshImpl<Vert>::MeshImpl(
+Mesh::Mesh(
 	GraphicsApi const & graphics_api,
-	std::vector<Vert> && vertices,
-	std::vector<index_t> && indices)
+	std::vector<Vert> const & vertices,
+	std::vector<index_t> const & indices)
 	: m_graphics_api{ graphics_api }
-	, m_vertices{ std::move(vertices) }
-	, m_indices{ std::move(indices) }
-{}
-
-template <IsVertex Vert>
-void MeshImpl<Vert>::InitBuffers()
 {
-	if (m_vertices.empty())
+	if (vertices.empty())
 	{
-		std::cout << "Mesh::Init() verts empty" << std::endl;
+		std::cout << "Mesh verts empty" << std::endl;
 		return;
 	}
-	if (m_indices.empty())
+	if (indices.empty())
 	{
-		std::cout << "Mesh::Init() indices empty" << std::endl;
+		std::cout << "Mesh indices empty" << std::endl;
 		return;
 	}
 
 	VkResult result = init_buffer(
 		m_graphics_api,
-		m_vertices,
+		vertices,
 		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
 		m_vertex_buffer,
 		m_vertex_buffer_memory);
@@ -188,7 +126,7 @@ void MeshImpl<Vert>::InitBuffers()
 
 	result = init_buffer(
 		m_graphics_api,
-		m_indices,
+		indices,
 		VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
 		m_index_buffer,
 		m_index_buffer_memory);
@@ -197,10 +135,11 @@ void MeshImpl<Vert>::InitBuffers()
 		std::cout << "Failed to create index buffer" << std::endl;
 		return;
 	}
+
+	m_index_count = static_cast<uint32_t>(indices.size());
 }
 
-template <IsVertex Vert>
-void MeshImpl<Vert>::DeleteBuffers()
+Mesh::~Mesh()
 {
 	VkDevice device = m_graphics_api.GetDevice();
 
@@ -215,17 +154,16 @@ void MeshImpl<Vert>::DeleteBuffers()
 	m_vertex_buffer_memory = VK_NULL_HANDLE;
 }
 
-template <IsVertex Vert>
-bool MeshImpl<Vert>::IsInitialized() const
+bool Mesh::IsInitialized() const
 {
 	return m_vertex_buffer != VK_NULL_HANDLE
 		&& m_vertex_buffer_memory != VK_NULL_HANDLE
 		&& m_index_buffer != VK_NULL_HANDLE
-		&& m_index_buffer_memory != VK_NULL_HANDLE;
+		&& m_index_buffer_memory != VK_NULL_HANDLE
+		&& m_index_count > 0;
 }
 
-template <IsVertex Vert>
-void MeshImpl<Vert>::Render(bool /*wireframe*/) const
+void Mesh::Render(bool /*wireframe*/) const
 {
 	if (!IsInitialized())
 		return;
@@ -250,7 +188,7 @@ void MeshImpl<Vert>::Render(bool /*wireframe*/) const
 
 	vkCmdDrawIndexed(
 		command_buffer,
-		static_cast<uint32_t>(m_indices.size()),
+		m_index_count,
 		1 /*instanceCount*/,
 		0 /*firstIndex*/,
 		0 /*vertexOffset*/,

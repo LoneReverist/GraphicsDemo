@@ -16,12 +16,6 @@ Renderer::Renderer(GraphicsApi const & graphics_api)
 {
 }
 
-Renderer::~Renderer()
-{
-	for (Mesh & mesh : m_meshes)
-		mesh.DeleteBuffers();
-}
-
 void Renderer::Render() const
 {
 	VkCommandBuffer command_buffer = m_graphics_api.GetCurCommandBuffer();
@@ -125,17 +119,13 @@ int Renderer::LoadMesh(std::filesystem::path const & mesh_path)
 		return -1;
 	}
 
-	Mesh & mesh = m_meshes.emplace_back(m_graphics_api, std::move(vertices), std::move(indices));
-	mesh.InitBuffers();
-
+	m_meshes.emplace_back(m_graphics_api, vertices, indices);
 	return static_cast<int>(m_meshes.size() - 1);
 }
 
 int Renderer::AddMesh(Mesh && mesh)
 {
-	mesh.InitBuffers();
-
-	m_meshes.push_back(std::move(mesh));
+	m_meshes.emplace_back(std::move(mesh));
 	return static_cast<int>(m_meshes.size() - 1);
 }
 

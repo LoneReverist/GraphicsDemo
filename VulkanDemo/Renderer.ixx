@@ -25,7 +25,6 @@ export class Renderer
 {
 public:
 	explicit Renderer(GraphicsApi const & graphics_api);
-	~Renderer();
 
 	void Render() const;
 

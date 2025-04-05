@@ -90,7 +90,7 @@ namespace
 			1, 0, 2,
 			1, 2, 3 };
 
-		return Mesh{ graphics_api, std::move(verts), std::move(indices) };
+		return Mesh{ graphics_api, verts, indices };
 	}
 
 	Mesh create_skybox_mesh(GraphicsApi const & graphics_api)
@@ -119,7 +119,7 @@ namespace
 			1, 5, 2,
 			2, 5, 6 };
 
-		return Mesh{ graphics_api, std::move(verts), std::move(indices) };
+		return Mesh{ graphics_api, verts, indices };
 	}
 
 	std::unique_ptr<GraphicsPipeline> create_texture_pipeline(
