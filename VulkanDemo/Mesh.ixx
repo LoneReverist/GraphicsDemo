@@ -22,12 +22,13 @@ public:
 		GraphicsApi const & graphics_api,
 		std::vector<Vert> const & vertices,
 		std::vector<index_t> const & indices);
-	Mesh(Mesh && other);
 	~Mesh();
+
+	Mesh(Mesh && other);
+	Mesh & operator=(Mesh && other);
 
 	Mesh(Mesh &) = delete;
 	Mesh & operator=(Mesh &) = delete;
-	Mesh & operator=(Mesh &&) = delete;
 
 	bool IsInitialized() const;
 
@@ -147,24 +148,6 @@ Mesh::Mesh(
 	m_index_count = static_cast<std::uint32_t>(indices.size());
 }
 
-Mesh::Mesh(Mesh && other)
-	: m_graphics_api(other.m_graphics_api)
-{
-	destroy_buffers();
-
-	m_vertex_buffer = other.m_vertex_buffer;
-	m_vertex_buffer_memory = other.m_vertex_buffer_memory;
-	m_index_buffer = other.m_index_buffer;
-	m_index_buffer_memory = other.m_index_buffer_memory;
-	m_index_count = other.m_index_count;
-
-	other.m_vertex_buffer = VK_NULL_HANDLE;
-	other.m_vertex_buffer_memory = VK_NULL_HANDLE;
-	other.m_index_buffer = VK_NULL_HANDLE;
-	other.m_index_buffer_memory = VK_NULL_HANDLE;
-	other.m_index_count = 0;
-}
-
 Mesh::~Mesh()
 {
 	destroy_buffers();
@@ -183,6 +166,34 @@ void Mesh::destroy_buffers()
 	m_vertex_buffer = VK_NULL_HANDLE;
 	vkFreeMemory(device, m_vertex_buffer_memory, nullptr);
 	m_vertex_buffer_memory = VK_NULL_HANDLE;
+}
+
+Mesh::Mesh(Mesh && other)
+	: m_graphics_api(other.m_graphics_api)
+{
+	*this = std::move(other);
+}
+
+Mesh & Mesh::operator=(Mesh && other)
+{
+	if (this == &other)
+		return *this;
+
+	destroy_buffers();
+
+	m_vertex_buffer = other.m_vertex_buffer;
+	m_vertex_buffer_memory = other.m_vertex_buffer_memory;
+	m_index_buffer = other.m_index_buffer;
+	m_index_buffer_memory = other.m_index_buffer_memory;
+	m_index_count = other.m_index_count;
+
+	other.m_vertex_buffer = VK_NULL_HANDLE;
+	other.m_vertex_buffer_memory = VK_NULL_HANDLE;
+	other.m_index_buffer = VK_NULL_HANDLE;
+	other.m_index_buffer_memory = VK_NULL_HANDLE;
+	other.m_index_count = 0;
+
+	return *this;
 }
 
 bool Mesh::IsInitialized() const

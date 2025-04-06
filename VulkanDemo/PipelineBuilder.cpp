@@ -85,16 +85,16 @@ void PipelineBuilder::LoadShaders(std::filesystem::path const & vs_path, std::fi
 	m_frag_shader_module = load_shader(fs_path, device);
 }
 
-std::unique_ptr<GraphicsPipeline> PipelineBuilder::CreatePipeline() const
+std::optional<GraphicsPipeline> PipelineBuilder::CreatePipeline() const
 {
 	if (m_vert_shader_module == VK_NULL_HANDLE
 		|| m_frag_shader_module == VK_NULL_HANDLE
 		|| m_vert_attrib_descs.empty())
 	{
-		return nullptr;
+		return std::nullopt;
 	}
 
-	return std::make_unique<GraphicsPipeline>(
+	return GraphicsPipeline{
 		m_graphics_api,
 		m_vert_shader_module,
 		m_frag_shader_module,
@@ -106,5 +106,5 @@ std::unique_ptr<GraphicsPipeline> PipelineBuilder::CreatePipeline() const
 		m_texture,
 		m_depth_test_options,
 		m_per_frame_constants_callback,
-		m_per_object_constants_callback);
+		m_per_object_constants_callback };
 }

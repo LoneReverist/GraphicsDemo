@@ -139,7 +139,7 @@ namespace
 		return Mesh{ graphics_api, verts, indices };
 	}
 
-	std::unique_ptr<GraphicsPipeline> create_texture_pipeline(
+	std::optional<GraphicsPipeline> create_texture_pipeline(
 		Scene const & scene,
 		std::filesystem::path const & shaders_path,
 		Texture const & texture)
@@ -202,7 +202,7 @@ namespace
 		return builder.CreatePipeline();
 	}
 
-	std::unique_ptr<GraphicsPipeline> create_reflection_pipeline(
+	std::optional<GraphicsPipeline> create_reflection_pipeline(
 		Scene const & scene,
 		std::filesystem::path const & shaders_path,
 		Texture const & texture)
@@ -273,7 +273,7 @@ namespace
 		return builder.CreatePipeline();
 	}
 
-	std::unique_ptr<GraphicsPipeline> create_skybox_pipeline(
+	std::optional<GraphicsPipeline> create_skybox_pipeline(
 		Scene const & scene,
 		std::filesystem::path const & shaders_path,
 		Texture const & skybox)
@@ -310,7 +310,7 @@ namespace
 		return builder.CreatePipeline();
 	}
 
-	std::unique_ptr<GraphicsPipeline> create_color_pipeline(
+	std::optional<GraphicsPipeline> create_color_pipeline(
 		Scene const & scene,
 		std::filesystem::path const & shaders_path)
 	{
@@ -371,7 +371,7 @@ namespace
 		return builder.CreatePipeline();
 	}
 
-	std::unique_ptr<GraphicsPipeline> create_light_source_pipeline(
+	std::optional<GraphicsPipeline> create_light_source_pipeline(
 		Scene const & scene,
 		std::filesystem::path const & shaders_path)
 	{
@@ -456,16 +456,17 @@ void Scene::Init()
 	std::optional<Mesh> blue_gem_mesh = create_mesh_from_file(m_graphics_api,
 		resources_path / "objects" / "bluegem.obj");
 
-	//const int color_shader_id = m_renderer.AddGraphicsPipeline(
-	//	std::move(create_color_pipeline(*this, shaders_path)));
-	const int texture_shader_id = m_renderer.AddGraphicsPipeline(
-		std::move(create_texture_pipeline(*this, shaders_path, *m_ground_tex)));
-	const int light_source_pipeline_id = m_renderer.AddGraphicsPipeline(
-		std::move(create_light_source_pipeline(*this, shaders_path)));
-	const int reflection_shader_id = m_renderer.AddGraphicsPipeline(
-		std::move(create_reflection_pipeline(*this, shaders_path, *m_skybox_tex)));
-	const int skybox_pipeline_id = m_renderer.AddGraphicsPipeline(
-		std::move(create_skybox_pipeline(*this, shaders_path, *m_skybox_tex)));
+	//std::optional<GraphicsPipeline> color_pipeline = create_color_pipeline(*this, shaders_path);
+	std::optional<GraphicsPipeline> texture_pipeline = create_texture_pipeline(*this, shaders_path, *m_ground_tex);
+	std::optional<GraphicsPipeline> light_source_pipeline = create_light_source_pipeline(*this, shaders_path);
+	std::optional<GraphicsPipeline> reflection_pipeline = create_reflection_pipeline(*this, shaders_path, *m_skybox_tex);
+	std::optional<GraphicsPipeline> skybox_pipeline = create_skybox_pipeline(*this, shaders_path, *m_skybox_tex);
+
+	//const int color_shader_id = color_pipeline.has_value() ? m_renderer.AddGraphicsPipeline(std::move(color_pipeline.value())) : -1;
+	const int texture_shader_id = texture_pipeline.has_value() ? m_renderer.AddGraphicsPipeline(std::move(texture_pipeline.value())) : -1;
+	const int light_source_pipeline_id = light_source_pipeline.has_value() ? m_renderer.AddGraphicsPipeline(std::move(light_source_pipeline.value())) : -1;
+	const int reflection_shader_id = reflection_pipeline.has_value() ? m_renderer.AddGraphicsPipeline(std::move(reflection_pipeline.value())) : -1;
+	const int skybox_pipeline_id = skybox_pipeline.has_value() ? m_renderer.AddGraphicsPipeline(std::move(skybox_pipeline.value())) : -1;
 
 	const int sword_mesh_id = sword_mesh.has_value() ? m_renderer.AddMesh(std::move(sword_mesh.value())) : -1;
 	const int red_gem_mesh_id = red_gem_mesh.has_value() ? m_renderer.AddMesh(std::move(red_gem_mesh.value())) : -1;
@@ -479,12 +480,9 @@ void Scene::Init()
 	m_red_gem = m_renderer.CreateRenderObject("red gem", red_gem_mesh_id, light_source_pipeline_id);
 	m_green_gem = m_renderer.CreateRenderObject("green gem", green_gem_mesh_id, light_source_pipeline_id);
 	m_blue_gem = m_renderer.CreateRenderObject("blue gem", blue_gem_mesh_id, light_source_pipeline_id);
-	//m_ground = m_renderer.CreateRenderObject("ground", ground_mesh_id, color_shader_id);
 	m_ground = m_renderer.CreateRenderObject("ground", ground_mesh_id, texture_shader_id);
 	m_skybox = m_renderer.CreateRenderObject("skybox", skybox_mesh_id, skybox_pipeline_id);
 
-	//m_sword0->SetColor({ 0.6, 0.6, 0.6 });
-	//m_sword1->SetColor({ 0.6, 0.6, 0.6 });
 	m_red_gem->SetColor({ 1.0, 0.0, 0.0 });
 	m_green_gem->SetColor({ 0.0, 1.0, 0.0 });
 	m_blue_gem->SetColor({ 0.0, 0.0, 1.0 });

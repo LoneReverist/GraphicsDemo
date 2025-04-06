@@ -455,6 +455,11 @@ GraphicsPipeline::GraphicsPipeline(GraphicsApi const & graphics_api,
 
 GraphicsPipeline::~GraphicsPipeline()
 {
+	destroy_pipeline();
+}
+
+void GraphicsPipeline::destroy_pipeline()
+{
 	VkDevice device = m_graphics_api.GetDevice();
 
 	for (DescriptorSet & descriptor_set : m_descriptor_sets)
@@ -471,6 +476,38 @@ GraphicsPipeline::~GraphicsPipeline()
 
 	vkDestroyPipeline(device, m_graphics_pipeline, nullptr);
 	vkDestroyPipelineLayout(device, m_pipeline_layout, nullptr);
+}
+
+GraphicsPipeline::GraphicsPipeline(GraphicsPipeline && other)
+	: m_graphics_api(other.m_graphics_api)
+{
+	*this = std::move(other);
+}
+
+GraphicsPipeline & GraphicsPipeline::operator=(GraphicsPipeline && other)
+{
+	if (this == &other)
+		return *this;
+
+	destroy_pipeline();
+
+	m_graphics_pipeline = other.m_graphics_pipeline;
+	m_pipeline_layout = other.m_pipeline_layout;
+	m_descriptor_set_layout = other.m_descriptor_set_layout;
+	m_descriptor_pool = other.m_descriptor_pool;
+	m_descriptor_sets = std::move(other.m_descriptor_sets);
+	m_per_frame_constants_callback = other.m_per_frame_constants_callback;
+	m_per_object_constants_callback = other.m_per_object_constants_callback;
+
+	other.m_graphics_pipeline = VK_NULL_HANDLE;
+	other.m_pipeline_layout = VK_NULL_HANDLE;
+	other.m_descriptor_set_layout = VK_NULL_HANDLE;
+	other.m_descriptor_pool = VK_NULL_HANDLE;
+	other.m_descriptor_sets.fill(DescriptorSet{});
+	other.m_per_frame_constants_callback = nullptr;
+	other.m_per_object_constants_callback = nullptr;
+
+	return *this;
 }
 
 void GraphicsPipeline::Activate() const

@@ -19,7 +19,7 @@ import RenderObject;
 
 struct PipelineContainer
 {
-	std::unique_ptr<GraphicsPipeline> m_pipeline;
+	GraphicsPipeline m_pipeline;
 	std::vector<std::weak_ptr<RenderObject>> m_render_objects;
 };
 
@@ -30,7 +30,7 @@ public:
 
 	void Render() const;
 
-	int AddGraphicsPipeline(std::unique_ptr<GraphicsPipeline> pipeline);
+	int AddGraphicsPipeline(GraphicsPipeline && pipeline);
 	int AddMesh(Mesh && mesh_var);
 
 	std::shared_ptr<RenderObject> CreateRenderObject(std::string const & name, int mesh_id, int pipeline_id);

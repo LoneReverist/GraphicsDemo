@@ -66,6 +66,12 @@ public:
 		PerObjectConstantsCallback per_object_constants_callback);
 	~GraphicsPipeline();
 
+	GraphicsPipeline(GraphicsPipeline && other);
+	GraphicsPipeline & operator=(GraphicsPipeline && other);
+
+	GraphicsPipeline(GraphicsPipeline &) = delete;
+	GraphicsPipeline & operator=(GraphicsPipeline &) = delete;
+
 	bool IsValid() const { return m_graphics_pipeline != VK_NULL_HANDLE; }
 
 	void Activate() const;
@@ -77,6 +83,9 @@ public:
 
 	template <typename VSConstantData = std::nullopt_t, typename FSConstantData = std::nullopt_t>
 	void SetPushConstants(VSConstantData const & vs_data, FSConstantData const & fs_data) const;
+
+private:
+	void destroy_pipeline();
 
 private:
 	GraphicsApi const & m_graphics_api;

@@ -43,7 +43,7 @@ public:
 	void SetPerFrameConstantsCallback(PerFrameConstantsCallback callback) { m_per_frame_constants_callback = callback; }
 	void SetPerObjectConstantsCallback(PerObjectConstantsCallback callback) { m_per_object_constants_callback = callback; }
 
-	std::unique_ptr<GraphicsPipeline> CreatePipeline() const;
+	std::optional<GraphicsPipeline> CreatePipeline() const;
 
 private:
 	GraphicsApi const & m_graphics_api;
