@@ -4,6 +4,7 @@ module;
 
 #include <array>
 #include <filesystem>
+#include <iostream>
 #include <numbers>
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -13,6 +14,7 @@ module Scene;
 import GraphicsApi;
 import GraphicsPipeline;
 import Mesh;
+import ObjLoader;
 import PipelineBuilder;
 import Texture;
 import Vertex;
@@ -89,6 +91,21 @@ namespace
 		std::vector<Mesh::index_t> indices{
 			1, 0, 2,
 			1, 2, 3 };
+
+		return Mesh{ graphics_api, verts, indices };
+	}
+
+	std::optional<Mesh> create_mesh_from_file(
+		GraphicsApi const & graphics_api,
+		std::filesystem::path const & file_path)
+	{
+		std::vector<NormalVertex> verts;
+		std::vector<Mesh::index_t> indices;
+		if (!ObjLoader::LoadObjFile(file_path, verts, indices))
+		{
+			std::cout << "create_mesh_from_file() error loading file:" << file_path << std::endl;
+			return std::nullopt;
+		}
 
 		return Mesh{ graphics_api, verts, indices };
 	}
@@ -430,6 +447,15 @@ void Scene::Init()
 		resources_path / "textures" / "skybox" / "back.jpg"
 	});
 
+	std::optional<Mesh> sword_mesh = create_mesh_from_file(m_graphics_api,
+		resources_path / "objects" / "skullsword.obj");
+	std::optional<Mesh> red_gem_mesh = create_mesh_from_file(m_graphics_api,
+		resources_path / "objects" / "redgem.obj");
+	std::optional<Mesh> green_gem_mesh = create_mesh_from_file(m_graphics_api,
+		resources_path / "objects" / "greengem.obj");
+	std::optional<Mesh> blue_gem_mesh = create_mesh_from_file(m_graphics_api,
+		resources_path / "objects" / "bluegem.obj");
+
 	//const int color_shader_id = m_renderer.AddGraphicsPipeline(
 	//	std::move(create_color_pipeline(*this, shaders_path)));
 	const int texture_shader_id = m_renderer.AddGraphicsPipeline(
@@ -441,10 +467,10 @@ void Scene::Init()
 	const int skybox_pipeline_id = m_renderer.AddGraphicsPipeline(
 		std::move(create_skybox_pipeline(*this, shaders_path, *m_skybox_tex)));
 
-	const int sword_mesh_id = m_renderer.LoadMesh(resources_path / "objects" / "skullsword.obj");
-	const int red_gem_mesh_id = m_renderer.LoadMesh(resources_path / "objects" / "redgem.obj");
-	const int green_gem_mesh_id = m_renderer.LoadMesh(resources_path / "objects" / "greengem.obj");
-	const int blue_gem_mesh_id = m_renderer.LoadMesh(resources_path / "objects" / "bluegem.obj");
+	const int sword_mesh_id = sword_mesh.has_value() ? m_renderer.AddMesh(std::move(sword_mesh.value())) : -1;
+	const int red_gem_mesh_id = red_gem_mesh.has_value() ? m_renderer.AddMesh(std::move(red_gem_mesh.value())) : -1;
+	const int green_gem_mesh_id = green_gem_mesh.has_value() ? m_renderer.AddMesh(std::move(green_gem_mesh.value())) : -1;
+	const int blue_gem_mesh_id = blue_gem_mesh.has_value() ? m_renderer.AddMesh(std::move(blue_gem_mesh.value())) : -1;
 	const int ground_mesh_id = m_renderer.AddMesh(std::move(create_ground_mesh(m_graphics_api)));
 	const int skybox_mesh_id = m_renderer.AddMesh(std::move(create_skybox_mesh(m_graphics_api)));
 

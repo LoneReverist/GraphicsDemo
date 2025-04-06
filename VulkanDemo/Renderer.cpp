@@ -8,9 +8,6 @@ module;
 
 module Renderer;
 
-import ObjLoader;
-import Vertex;
-
 Renderer::Renderer(GraphicsApi const & graphics_api)
 	: m_graphics_api(graphics_api)
 {
@@ -109,27 +106,13 @@ int Renderer::AddGraphicsPipeline(std::unique_ptr<GraphicsPipeline> pipeline)
 	return static_cast<int>(m_pipeline_containers.size() - 1);
 }
 
-int Renderer::LoadMesh(std::filesystem::path const & mesh_path)
-{
-	std::vector<NormalVertex> vertices;
-	std::vector<Mesh::index_t> indices;
-	if (!ObjLoader::LoadObjFile(mesh_path, vertices, indices))
-	{
-		std::cout << "Renderer::LoadMesh() error loading file:" << mesh_path << std::endl;
-		return -1;
-	}
-
-	m_meshes.emplace_back(m_graphics_api, vertices, indices);
-	return static_cast<int>(m_meshes.size() - 1);
-}
-
 int Renderer::AddMesh(Mesh && mesh)
 {
 	m_meshes.emplace_back(std::move(mesh));
 	return static_cast<int>(m_meshes.size() - 1);
 }
 
-std::shared_ptr<RenderObject> Renderer::CreateRenderObject(std::string name, int mesh_id, int pipeline_id)
+std::shared_ptr<RenderObject> Renderer::CreateRenderObject(std::string const & name, int mesh_id, int pipeline_id)
 {
 	// Right now it's up to the developer to ensure the Vertex type of the mesh is the same as
 	// the Vertex type for the pipeline, but at some point a static_assert would be good
