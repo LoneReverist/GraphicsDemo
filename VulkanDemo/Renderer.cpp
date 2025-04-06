@@ -91,7 +91,7 @@ void Renderer::Render() const
 		throw std::runtime_error("failed to record command buffer!");
 }
 
-int Renderer::AddGraphicsPipeline(GraphicsPipeline && pipeline)
+int Renderer::AddPipeline(GraphicsPipeline && pipeline)
 {
 	if (!pipeline.IsValid())
 	{
@@ -125,8 +125,6 @@ std::shared_ptr<RenderObject> Renderer::CreateRenderObject(std::string const & n
 		return nullptr;
 	}
 
-	// Right now it's up to the developer to ensure the Vertex type of the mesh is the same as
-	// the Vertex type for the pipeline, but at some point a static_assert would be good
 	std::shared_ptr<RenderObject> obj = std::make_shared<RenderObject>(name, mesh_id, pipeline_id);
 	m_pipeline_containers[pipeline_id].m_render_objects.push_back(obj);
 	return obj;

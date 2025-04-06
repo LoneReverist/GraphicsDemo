@@ -98,7 +98,7 @@ void VulkanApp::Run()
 			}
 
 			graphics_api.WaitForLastFrame();
-		}); // the GraphicsApi, Renderer and Scene are destroyed in the reverse order they were created
+		}); // the GraphicsApi and Scene are destroyed in the reverse order they were created
 
 	while (!glfwWindowShouldClose(m_window))
 		glfwPollEvents(); // must only be called from main thread

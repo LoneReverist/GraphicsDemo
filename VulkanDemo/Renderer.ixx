@@ -30,7 +30,7 @@ public:
 
 	void Render() const;
 
-	int AddGraphicsPipeline(GraphicsPipeline && pipeline);
+	int AddPipeline(GraphicsPipeline && pipeline);
 	int AddMesh(Mesh && mesh_var);
 
 	std::shared_ptr<RenderObject> CreateRenderObject(std::string const & name, int mesh_id, int pipeline_id);

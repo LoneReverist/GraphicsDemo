@@ -21,6 +21,672 @@ import Vertex;
 
 namespace
 {
+	template <IsVertex Vert>
+	struct AssetId
+	{
+		using VertexT = Vert;
+		int m_index{ -1 };
+	};
+
+	template <typename AssetId1, typename AssetId2>
+	concept AssetsAreCompatible = std::same_as<typename AssetId1::VertexT, typename AssetId2::VertexT>;
+
+	class GroundMesh
+	{
+	public:
+		using VertexT = TextureVertex;
+
+		static AssetId<VertexT> Create(
+			Renderer & renderer,
+			GraphicsApi const & graphics_api);
+
+	private:
+		static Mesh create_ground_mesh(GraphicsApi const & graphics_api);
+	};
+
+	auto GroundMesh::Create(
+		Renderer & renderer,
+		GraphicsApi const & graphics_api)
+		-> AssetId<VertexT>
+	{
+		AssetId<VertexT> id;
+
+		Mesh ground_mesh = create_ground_mesh(graphics_api);
+		if (!ground_mesh.IsInitialized())
+		{
+			std::cout << "Failed to create GroundMesh" << std::endl;
+			return id;
+		}
+
+		id.m_index = renderer.AddMesh(std::move(ground_mesh));
+		return id;
+	}
+
+	Mesh GroundMesh::create_ground_mesh(GraphicsApi const & graphics_api)
+	{
+		float scale = 30.0f;
+
+		static_assert(std::same_as<VertexT, TextureVertex>);
+		std::vector<TextureVertex> verts {
+			{ { -scale,  scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.0, 1.0 } },
+			{ {  scale,  scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 1.0, 1.0 } },
+			{ { -scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.0, 0.0 } },
+			{ {  scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 1.0, 0.0 } } };
+
+		//static_assert(std::same_as<VertexT, ColorVertex>);
+		//std::vector<ColorVertex> verts{
+		//	{ { -scale,  scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 1.0, 0.0, 0.0 } },
+		//	{ {  scale,  scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.0, 1.0, 0.0 } },
+		//	{ { -scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.0, 0.0, 1.0 } },
+		//	{ {  scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.5, 0.5, 0.5 } } };
+
+		std::vector<Mesh::index_t> indices{
+			1, 0, 2,
+			1, 2, 3 };
+
+		return Mesh{ graphics_api, verts, indices };
+	}
+
+	class SkyboxMesh
+	{
+	public:
+		using VertexT = PositionVertex;
+
+		static AssetId<VertexT> Create(
+			Renderer & renderer,
+			GraphicsApi const & graphics_api);
+
+	private:
+		static Mesh create_skybox_mesh(GraphicsApi const & graphics_api);
+	};
+
+	auto SkyboxMesh::Create(
+		Renderer & renderer,
+		GraphicsApi const & graphics_api)
+		-> AssetId<VertexT>
+	{
+		AssetId<VertexT> id;
+
+		Mesh skybox_mesh = create_skybox_mesh(graphics_api);
+		if (!skybox_mesh.IsInitialized())
+		{
+			std::cout << "Failed to create SkyboxMesh" << std::endl;
+			return id;
+		}
+
+		id.m_index = renderer.AddMesh(std::move(skybox_mesh));
+		return id;
+	}
+
+	Mesh SkyboxMesh::create_skybox_mesh(GraphicsApi const & graphics_api)
+	{
+		static_assert(std::same_as<VertexT, PositionVertex>);
+		std::vector<PositionVertex> verts {
+			{ { -1.0f,  1.0f, -1.0f } },
+			{ { -1.0f, -1.0f, -1.0f } },
+			{ {  1.0f, -1.0f, -1.0f } },
+			{ {  1.0f,  1.0f, -1.0f } },
+			{ { -1.0f,  1.0f,  1.0f } },
+			{ { -1.0f, -1.0f,  1.0f } },
+			{ {  1.0f, -1.0f,  1.0f } },
+			{ {  1.0f,  1.0f,  1.0f } } };
+
+		std::vector<Mesh::index_t> indices{
+			0, 1, 2,
+			2, 3, 0,
+			5, 1, 0,
+			0, 4, 5,
+			2, 6, 7,
+			7, 3, 2,
+			5, 4, 7,
+			7, 6, 5,
+			0, 3, 7,
+			7, 4, 0,
+			1, 5, 2,
+			2, 5, 6 };
+
+		return Mesh{ graphics_api, verts, indices };
+	}
+
+	class FileMesh
+	{
+	public:
+		using VertexT = NormalVertex;
+
+		static AssetId<VertexT> Create(
+			Renderer & renderer,
+			GraphicsApi const & graphics_api,
+			std::filesystem::path const & file_path);
+
+	private:
+		static std::optional<Mesh> create_mesh_from_file(
+			GraphicsApi const & graphics_api,
+			std::filesystem::path const & file_path);
+	};
+
+	auto FileMesh::Create(
+		Renderer & renderer,
+		GraphicsApi const & graphics_api,
+		std::filesystem::path const & file_path)
+		-> AssetId<VertexT>
+	{
+		AssetId<VertexT> id;
+
+		std::optional<Mesh> file_mesh = create_mesh_from_file(graphics_api, file_path);
+		if (!file_mesh.has_value())
+			return id;
+
+		id.m_index = renderer.AddMesh(std::move(file_mesh.value()));
+		return id;
+	}
+
+	std::optional<Mesh> FileMesh::create_mesh_from_file(
+		GraphicsApi const & graphics_api,
+		std::filesystem::path const & file_path)
+	{
+		if (!std::filesystem::exists(file_path))
+		{
+			std::cout << "FileMesh::create_mesh_from_file() file does not exist:" << file_path << std::endl;
+			return std::nullopt;
+		}
+
+		std::vector<NormalVertex> verts;
+		std::vector<Mesh::index_t> indices;
+		if (!ObjLoader::LoadObjFile(file_path, verts, indices))
+		{
+			std::cout << "create_mesh_from_file() error loading file:" << file_path << std::endl;
+			return std::nullopt;
+		}
+
+		return Mesh{ graphics_api, verts, indices };
+	}
+
+	class TexturePipeline
+	{
+	public:
+		using VertexT = TextureVertex;
+
+		static AssetId<VertexT> Create(
+			Renderer & renderer,
+			Scene const & scene,
+			std::filesystem::path const & shaders_path,
+			Texture const & texture);
+
+	private:
+		static std::optional<GraphicsPipeline> create_texture_pipeline(
+			Scene const & scene,
+			std::filesystem::path const & shaders_path,
+			Texture const & texture);
+	};
+
+	auto TexturePipeline::Create(
+		Renderer & renderer,
+		Scene const & scene,
+		std::filesystem::path const & shaders_path,
+		Texture const & texture)
+		-> AssetId<VertexT>
+	{
+		AssetId<VertexT> id;
+
+		std::optional<GraphicsPipeline> pipeline = create_texture_pipeline(scene, shaders_path, texture);
+		if (!pipeline.has_value())
+		{
+			std::cout << "Failed to create TexturePipeline" << std::endl;
+			return id;
+		}
+
+		id.m_index = renderer.AddPipeline(std::move(pipeline.value()));
+		return id;
+	}
+
+	std::optional<GraphicsPipeline> TexturePipeline::create_texture_pipeline(
+		Scene const & scene,
+		std::filesystem::path const & shaders_path,
+		Texture const & texture)
+	{
+		struct VSPushConstant
+		{
+			alignas(16) glm::mat4 model;
+		};
+		struct ViewProjUniform
+		{
+			alignas(16) glm::mat4 view;
+			alignas(16) glm::mat4 proj;
+		};
+		struct LightsUniform
+		{
+			alignas(16) glm::vec3 m_ambient_light_color;
+			PointLight m_pointlight_1;
+			PointLight m_pointlight_2;
+			PointLight m_pointlight_3;
+			SpotLight m_spotlight;
+		};
+
+		PipelineBuilder builder{ scene.GetGraphicsApi() };
+		builder.LoadShaders(
+			shaders_path / "texture_vert.spv",
+			shaders_path / "texture_frag.spv");
+		builder.SetVertexType<VertexT>();
+		builder.SetPushConstantTypes<VSPushConstant, std::nullopt_t>();
+		builder.SetVSUniformTypes<ViewProjUniform>();
+		builder.SetFSUniformTypes<LightsUniform>();
+		builder.SetTexture(texture);
+
+		builder.SetPerFrameConstantsCallback(
+			[&scene](GraphicsPipeline const & pipeline)
+			{
+				pipeline.SetUniform(0 /*binding*/,
+					ViewProjUniform{
+						.view = scene.GetCamera().GetViewTransform(),
+						.proj = scene.GetCamera().GetProjTransform()
+					});
+				pipeline.SetUniform(1 /*binding*/,
+					LightsUniform{
+						.m_ambient_light_color = scene.GetAmbientLightColor(),
+						.m_pointlight_1 = scene.GetPointLight1(),
+						.m_pointlight_2 = scene.GetPointLight2(),
+						.m_pointlight_3 = scene.GetPointLight3(),
+						.m_spotlight = scene.GetSpotLight()
+					});
+			});
+		builder.SetPerObjectConstantsCallback(
+			[](GraphicsPipeline const & pipeline, RenderObject const & obj)
+			{
+				pipeline.SetPushConstants(
+					VSPushConstant{
+						.model = obj.GetModelTransform()
+					},
+					std::nullopt);
+			});
+
+		return builder.CreatePipeline();
+	}
+
+	class ReflectionPipeline
+	{
+	public:
+		using VertexT = NormalVertex;
+
+		static AssetId<VertexT> Create(
+			Renderer & renderer,
+			Scene const & scene,
+			std::filesystem::path const & shaders_path,
+			Texture const & texture);
+
+	private:
+		static std::optional<GraphicsPipeline> create_reflection_pipeline(
+			Scene const & scene,
+			std::filesystem::path const & shaders_path,
+			Texture const & texture);
+	};
+
+	auto ReflectionPipeline::Create(
+		Renderer & renderer,
+		Scene const & scene,
+		std::filesystem::path const & shaders_path,
+		Texture const & texture)
+		-> AssetId<VertexT>
+	{
+		AssetId<VertexT> id;
+
+		std::optional<GraphicsPipeline> pipeline = create_reflection_pipeline(scene, shaders_path, texture);
+		if (!pipeline.has_value())
+		{
+			std::cout << "Failed to create ReflectionPipeline" << std::endl;
+			return id;
+		}
+
+		id.m_index = renderer.AddPipeline(std::move(pipeline.value()));
+		return id;
+	}
+
+	std::optional<GraphicsPipeline> ReflectionPipeline::create_reflection_pipeline(
+		Scene const & scene,
+		std::filesystem::path const & shaders_path,
+		Texture const & texture)
+	{
+		struct VSPushConstant
+		{
+			alignas(16) glm::mat4 model;
+		};
+		struct ViewProjUniform
+		{
+			alignas(16) glm::mat4 view;
+			alignas(16) glm::mat4 proj;
+		};
+		struct LightsUniform
+		{
+			alignas(16) glm::vec3 m_ambient_light_color;
+			PointLight m_pointlight_1;
+			PointLight m_pointlight_2;
+			PointLight m_pointlight_3;
+			SpotLight m_spotlight;
+		};
+		struct CameraUniform
+		{
+			alignas(16) glm::vec3 camera_pos_world;
+		};
+
+		PipelineBuilder builder{ scene.GetGraphicsApi() };
+		builder.LoadShaders(
+			shaders_path / "reflection_vert.spv",
+			shaders_path / "reflection_frag.spv");
+		builder.SetVertexType<VertexT>();
+		builder.SetPushConstantTypes<VSPushConstant, std::nullopt_t>();
+		builder.SetVSUniformTypes<ViewProjUniform>();
+		builder.SetFSUniformTypes<LightsUniform, CameraUniform>();
+		builder.SetTexture(texture);
+
+		builder.SetPerFrameConstantsCallback(
+			[&scene](GraphicsPipeline const & pipeline)
+			{
+				pipeline.SetUniform(0 /*binding*/,
+					ViewProjUniform{
+						.view = scene.GetCamera().GetViewTransform(),
+						.proj = scene.GetCamera().GetProjTransform()
+					});
+				pipeline.SetUniform(1 /*binding*/,
+					LightsUniform{
+						.m_ambient_light_color = scene.GetAmbientLightColor(),
+						.m_pointlight_1 = scene.GetPointLight1(),
+						.m_pointlight_2 = scene.GetPointLight2(),
+						.m_pointlight_3 = scene.GetPointLight3(),
+						.m_spotlight = scene.GetSpotLight()
+					});
+				pipeline.SetUniform(2 /*binding*/,
+					CameraUniform{
+						.camera_pos_world = scene.GetCamera().GetPos()
+					});
+			});
+		builder.SetPerObjectConstantsCallback(
+			[](GraphicsPipeline const & pipeline, RenderObject const & obj)
+			{
+				pipeline.SetPushConstants(
+					VSPushConstant{
+						.model = obj.GetModelTransform()
+					},
+					std::nullopt);
+			});
+
+		return builder.CreatePipeline();
+	}
+
+	class SkyboxPipeline
+	{
+	public:
+		using VertexT = PositionVertex;
+
+		static AssetId<VertexT> Create(
+			Renderer & renderer,
+			Scene const & scene,
+			std::filesystem::path const & shaders_path,
+			Texture const & skybox);
+
+	private:
+		static std::optional<GraphicsPipeline> create_skybox_pipeline(
+			Scene const & scene,
+			std::filesystem::path const & shaders_path,
+			Texture const & skybox);
+	};
+
+	auto SkyboxPipeline::Create(
+		Renderer & renderer,
+		Scene const & scene,
+		std::filesystem::path const & shaders_path,
+		Texture const & skybox)
+		-> AssetId<VertexT>
+	{
+		AssetId<VertexT> id;
+
+		std::optional<GraphicsPipeline> pipeline = create_skybox_pipeline(scene, shaders_path, skybox);
+		if (!pipeline.has_value())
+		{
+			std::cout << "Failed to create SkyboxPipeline" << std::endl;
+			return id;
+		}
+
+		id.m_index = renderer.AddPipeline(std::move(pipeline.value()));
+		return id;
+	}
+
+	std::optional<GraphicsPipeline> SkyboxPipeline::create_skybox_pipeline(
+		Scene const & scene,
+		std::filesystem::path const & shaders_path,
+		Texture const & skybox)
+	{
+		struct ViewProjUniform
+		{
+			alignas(16) glm::mat4 view;
+			alignas(16) glm::mat4 proj;
+		};
+
+		PipelineBuilder builder{ scene.GetGraphicsApi() };
+		builder.LoadShaders(
+			shaders_path / "skybox_vert.spv",
+			shaders_path / "skybox_frag.spv");
+		builder.SetVertexType<VertexT>();
+		builder.SetVSUniformTypes<ViewProjUniform>();
+		builder.SetTexture(skybox);
+		builder.SetDepthTestOptions(DepthTestOptions{
+			.m_enable_depth_test = true,
+			.m_enable_depth_write = false,
+			.m_depth_compare_op = DepthCompareOp::EQUAL
+			});
+
+		builder.SetPerFrameConstantsCallback(
+			[&scene](GraphicsPipeline const & pipeline)
+			{
+				pipeline.SetUniform(0 /*binding*/,
+					ViewProjUniform{
+						.view = scene.GetCamera().GetViewTransform(),
+						.proj = scene.GetCamera().GetProjTransform()
+					});
+			});
+
+		return builder.CreatePipeline();
+	}
+
+	class ColorPipeline
+	{
+	public:
+		using VertexT = ColorVertex;
+
+		static AssetId<VertexT> Create(
+			Renderer & renderer,
+			Scene const & scene,
+			std::filesystem::path const & shaders_path);
+
+	private:
+		static std::optional<GraphicsPipeline> create_color_pipeline(
+			Scene const & scene,
+			std::filesystem::path const & shaders_path);
+	};
+
+	auto ColorPipeline::Create(
+		Renderer & renderer,
+		Scene const & scene,
+		std::filesystem::path const & shaders_path)
+		-> AssetId<VertexT>
+	{
+		AssetId<VertexT> id;
+
+		std::optional<GraphicsPipeline> pipeline = create_color_pipeline(scene, shaders_path);
+		if (!pipeline.has_value())
+		{
+			std::cout << "Failed to create ColorPipeline" << std::endl;
+			return id;
+		}
+
+		id.m_index = renderer.AddPipeline(std::move(pipeline.value()));
+		return id;
+	}
+
+	std::optional<GraphicsPipeline> ColorPipeline::create_color_pipeline(
+		Scene const & scene,
+		std::filesystem::path const & shaders_path)
+	{
+		struct VSPushConstant
+		{
+			alignas(16) glm::mat4 model;
+		};
+		struct ViewProjUniform
+		{
+			alignas(16) glm::mat4 view;
+			alignas(16) glm::mat4 proj;
+		};
+		struct LightsUniform
+		{
+			alignas(16) glm::vec3 m_ambient_light_color;
+			PointLight m_pointlight_1;
+			PointLight m_pointlight_2;
+			PointLight m_pointlight_3;
+			SpotLight m_spotlight;
+		};
+
+		PipelineBuilder builder{ scene.GetGraphicsApi() };
+		builder.LoadShaders(
+			shaders_path / "color_vert.spv",
+			shaders_path / "color_frag.spv");
+		builder.SetVertexType<VertexT>();
+		builder.SetPushConstantTypes<VSPushConstant, std::nullopt_t>();
+		builder.SetVSUniformTypes<ViewProjUniform>();
+		builder.SetFSUniformTypes<LightsUniform>();
+
+		builder.SetPerFrameConstantsCallback(
+			[&scene](GraphicsPipeline const & pipeline)
+			{
+				pipeline.SetUniform(0 /*binding*/,
+					ViewProjUniform{
+						.view = scene.GetCamera().GetViewTransform(),
+						.proj = scene.GetCamera().GetProjTransform()
+					});
+				pipeline.SetUniform(1 /*binding*/,
+					LightsUniform{
+						.m_ambient_light_color = scene.GetAmbientLightColor(),
+						.m_pointlight_1 = scene.GetPointLight1(),
+						.m_pointlight_2 = scene.GetPointLight2(),
+						.m_pointlight_3 = scene.GetPointLight3(),
+						.m_spotlight = scene.GetSpotLight()
+					});
+			});
+		builder.SetPerObjectConstantsCallback(
+			[](GraphicsPipeline const & pipeline, RenderObject const & obj)
+			{
+				pipeline.SetPushConstants(
+					VSPushConstant{
+						.model = obj.GetModelTransform()
+					},
+					std::nullopt);
+			});
+
+		return builder.CreatePipeline();
+	}
+
+	class LightSourcePipeline
+	{
+	public:
+		using VertexT = NormalVertex;
+
+		static AssetId<VertexT> Create(
+			Renderer & renderer,
+			Scene const & scene,
+			std::filesystem::path const & shaders_path);
+
+	private:
+		static std::optional<GraphicsPipeline> create_light_source_pipeline(
+			Scene const & scene,
+			std::filesystem::path const & shaders_path);
+	};
+
+	auto LightSourcePipeline::Create(
+		Renderer & renderer,
+		Scene const & scene,
+		std::filesystem::path const & shaders_path)
+		-> AssetId<VertexT>
+	{
+		AssetId<VertexT> id;
+
+		std::optional<GraphicsPipeline> pipeline = create_light_source_pipeline(scene, shaders_path);
+		if (!pipeline.has_value())
+		{
+			std::cout << "Failed to create LightSourcePipeline" << std::endl;
+			return id;
+		}
+
+		id.m_index = renderer.AddPipeline(std::move(pipeline.value()));
+		return id;
+	}
+
+	std::optional<GraphicsPipeline> LightSourcePipeline::create_light_source_pipeline(
+		Scene const & scene,
+		std::filesystem::path const & shaders_path)
+	{
+		struct VSPushConstant
+		{
+			alignas(16) glm::mat4 model;
+		};
+		struct FSPushConstant
+		{
+			alignas(16) glm::vec3 color;
+		};
+		struct ViewProjUniform
+		{
+			alignas(16) glm::mat4 view;
+			alignas(16) glm::mat4 proj;
+		};
+		struct CameraPosUniform
+		{
+			alignas(16) glm::vec3 camera_pos_world;
+		};
+
+		PipelineBuilder builder{ scene.GetGraphicsApi() };
+		builder.LoadShaders(
+			shaders_path / "light_source_vert.spv",
+			shaders_path / "light_source_frag.spv");
+		builder.SetVertexType<VertexT>();
+		builder.SetPushConstantTypes<VSPushConstant, FSPushConstant>();
+		builder.SetVSUniformTypes<ViewProjUniform>();
+		builder.SetFSUniformTypes<CameraPosUniform>();
+
+		builder.SetPerFrameConstantsCallback(
+			[&scene](GraphicsPipeline const & pipeline)
+			{
+				pipeline.SetUniform(0 /*binding*/,
+					ViewProjUniform{
+						.view = scene.GetCamera().GetViewTransform(),
+						.proj = scene.GetCamera().GetProjTransform()
+					});
+				pipeline.SetUniform(1 /*binding*/,
+					CameraPosUniform{
+						.camera_pos_world = scene.GetCamera().GetPos()
+					});
+			});
+		builder.SetPerObjectConstantsCallback(
+			[](GraphicsPipeline const & pipeline, RenderObject const & obj)
+			{
+				pipeline.SetPushConstants(
+					VSPushConstant{
+						.model = obj.GetModelTransform()
+					},
+					FSPushConstant{
+						.color = obj.GetColor(),
+					});
+			});
+
+		return builder.CreatePipeline();
+	}
+
+	template <typename MeshAssetId, typename PipelineAssetId>
+		requires AssetsAreCompatible<MeshAssetId, PipelineAssetId>
+	std::shared_ptr<RenderObject> create_render_object(
+		Renderer & renderer,
+		std::string const & name,
+		MeshAssetId mesh_id,
+		PipelineAssetId pipeline_id)
+	{
+		return renderer.CreateRenderObject(name, mesh_id.m_index, pipeline_id.m_index);
+	}
+
 	void init_sword_transform(int index, glm::mat4 & transform)
 	{
 		float x_rot = static_cast<float>(std::numbers::pi / 2.0);
@@ -72,363 +738,6 @@ namespace
 		transform = glm::rotate(glm::mat4(1.0), delta_time * 0.5f, glm::vec3(0.0, 0.0, 1.0)) * transform;
 	}
 
-	Mesh create_ground_mesh(GraphicsApi const & graphics_api)
-	{
-		float scale = 30.0f;
-
-		std::vector<TextureVertex> verts {
-			{ { -scale,  scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.0, 1.0 } },
-			{ {  scale,  scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 1.0, 1.0 } },
-			{ { -scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.0, 0.0 } },
-			{ {  scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 1.0, 0.0 } } };
-		 
-		//std::vector<ColorVertex> verts{
-		//	{ { -scale,  scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 1.0, 0.0, 0.0 } },
-		//	{ {  scale,  scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.0, 1.0, 0.0 } },
-		//	{ { -scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.0, 0.0, 1.0 } },
-		//	{ {  scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.5, 0.5, 0.5 } } };
-
-		std::vector<Mesh::index_t> indices{
-			1, 0, 2,
-			1, 2, 3 };
-
-		return Mesh{ graphics_api, verts, indices };
-	}
-
-	std::optional<Mesh> create_mesh_from_file(
-		GraphicsApi const & graphics_api,
-		std::filesystem::path const & file_path)
-	{
-		std::vector<NormalVertex> verts;
-		std::vector<Mesh::index_t> indices;
-		if (!ObjLoader::LoadObjFile(file_path, verts, indices))
-		{
-			std::cout << "create_mesh_from_file() error loading file:" << file_path << std::endl;
-			return std::nullopt;
-		}
-
-		return Mesh{ graphics_api, verts, indices };
-	}
-
-	Mesh create_skybox_mesh(GraphicsApi const & graphics_api)
-	{
-		std::vector<PositionVertex> verts {
-			{ { -1.0f,  1.0f, -1.0f } },
-			{ { -1.0f, -1.0f, -1.0f } },
-			{ {  1.0f, -1.0f, -1.0f } },
-			{ {  1.0f,  1.0f, -1.0f } },
-			{ { -1.0f,  1.0f,  1.0f } },
-			{ { -1.0f, -1.0f,  1.0f } },
-			{ {  1.0f, -1.0f,  1.0f } },
-			{ {  1.0f,  1.0f,  1.0f } } };
-
-		std::vector<Mesh::index_t> indices{
-			0, 1, 2,
-			2, 3, 0,
-			5, 1, 0,
-			0, 4, 5,
-			2, 6, 7,
-			7, 3, 2,
-			5, 4, 7,
-			7, 6, 5,
-			0, 3, 7,
-			7, 4, 0,
-			1, 5, 2,
-			2, 5, 6 };
-
-		return Mesh{ graphics_api, verts, indices };
-	}
-
-	std::optional<GraphicsPipeline> create_texture_pipeline(
-		Scene const & scene,
-		std::filesystem::path const & shaders_path,
-		Texture const & texture)
-	{
-		struct VSPushConstant
-		{
-			alignas(16) glm::mat4 model;
-		};
-		struct ViewProjUniform
-		{
-			alignas(16) glm::mat4 view;
-			alignas(16) glm::mat4 proj;
-		};
-		struct LightsUniform
-		{
-			alignas(16) glm::vec3 m_ambient_light_color;
-			PointLight m_pointlight_1;
-			PointLight m_pointlight_2;
-			PointLight m_pointlight_3;
-			SpotLight m_spotlight;
-		};
-
-		PipelineBuilder builder{ scene.GetGraphicsApi() };
-		builder.LoadShaders(
-			shaders_path / "texture_vert.spv",
-			shaders_path / "texture_frag.spv");
-		builder.SetVertexType<TextureVertex>();
-		builder.SetPushConstantTypes<VSPushConstant, std::nullopt_t>();
-		builder.SetVSUniformTypes<ViewProjUniform>();
-		builder.SetFSUniformTypes<LightsUniform>();
-		builder.SetTexture(texture);
-
-		builder.SetPerFrameConstantsCallback(
-			[&scene](GraphicsPipeline const & pipeline)
-			{
-				pipeline.SetUniform(0 /*binding*/,
-					ViewProjUniform{
-						.view = scene.GetCamera().GetViewTransform(),
-						.proj = scene.GetCamera().GetProjTransform()
-					});
-				pipeline.SetUniform(1 /*binding*/,
-					LightsUniform{
-						.m_ambient_light_color = scene.GetAmbientLightColor(),
-						.m_pointlight_1 = scene.GetPointLight1(),
-						.m_pointlight_2 = scene.GetPointLight2(),
-						.m_pointlight_3 = scene.GetPointLight3(),
-						.m_spotlight = scene.GetSpotLight()
-					});
-			});
-		builder.SetPerObjectConstantsCallback(
-			[](GraphicsPipeline const & pipeline, RenderObject const & obj)
-			{
-				pipeline.SetPushConstants(
-					VSPushConstant{
-						.model = obj.GetModelTransform()
-					},
-					std::nullopt);
-			});
-
-		return builder.CreatePipeline();
-	}
-
-	std::optional<GraphicsPipeline> create_reflection_pipeline(
-		Scene const & scene,
-		std::filesystem::path const & shaders_path,
-		Texture const & texture)
-	{
-		struct VSPushConstant
-		{
-			alignas(16) glm::mat4 model;
-		};
-		struct ViewProjUniform
-		{
-			alignas(16) glm::mat4 view;
-			alignas(16) glm::mat4 proj;
-		};
-		struct LightsUniform
-		{
-			alignas(16) glm::vec3 m_ambient_light_color;
-			PointLight m_pointlight_1;
-			PointLight m_pointlight_2;
-			PointLight m_pointlight_3;
-			SpotLight m_spotlight;
-		};
-		struct CameraUniform
-		{
-			alignas(16) glm::vec3 camera_pos_world;
-		};
-
-		PipelineBuilder builder{ scene.GetGraphicsApi() };
-		builder.LoadShaders(
-			shaders_path / "reflection_vert.spv",
-			shaders_path / "reflection_frag.spv");
-		builder.SetVertexType<NormalVertex>();
-		builder.SetPushConstantTypes<VSPushConstant, std::nullopt_t>();
-		builder.SetVSUniformTypes<ViewProjUniform>();
-		builder.SetFSUniformTypes<LightsUniform, CameraUniform>();
-		builder.SetTexture(texture);
-
-		builder.SetPerFrameConstantsCallback(
-			[&scene](GraphicsPipeline const & pipeline)
-			{
-				pipeline.SetUniform(0 /*binding*/,
-					ViewProjUniform{
-						.view = scene.GetCamera().GetViewTransform(),
-						.proj = scene.GetCamera().GetProjTransform()
-					});
-				pipeline.SetUniform(1 /*binding*/,
-					LightsUniform{
-						.m_ambient_light_color = scene.GetAmbientLightColor(),
-						.m_pointlight_1 = scene.GetPointLight1(),
-						.m_pointlight_2 = scene.GetPointLight2(),
-						.m_pointlight_3 = scene.GetPointLight3(),
-						.m_spotlight = scene.GetSpotLight()
-					});
-				pipeline.SetUniform(2 /*binding*/,
-					CameraUniform{
-						.camera_pos_world = scene.GetCamera().GetPos()
-					});
-			});
-		builder.SetPerObjectConstantsCallback(
-			[](GraphicsPipeline const & pipeline, RenderObject const & obj)
-			{
-				pipeline.SetPushConstants(
-					VSPushConstant{
-						.model = obj.GetModelTransform()
-					},
-					std::nullopt);
-			});
-
-		return builder.CreatePipeline();
-	}
-
-	std::optional<GraphicsPipeline> create_skybox_pipeline(
-		Scene const & scene,
-		std::filesystem::path const & shaders_path,
-		Texture const & skybox)
-	{
-		struct ViewProjUniform
-		{
-			alignas(16) glm::mat4 view;
-			alignas(16) glm::mat4 proj;
-		};
-
-		PipelineBuilder builder{ scene.GetGraphicsApi() };
-		builder.LoadShaders(
-			shaders_path / "skybox_vert.spv",
-			shaders_path / "skybox_frag.spv");
-		builder.SetVertexType<PositionVertex>();
-		builder.SetVSUniformTypes<ViewProjUniform>();
-		builder.SetTexture(skybox);
-		builder.SetDepthTestOptions(DepthTestOptions{
-			.m_enable_depth_test = true,
-			.m_enable_depth_write = false,
-			.m_depth_compare_op = DepthCompareOp::EQUAL
-			});
-
-		builder.SetPerFrameConstantsCallback(
-			[&scene](GraphicsPipeline const & pipeline)
-			{
-				pipeline.SetUniform(0 /*binding*/,
-					ViewProjUniform{
-						.view = scene.GetCamera().GetViewTransform(),
-						.proj = scene.GetCamera().GetProjTransform()
-					});
-			});
-
-		return builder.CreatePipeline();
-	}
-
-	std::optional<GraphicsPipeline> create_color_pipeline(
-		Scene const & scene,
-		std::filesystem::path const & shaders_path)
-	{
-		struct VSPushConstant
-		{
-			alignas(16) glm::mat4 model;
-		};
-		struct ViewProjUniform
-		{
-			alignas(16) glm::mat4 view;
-			alignas(16) glm::mat4 proj;
-		};
-		struct LightsUniform
-		{
-			alignas(16) glm::vec3 m_ambient_light_color;
-			PointLight m_pointlight_1;
-			PointLight m_pointlight_2;
-			PointLight m_pointlight_3;
-			SpotLight m_spotlight;
-		};
-
-		PipelineBuilder builder{ scene.GetGraphicsApi() };
-		builder.LoadShaders(
-			shaders_path / "color_vert.spv",
-			shaders_path / "color_frag.spv");
-		builder.SetVertexType<ColorVertex>();
-		builder.SetPushConstantTypes<VSPushConstant, std::nullopt_t>();
-		builder.SetVSUniformTypes<ViewProjUniform>();
-		builder.SetFSUniformTypes<LightsUniform>();
-
-		builder.SetPerFrameConstantsCallback(
-			[&scene](GraphicsPipeline const & pipeline)
-			{
-				pipeline.SetUniform(0 /*binding*/,
-					ViewProjUniform{
-						.view = scene.GetCamera().GetViewTransform(),
-						.proj = scene.GetCamera().GetProjTransform()
-					});
-				pipeline.SetUniform(1 /*binding*/,
-					LightsUniform{
-						.m_ambient_light_color = scene.GetAmbientLightColor(),
-						.m_pointlight_1 = scene.GetPointLight1(),
-						.m_pointlight_2 = scene.GetPointLight2(),
-						.m_pointlight_3 = scene.GetPointLight3(),
-						.m_spotlight = scene.GetSpotLight()
-					});
-			});
-		builder.SetPerObjectConstantsCallback(
-			[](GraphicsPipeline const & pipeline, RenderObject const & obj)
-			{
-				pipeline.SetPushConstants(
-					VSPushConstant{
-						.model = obj.GetModelTransform()
-					},
-					std::nullopt);
-			});
-
-		return builder.CreatePipeline();
-	}
-
-	std::optional<GraphicsPipeline> create_light_source_pipeline(
-		Scene const & scene,
-		std::filesystem::path const & shaders_path)
-	{
-		struct VSPushConstant
-		{
-			alignas(16) glm::mat4 model;
-		};
-		struct FSPushConstant
-		{
-			alignas(16) glm::vec3 color;
-		};
-		struct ViewProjUniform
-		{
-			alignas(16) glm::mat4 view;
-			alignas(16) glm::mat4 proj;
-		};
-		struct CameraPosUniform
-		{
-			alignas(16) glm::vec3 camera_pos_world;
-		};
-
-		PipelineBuilder builder{ scene.GetGraphicsApi() };
-		builder.LoadShaders(
-			shaders_path / "light_source_vert.spv",
-			shaders_path / "light_source_frag.spv");
-		builder.SetVertexType<NormalVertex>();
-		builder.SetPushConstantTypes<VSPushConstant, FSPushConstant>();
-		builder.SetVSUniformTypes<ViewProjUniform>();
-		builder.SetFSUniformTypes<CameraPosUniform>();
-
-		builder.SetPerFrameConstantsCallback(
-			[&scene](GraphicsPipeline const & pipeline)
-			{
-				pipeline.SetUniform(0 /*binding*/,
-					ViewProjUniform{
-						.view = scene.GetCamera().GetViewTransform(),
-						.proj = scene.GetCamera().GetProjTransform()
-					});
-				pipeline.SetUniform(1 /*binding*/,
-					CameraPosUniform{
-						.camera_pos_world = scene.GetCamera().GetPos()
-					});
-			});
-		builder.SetPerObjectConstantsCallback(
-			[](GraphicsPipeline const & pipeline, RenderObject const & obj)
-			{
-				pipeline.SetPushConstants(
-					VSPushConstant{
-						.model = obj.GetModelTransform()
-					},
-					FSPushConstant{
-						.color = obj.GetColor(),
-					});
-			});
-
-		return builder.CreatePipeline();
-	}
 }
 
 void Scene::Init()
@@ -447,41 +756,30 @@ void Scene::Init()
 		resources_path / "textures" / "skybox" / "back.jpg"
 	});
 
-	std::optional<Mesh> sword_mesh = create_mesh_from_file(m_graphics_api,
+	AssetId<TexturePipeline::VertexT> texture_pipeline_id = TexturePipeline::Create(m_renderer, *this, shaders_path, *m_ground_tex);
+	AssetId<LightSourcePipeline::VertexT> light_source_pipeline_id = LightSourcePipeline::Create(m_renderer, *this, shaders_path);
+	AssetId<ReflectionPipeline::VertexT> reflection_pipeline_id = ReflectionPipeline::Create(m_renderer, *this, shaders_path, *m_skybox_tex);
+	AssetId<SkyboxPipeline::VertexT> skybox_pipeline_id = SkyboxPipeline::Create(m_renderer, *this, shaders_path, *m_skybox_tex);
+	//AssetId<ColorPipeline::VertexT> color_pipeline_id = ColorPipeline::Create(m_renderer, *this, shaders_path);
+
+	AssetId<FileMesh::VertexT> sword_mesh_id = FileMesh::Create(m_renderer, m_graphics_api,
 		resources_path / "objects" / "skullsword.obj");
-	std::optional<Mesh> red_gem_mesh = create_mesh_from_file(m_graphics_api,
+	AssetId<FileMesh::VertexT> red_gem_mesh_id = FileMesh::Create(m_renderer, m_graphics_api,
 		resources_path / "objects" / "redgem.obj");
-	std::optional<Mesh> green_gem_mesh = create_mesh_from_file(m_graphics_api,
+	AssetId<FileMesh::VertexT> green_gem_mesh_id = FileMesh::Create(m_renderer, m_graphics_api,
 		resources_path / "objects" / "greengem.obj");
-	std::optional<Mesh> blue_gem_mesh = create_mesh_from_file(m_graphics_api,
+	AssetId<FileMesh::VertexT> blue_gem_mesh_id = FileMesh::Create(m_renderer, m_graphics_api,
 		resources_path / "objects" / "bluegem.obj");
+	AssetId<GroundMesh::VertexT> ground_mesh_id = GroundMesh::Create(m_renderer, m_graphics_api);
+	AssetId<SkyboxMesh::VertexT> skybox_mesh_id = SkyboxMesh::Create(m_renderer, m_graphics_api);
 
-	//std::optional<GraphicsPipeline> color_pipeline = create_color_pipeline(*this, shaders_path);
-	std::optional<GraphicsPipeline> texture_pipeline = create_texture_pipeline(*this, shaders_path, *m_ground_tex);
-	std::optional<GraphicsPipeline> light_source_pipeline = create_light_source_pipeline(*this, shaders_path);
-	std::optional<GraphicsPipeline> reflection_pipeline = create_reflection_pipeline(*this, shaders_path, *m_skybox_tex);
-	std::optional<GraphicsPipeline> skybox_pipeline = create_skybox_pipeline(*this, shaders_path, *m_skybox_tex);
-
-	//const int color_shader_id = color_pipeline.has_value() ? m_renderer.AddGraphicsPipeline(std::move(color_pipeline.value())) : -1;
-	const int texture_shader_id = texture_pipeline.has_value() ? m_renderer.AddGraphicsPipeline(std::move(texture_pipeline.value())) : -1;
-	const int light_source_pipeline_id = light_source_pipeline.has_value() ? m_renderer.AddGraphicsPipeline(std::move(light_source_pipeline.value())) : -1;
-	const int reflection_shader_id = reflection_pipeline.has_value() ? m_renderer.AddGraphicsPipeline(std::move(reflection_pipeline.value())) : -1;
-	const int skybox_pipeline_id = skybox_pipeline.has_value() ? m_renderer.AddGraphicsPipeline(std::move(skybox_pipeline.value())) : -1;
-
-	const int sword_mesh_id = sword_mesh.has_value() ? m_renderer.AddMesh(std::move(sword_mesh.value())) : -1;
-	const int red_gem_mesh_id = red_gem_mesh.has_value() ? m_renderer.AddMesh(std::move(red_gem_mesh.value())) : -1;
-	const int green_gem_mesh_id = green_gem_mesh.has_value() ? m_renderer.AddMesh(std::move(green_gem_mesh.value())) : -1;
-	const int blue_gem_mesh_id = blue_gem_mesh.has_value() ? m_renderer.AddMesh(std::move(blue_gem_mesh.value())) : -1;
-	const int ground_mesh_id = m_renderer.AddMesh(std::move(create_ground_mesh(m_graphics_api)));
-	const int skybox_mesh_id = m_renderer.AddMesh(std::move(create_skybox_mesh(m_graphics_api)));
-
-	m_sword0 = m_renderer.CreateRenderObject("sword0", sword_mesh_id, reflection_shader_id);
-	m_sword1 = m_renderer.CreateRenderObject("sword1", sword_mesh_id, reflection_shader_id);
-	m_red_gem = m_renderer.CreateRenderObject("red gem", red_gem_mesh_id, light_source_pipeline_id);
-	m_green_gem = m_renderer.CreateRenderObject("green gem", green_gem_mesh_id, light_source_pipeline_id);
-	m_blue_gem = m_renderer.CreateRenderObject("blue gem", blue_gem_mesh_id, light_source_pipeline_id);
-	m_ground = m_renderer.CreateRenderObject("ground", ground_mesh_id, texture_shader_id);
-	m_skybox = m_renderer.CreateRenderObject("skybox", skybox_mesh_id, skybox_pipeline_id);
+	m_sword0 = create_render_object(m_renderer, "sword0", sword_mesh_id, reflection_pipeline_id);
+	m_sword1 = create_render_object(m_renderer, "sword1", sword_mesh_id, reflection_pipeline_id);
+	m_red_gem = create_render_object(m_renderer, "red gem", red_gem_mesh_id, light_source_pipeline_id);
+	m_green_gem = create_render_object(m_renderer, "green gem", green_gem_mesh_id, light_source_pipeline_id);
+	m_blue_gem = create_render_object(m_renderer, "blue gem", blue_gem_mesh_id, light_source_pipeline_id);
+	m_ground = create_render_object(m_renderer, "ground", ground_mesh_id, texture_pipeline_id);
+	m_skybox = create_render_object(m_renderer, "skybox", skybox_mesh_id, skybox_pipeline_id);
 
 	m_red_gem->SetColor({ 1.0, 0.0, 0.0 });
 	m_green_gem->SetColor({ 0.0, 1.0, 0.0 });
