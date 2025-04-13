@@ -2,17 +2,16 @@
 
 module;
 
+#include <algorithm>
 #include <array>
+#include <charconv>
+#include <filesystem>
 #include <fstream>
 #include <ranges>
+#include <string>
 #include <unordered_map>
 
 module ObjLoader;
-
-//import <array>;
-//import <fstream>; // not working?
-//import <ranges>;
-//import <unordered_map>;
 
 namespace
 {
@@ -63,7 +62,7 @@ namespace ObjLoader
 		return result;
 	}
 
-	bool read_obj_file(std::filesystem::path filepath,
+	bool read_obj_file(std::filesystem::path const & filepath,
 		std::vector<std::array<float, 3>> & positions,
 		std::vector<std::array<float, 3>> & normals,
 		std::vector<ObjFaceVerts> & face_verts)
@@ -125,7 +124,10 @@ namespace ObjLoader
 		return true;
 	}
 
-	bool LoadObjFile(std::filesystem::path const & filepath, std::vector<NormalVertex> & out_vertices, std::vector<unsigned int> & out_indices)
+	bool LoadObjFile(
+		std::filesystem::path const & filepath,
+		std::vector<NormalVertex> & out_vertices,
+		std::vector<Mesh::index_t> & out_indices)
 	{
 		std::vector<std::array<float, 3>> positions;
 		std::vector<std::array<float, 3>> normals;
@@ -149,13 +151,13 @@ namespace ObjLoader
 					{ norm[0], norm[1], norm[2] }
 					});
 
-				return static_cast<unsigned int>(out_vertices.size() - 1);
+				return static_cast<Mesh::index_t>(out_vertices.size() - 1);
 			};
 
 		for (ObjFaceVerts const & verts : face_verts)
 		{
 			// verts are counter-clockwise, there may be more than 3 of them so we could be building multiple triangles
-			std::vector<unsigned int> vis;
+			std::vector<Mesh::index_t> vis;
 			std::transform(verts.begin(), verts.end(), std::back_inserter(vis), add_vert);
 
 			for (int i = 1; i + 2 <= vis.size(); i++)

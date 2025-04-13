@@ -3,17 +3,15 @@
 module;
 
 #include <array>
+#include <filesystem>
 #include <numbers>
 
 #include <glm/gtc/matrix_transform.hpp>
 
 module Scene;
 
-//import <array>;
-import <filesystem>;
-//import <numbers>;
-
 import Mesh;
+import Vertex;
 
 namespace
 {
@@ -78,11 +76,11 @@ namespace
 			{ { -scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.0, 0.0 } },
 			{ {  scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 1.0, 0.0 } } };
 
-		std::vector<unsigned int> indices{
+		std::vector<Mesh::index_t> indices{
 			1, 0, 2,
 			1, 2, 3 };
 
-		return Mesh{ std::move(verts), std::move(indices) };
+		return Mesh{ verts, indices };
 	}
 
 	Mesh create_skybox_mesh()
@@ -97,7 +95,7 @@ namespace
 			{ {  1.0f, -1.0f,  1.0f } },
 			{ {  1.0f,  1.0f,  1.0f } } };
 
-		std::vector<unsigned int> indices{
+		std::vector<Mesh::index_t> indices{
 			0, 1, 2,
 			2, 3, 0,
 			5, 1, 0,
@@ -111,7 +109,7 @@ namespace
 			1, 5, 2,
 			2, 5, 6 };
 
-		return Mesh{ std::move(verts), std::move(indices) };
+		return Mesh{ verts, indices };
 	}
 }
 

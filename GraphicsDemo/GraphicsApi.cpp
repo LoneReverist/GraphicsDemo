@@ -3,12 +3,11 @@
 module;
 
 #include <format>
+#include <iostream>
 
 #include <glad/glad.h>
 
 module GraphicsApi;
-
-import <iostream>;
 
 namespace
 {

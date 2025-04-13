@@ -2,105 +2,58 @@
 
 module;
 
-#include <glad/glad.h>
+#include <iostream>
+#include <vector>
 
-#include <glm/vec2.hpp>
-#include <glm/vec3.hpp>
+#include <glad/glad.h>
 
 export module Mesh;
 
-import <concepts>;
-import <iostream>;
-import <variant>;
-import <vector>;
-
-export struct PositionVertex {
-	glm::vec3 m_pos;
-};
-
-export struct NormalVertex {
-	glm::vec3 m_pos;
-	glm::vec3 m_normal;
-};
-
-export struct TextureVertex {
-	glm::vec3 m_pos;
-	glm::vec3 m_normal;
-	glm::vec2 m_tex_coord;
-};
-
-template <typename T>
-concept VertexConcept = std::same_as<T, PositionVertex> || std::same_as<T, NormalVertex> || std::same_as<T, TextureVertex>;
-
-template <typename T>
-concept VertexSupportsNormal = VertexConcept<T> && requires(T v) { v.m_normal; };
-
-template <typename T>
-concept VertexSupportsTexCoord = VertexConcept<T> && requires(T v) { v.m_tex_coord; };
-
-template <VertexConcept Vertex>
-class MeshImpl
-{
-public:
-	template<VertexConcept Vertex>
-	MeshImpl(std::vector<Vertex> && verts, std::vector<unsigned int> && indices)
-		: m_verts{ std::move(verts) }
-		, m_indices{ std::move(indices) }
-	{}
-
-	void InitBuffers();
-	void DeleteBuffers();
-
-	void Render(bool wireframe) const;
-
-private:
-	std::vector<Vertex> m_verts;
-	std::vector<unsigned int> m_indices;
-
-	unsigned int m_vbo_id{ 0 }; // vertex buffer object
-	unsigned int m_ebo_id{ 0 }; // element buffer object
-	unsigned int m_vao_id{ 0 }; // vertex array object
-};
+import Vertex;
 
 export class Mesh
 {
 public:
-	template<VertexConcept Vertex>
-	Mesh(std::vector<Vertex> && verts, std::vector<unsigned int> && indices)
-		: m_mesh_var(MeshImpl<Vertex>{ std::move(verts), std::move(indices) })
-	{}
+	using index_t = std::uint16_t;
 
-	void InitBuffers()
-	{
-		std::visit([](auto & mesh) { mesh.InitBuffers(); }, m_mesh_var);
-	}
-	void DeleteBuffers()
-	{
-		std::visit([](auto & mesh) { mesh.DeleteBuffers(); }, m_mesh_var);
-	}
+	template <IsVertex Vert>
+	Mesh(std::vector<Vert> const & vertices,
+		std::vector<index_t> const & indices);
+	~Mesh();
 
-	void Render(bool wireframe) const
-	{
-		std::visit([wireframe](auto & mesh) { mesh.Render(wireframe); }, m_mesh_var);
-	}
+	Mesh(Mesh && other);
+	Mesh & operator=(Mesh && other);
+
+	Mesh(Mesh &) = delete;
+	Mesh & operator=(Mesh &) = delete;
+
+	bool IsInitialized() const;
+
+	void Render(bool wireframe) const;
 
 private:
-	using mesh_variant_t = std::variant<MeshImpl<PositionVertex>, MeshImpl<NormalVertex>, MeshImpl<TextureVertex>>;
+	void destroy_buffers();
 
-	mesh_variant_t m_mesh_var;
+private:
+	unsigned int m_vbo_id{ 0 }; // vertex buffer object
+	unsigned int m_ebo_id{ 0 }; // element buffer object
+	unsigned int m_vao_id{ 0 }; // vertex array object
+
+	GLsizei m_index_count{ 0 };
 };
 
-template <VertexConcept Vertex>
-void MeshImpl<Vertex>::InitBuffers()
+template <IsVertex Vert>
+Mesh::Mesh(std::vector<Vert> const & vertices,
+	std::vector<index_t> const & indices)
 {
-	if (m_verts.empty())
+	if (vertices.empty())
 	{
-		std::cout << "Mesh::Init() verts empty" << std::endl;
+		std::cout << "Mesh verts empty" << std::endl;
 		return;
 	}
-	if (m_indices.empty())
+	if (indices.empty())
 	{
-		std::cout << "Mesh::Init() indices empty" << std::endl;
+		std::cout << "Mesh indices empty" << std::endl;
 		return;
 	}
 
@@ -113,40 +66,25 @@ void MeshImpl<Vertex>::InitBuffers()
 	glBindBuffer(GL_ARRAY_BUFFER, m_vbo_id);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ebo_id);
 
-	GLsizeiptr buffer_size = static_cast<GLsizeiptr>(m_verts.size() * sizeof(Vertex));
-	glBufferData(GL_ARRAY_BUFFER, buffer_size, m_verts.data(), GL_STATIC_DRAW);
+	GLsizeiptr buffer_size = static_cast<GLsizeiptr>(vertices.size() * sizeof(Vert));
+	glBufferData(GL_ARRAY_BUFFER, buffer_size, vertices.data(), GL_STATIC_DRAW);
 
-	buffer_size = static_cast<GLsizeiptr>(m_indices.size() * sizeof(unsigned int));
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, buffer_size, m_indices.data(), GL_STATIC_DRAW);
+	buffer_size = static_cast<GLsizeiptr>(indices.size() * sizeof(index_t));
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, buffer_size, indices.data(), GL_STATIC_DRAW);
 
-	GLsizei stride = sizeof(Vertex);
-	void * pos_offset = reinterpret_cast<void *>(0);
-	glVertexAttribPointer(
-		0,				// layout (location = 0) in vertex shader
-		3,				// 3 floats per vertex position
-		GL_FLOAT,		// data type
-		GL_FALSE,		// normalize (not relevant)
-		stride,			// size of vertex
-		pos_offset);	// offset
-	glEnableVertexAttribArray(0);
+	Vertex::SetAttributes<Vert>();
 
-	if constexpr (VertexSupportsNormal<Vertex>)
-	{
-		void * normal_offset = reinterpret_cast<void *>(sizeof(glm::vec3));
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, normal_offset);
-		glEnableVertexAttribArray(1);
-	}
+	glBindVertexArray(0);
 
-	if constexpr (VertexSupportsTexCoord<Vertex>)
-	{
-		void * tex_offset = reinterpret_cast<void *>(sizeof(glm::vec3) + sizeof(glm::vec3));
-		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride, tex_offset);
-		glEnableVertexAttribArray(2);
-	}
+	m_index_count = static_cast<GLsizei>(indices.size());
 }
 
-template <VertexConcept Vertex>
-void MeshImpl<Vertex>::DeleteBuffers()
+Mesh::~Mesh()
+{
+	destroy_buffers();
+}
+
+void Mesh::destroy_buffers()
 {
 	glDeleteVertexArrays(1, &m_vao_id);
 	glDeleteBuffers(1, &m_vbo_id);
@@ -156,10 +94,42 @@ void MeshImpl<Vertex>::DeleteBuffers()
 	m_ebo_id = 0;
 }
 
-template <VertexConcept Vertex>
-void MeshImpl<Vertex>::Render(bool wireframe) const
+Mesh::Mesh(Mesh && other)
 {
-	if (m_vao_id == 0)
+	*this = std::move(other);
+}
+
+Mesh & Mesh::operator=(Mesh && other)
+{
+	if (this == &other)
+		return *this;
+
+	destroy_buffers();
+
+	m_vbo_id = other.m_vbo_id;
+	m_ebo_id = other.m_ebo_id;
+	m_vao_id = other.m_vao_id;
+	m_index_count = other.m_index_count;
+
+	other.m_vao_id = 0;
+	other.m_vbo_id = 0;
+	other.m_ebo_id = 0;
+	other.m_index_count = 0;
+
+	return *this;
+}
+
+bool Mesh::IsInitialized() const
+{
+	return m_vao_id != 0
+		&& m_vbo_id != 0
+		&& m_ebo_id != 0
+		&& m_index_count > 0;
+}
+
+void Mesh::Render(bool wireframe) const
+{
+	if (!IsInitialized())
 		return;
 
 	glBindVertexArray(m_vao_id);
@@ -169,6 +139,7 @@ void MeshImpl<Vertex>::Render(bool wireframe) const
 	else
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-	GLsizei num_elements = static_cast<GLsizei>(m_indices.size());
-	glDrawElements(GL_TRIANGLES, num_elements, GL_UNSIGNED_INT, nullptr);
+	static_assert(std::is_same_v<index_t, std::uint16_t>,
+		"Mesh::Render only supports 16-bit indices");
+	glDrawElements(GL_TRIANGLES, m_index_count, GL_UNSIGNED_SHORT, nullptr);
 }

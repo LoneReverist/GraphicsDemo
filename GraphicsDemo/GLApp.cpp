@@ -2,15 +2,13 @@
 
 module;
 
+#include <iostream>
 #include <thread>
 
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
 module GLApp;
-
-import <iostream>;
-//import <thread>;
 
 import GraphicsApi;
 import Renderer;

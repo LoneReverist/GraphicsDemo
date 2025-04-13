@@ -2,13 +2,13 @@
 
 module;
 
+#include <iostream>
+
 #include <glad/glad.h>
 
 #include <glm/gtc/matrix_transform.hpp>
 
 module Renderer;
-
-import <iostream>;
 
 import ObjLoader;
 
@@ -16,8 +16,6 @@ Renderer::~Renderer()
 {
 	for (ShaderProgram & shader_program : m_shader_programs)
 		shader_program.DeleteShaders();
-	for (Mesh & mesh : m_meshes)
-		mesh.DeleteBuffers();
 }
 
 void Renderer::Init()
@@ -142,15 +140,14 @@ int Renderer::LoadShaderProgram(std::filesystem::path const & vert_shader_path, 
 int Renderer::LoadMesh(std::filesystem::path const & mesh_path)
 {
 	std::vector<NormalVertex> vertices;
-	std::vector<unsigned int> indices;
+	std::vector<Mesh::index_t> indices;
 	if (!ObjLoader::LoadObjFile(mesh_path, vertices, indices))
 	{
 		std::cout << "Renderer::LoadMesh() error loading file:" << mesh_path << std::endl;
 		return -1;
 	}
 
-	Mesh mesh{ std::move(vertices), std::move(indices) };
-	mesh.InitBuffers();
+	Mesh mesh{ vertices, indices };
 
 	m_meshes.push_back(std::move(mesh));
 	return static_cast<int>(m_meshes.size() - 1);
@@ -158,8 +155,6 @@ int Renderer::LoadMesh(std::filesystem::path const & mesh_path)
 
 int Renderer::AddMesh(Mesh && mesh)
 {
-	mesh.InitBuffers();
-
 	m_meshes.push_back(std::move(mesh));
 	return static_cast<int>(m_meshes.size() - 1);
 }

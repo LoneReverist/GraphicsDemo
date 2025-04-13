@@ -105,6 +105,7 @@
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="ShaderProgram.cpp" />
     <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="Vertex.ixx" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
