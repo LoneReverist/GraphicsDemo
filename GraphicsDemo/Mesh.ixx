@@ -14,11 +14,11 @@ import Vertex;
 export class Mesh
 {
 public:
-	using index_t = std::uint16_t;
+	using IndexT = std::uint16_t;
 
-	template <IsVertex Vert>
-	Mesh(std::vector<Vert> const & vertices,
-		std::vector<index_t> const & indices);
+	template <IsVertex VertexT>
+	Mesh(std::vector<VertexT> const & vertices,
+		std::vector<IndexT> const & indices);
 	~Mesh();
 
 	Mesh(Mesh && other);
@@ -42,9 +42,9 @@ private:
 	GLsizei m_index_count{ 0 };
 };
 
-template <IsVertex Vert>
-Mesh::Mesh(std::vector<Vert> const & vertices,
-	std::vector<index_t> const & indices)
+template <IsVertex VertexT>
+Mesh::Mesh(std::vector<VertexT> const & vertices,
+	std::vector<IndexT> const & indices)
 {
 	if (vertices.empty())
 	{
@@ -66,13 +66,13 @@ Mesh::Mesh(std::vector<Vert> const & vertices,
 	glBindBuffer(GL_ARRAY_BUFFER, m_vbo_id);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ebo_id);
 
-	GLsizeiptr buffer_size = static_cast<GLsizeiptr>(vertices.size() * sizeof(Vert));
+	GLsizeiptr buffer_size = static_cast<GLsizeiptr>(vertices.size() * sizeof(VertexT));
 	glBufferData(GL_ARRAY_BUFFER, buffer_size, vertices.data(), GL_STATIC_DRAW);
 
-	buffer_size = static_cast<GLsizeiptr>(indices.size() * sizeof(index_t));
+	buffer_size = static_cast<GLsizeiptr>(indices.size() * sizeof(IndexT));
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, buffer_size, indices.data(), GL_STATIC_DRAW);
 
-	Vertex::SetAttributes<Vert>();
+	Vertex::SetAttributes<VertexT>();
 
 	glBindVertexArray(0);
 
@@ -139,7 +139,7 @@ void Mesh::Render(bool wireframe) const
 	else
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-	static_assert(std::is_same_v<index_t, std::uint16_t>,
+	static_assert(std::is_same_v<IndexT, std::uint16_t>,
 		"Mesh::Render only supports 16-bit indices");
 	glDrawElements(GL_TRIANGLES, m_index_count, GL_UNSIGNED_SHORT, nullptr);
 }

@@ -140,7 +140,7 @@ int Renderer::LoadShaderProgram(std::filesystem::path const & vert_shader_path, 
 int Renderer::LoadMesh(std::filesystem::path const & mesh_path)
 {
 	std::vector<NormalVertex> vertices;
-	std::vector<Mesh::index_t> indices;
+	std::vector<Mesh::IndexT> indices;
 	if (!ObjLoader::LoadObjFile(mesh_path, vertices, indices))
 	{
 		std::cout << "Renderer::LoadMesh() error loading file:" << mesh_path << std::endl;

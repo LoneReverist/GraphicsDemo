@@ -21,10 +21,10 @@ import Vertex;
 
 namespace
 {
-	template <IsVertex Vert>
+	template <IsVertex T>
 	struct AssetId
 	{
-		using VertexT = Vert;
+		using VertexT = T;
 		int m_index{ -1 };
 	};
 
@@ -80,7 +80,7 @@ namespace
 		//	{ { -scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.0, 0.0, 1.0 } },
 		//	{ {  scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.5, 0.5, 0.5 } } };
 
-		std::vector<Mesh::index_t> indices{
+		std::vector<Mesh::IndexT> indices{
 			1, 0, 2,
 			1, 2, 3 };
 
@@ -131,7 +131,7 @@ namespace
 			{ {  1.0f, -1.0f,  1.0f } },
 			{ {  1.0f,  1.0f,  1.0f } } };
 
-		std::vector<Mesh::index_t> indices{
+		std::vector<Mesh::IndexT> indices{
 			0, 1, 2,
 			2, 3, 0,
 			5, 1, 0,
@@ -191,7 +191,7 @@ namespace
 		}
 
 		std::vector<NormalVertex> verts;
-		std::vector<Mesh::index_t> indices;
+		std::vector<Mesh::IndexT> indices;
 		if (!ObjLoader::LoadObjFile(file_path, verts, indices))
 		{
 			std::cout << "create_mesh_from_file() error loading file:" << file_path << std::endl;

@@ -51,10 +51,10 @@ concept VertexSupportsColor = IsVertex<T> && requires(T v) { v.m_color; };
 
 namespace Vertex
 {
-	export template<IsVertex Vert>
+	export template<IsVertex VertexT>
 	void SetAttributes()
 	{
-		GLsizei stride = sizeof(Vert);
+		GLsizei stride = sizeof(VertexT);
 		size_t offset = 0;
 		glVertexAttribPointer(
 			0,				// layout (location = 0) in vertex shader
@@ -66,21 +66,21 @@ namespace Vertex
 		glEnableVertexAttribArray(0);
 		offset += sizeof(glm::vec3);
 
-		if constexpr (VertexSupportsNormal<Vert>)
+		if constexpr (VertexSupportsNormal<VertexT>)
 		{
 			glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<void *>(offset));
 			glEnableVertexAttribArray(1);
 			offset += sizeof(glm::vec3);
 		}
 
-		if constexpr (VertexSupportsTexCoord<Vert>)
+		if constexpr (VertexSupportsTexCoord<VertexT>)
 		{
 			glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<void *>(offset));
 			glEnableVertexAttribArray(2);
 			offset += sizeof(glm::vec2);
 		}
 
-		if constexpr (VertexSupportsColor<Vert>)
+		if constexpr (VertexSupportsColor<VertexT>)
 		{
 			glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<void *>(offset));
 			glEnableVertexAttribArray(3);

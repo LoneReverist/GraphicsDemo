@@ -25,7 +25,7 @@ public:
 
 	void LoadShaders(std::filesystem::path const & vs_path, std::filesystem::path const & fs_path);
 
-	template <IsVertex Vert>
+	template <IsVertex VertexT>
 	void SetVertexType();
 
 	template <typename VSConstantData = std::nullopt_t, typename FSConstantData = std::nullopt_t>
@@ -65,11 +65,11 @@ private:
 	PerObjectConstantsCallback m_per_object_constants_callback;
 };
 
-template <IsVertex Vert>
+template <IsVertex VertexT>
 void PipelineBuilder::SetVertexType()
 {
-	m_vert_binding_desc = Vertex::GetBindingDesc<Vert>();
-	m_vert_attrib_descs = Vertex::GetAttribDescs<Vert>();
+	m_vert_binding_desc = Vertex::GetBindingDesc<VertexT>();
+	m_vert_attrib_descs = Vertex::GetAttribDescs<VertexT>();
 }
 
 template <typename VSConstantData /*= std::nullopt_t*/, typename FSConstantData /*= std::nullopt_t*/>

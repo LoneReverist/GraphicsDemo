@@ -51,17 +51,17 @@ concept VertexSupportsColor = IsVertex<T> && requires(T v) { v.m_color; };
 
 namespace Vertex
 {
-	export template <IsVertex Vert>
+	export template <IsVertex VertexT>
 		VkVertexInputBindingDescription GetBindingDesc()
 	{
 		return VkVertexInputBindingDescription{
 			.binding = 0,
-			.stride = sizeof(Vert),
+			.stride = sizeof(VertexT),
 			.inputRate = VK_VERTEX_INPUT_RATE_VERTEX
 		};
 	}
 
-	export template <IsVertex Vert>
+	export template <IsVertex VertexT>
 		std::vector<VkVertexInputAttributeDescription> GetAttribDescs()
 	{
 		std::vector<VkVertexInputAttributeDescription> attrib_descs;
@@ -70,36 +70,36 @@ namespace Vertex
 			.location = static_cast<std::uint32_t>(attrib_descs.size()),
 			.binding = 0,
 			.format = VK_FORMAT_R32G32B32_SFLOAT,
-			.offset = offsetof(Vert, m_pos)
+			.offset = offsetof(VertexT, m_pos)
 			});
 
-		if constexpr (VertexSupportsNormal<Vert>)
+		if constexpr (VertexSupportsNormal<VertexT>)
 		{
 			attrib_descs.emplace_back(VkVertexInputAttributeDescription{
 				.location = static_cast<std::uint32_t>(attrib_descs.size()),
 				.binding = 0,
 				.format = VK_FORMAT_R32G32B32_SFLOAT,
-				.offset = offsetof(Vert, m_normal),
+				.offset = offsetof(VertexT, m_normal),
 				});
 		}
 
-		if constexpr (VertexSupportsTexCoord<Vert>)
+		if constexpr (VertexSupportsTexCoord<VertexT>)
 		{
 			attrib_descs.emplace_back(VkVertexInputAttributeDescription{
 				.location = static_cast<std::uint32_t>(attrib_descs.size()),
 				.binding = 0,
 				.format = VK_FORMAT_R32G32_SFLOAT,
-				.offset = offsetof(Vert, m_tex_coord)
+				.offset = offsetof(VertexT, m_tex_coord)
 				});
 		}
 
-		if constexpr (VertexSupportsColor<Vert>)
+		if constexpr (VertexSupportsColor<VertexT>)
 		{
 			attrib_descs.emplace_back(VkVertexInputAttributeDescription{
 				.location = static_cast<std::uint32_t>(attrib_descs.size()),
 				.binding = 0,
 				.format = VK_FORMAT_R32G32B32_SFLOAT,
-				.offset = offsetof(Vert, m_color)
+				.offset = offsetof(VertexT, m_color)
 				});
 		}
 

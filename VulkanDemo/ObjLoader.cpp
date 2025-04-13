@@ -127,7 +127,7 @@ namespace ObjLoader
 	bool LoadObjFile(
 		std::filesystem::path const & filepath,
 		std::vector<NormalVertex> & out_vertices,
-		std::vector<Mesh::index_t> & out_indices)
+		std::vector<Mesh::IndexT> & out_indices)
 	{
 		std::vector<std::array<float, 3>> positions;
 		std::vector<std::array<float, 3>> normals;
@@ -151,13 +151,13 @@ namespace ObjLoader
 					{ norm[0], norm[1], norm[2] }
 					});
 
-				return static_cast<Mesh::index_t>(out_vertices.size() - 1);
+				return static_cast<Mesh::IndexT>(out_vertices.size() - 1);
 			};
 
 		for (ObjFaceVerts const & verts : face_verts)
 		{
 			// verts are counter-clockwise, there may be more than 3 of them so we could be building multiple triangles
-			std::vector<Mesh::index_t> vis;
+			std::vector<Mesh::IndexT> vis;
 			std::transform(verts.begin(), verts.end(), std::back_inserter(vis), add_vert);
 
 			for (int i = 1; i + 2 <= vis.size(); i++)

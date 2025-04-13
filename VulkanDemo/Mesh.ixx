@@ -15,13 +15,13 @@ import Vertex;
 export class Mesh
 {
 public:
-	using index_t = std::uint16_t;
+	using IndexT = std::uint16_t;
 
-	template <IsVertex Vert>
+	template <IsVertex VertexT>
 	Mesh(
 		GraphicsApi const & graphics_api,
-		std::vector<Vert> const & vertices,
-		std::vector<index_t> const & indices);
+		std::vector<VertexT> const & vertices,
+		std::vector<IndexT> const & indices);
 	~Mesh();
 
 	Mesh(Mesh && other);
@@ -103,11 +103,11 @@ namespace
 	}
 }
 
-template<IsVertex Vert>
+template<IsVertex VertexT>
 Mesh::Mesh(
 	GraphicsApi const & graphics_api,
-	std::vector<Vert> const & vertices,
-	std::vector<index_t> const & indices)
+	std::vector<VertexT> const & vertices,
+	std::vector<IndexT> const & indices)
 	: m_graphics_api{ graphics_api }
 {
 	if (vertices.empty())
@@ -221,7 +221,7 @@ void Mesh::Render(bool /*wireframe*/) const
 		vertex_buffers,
 		offsets);
 
-	static_assert(std::same_as<index_t, std::uint16_t>);
+	static_assert(std::same_as<IndexT, std::uint16_t>);
 	vkCmdBindIndexBuffer(
 		command_buffer,
 		m_index_buffer,

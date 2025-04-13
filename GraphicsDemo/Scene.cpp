@@ -76,7 +76,7 @@ namespace
 			{ { -scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.0, 0.0 } },
 			{ {  scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 1.0, 0.0 } } };
 
-		std::vector<Mesh::index_t> indices{
+		std::vector<Mesh::IndexT> indices{
 			1, 0, 2,
 			1, 2, 3 };
 
@@ -95,7 +95,7 @@ namespace
 			{ {  1.0f, -1.0f,  1.0f } },
 			{ {  1.0f,  1.0f,  1.0f } } };
 
-		std::vector<Mesh::index_t> indices{
+		std::vector<Mesh::IndexT> indices{
 			0, 1, 2,
 			2, 3, 0,
 			5, 1, 0,
