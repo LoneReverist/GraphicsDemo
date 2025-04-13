@@ -36,7 +36,7 @@ public:
 
 		m_data = stbi_load(filepath.string().c_str(), &m_width, &m_height, &m_channels, STBI_rgb_alpha);
 		if (!IsValid())
-			std::cout << "ImageData::LoadImage() failed to load iamge: " << filepath << std::endl;
+			std::cout << "ImageData::LoadImage() failed to load image: " << filepath << std::endl;
 	}
 
 	bool IsValid() const { return m_data != nullptr && m_width > 0 && m_height > 0; }
@@ -348,13 +348,48 @@ Texture::Texture(GraphicsApi const & graphics_api, std::array<std::filesystem::p
 
 Texture::~Texture()
 {
+	destroy_texture();
+}
+
+void Texture::destroy_texture()
+{
 	VkDevice device = m_graphics_api.GetDevice();
 
 	vkDestroySampler(device, m_sampler, nullptr);
+	m_sampler = VK_NULL_HANDLE;
 	vkDestroyImageView(device, m_image_view, nullptr);
+	m_image_view = VK_NULL_HANDLE;
 
 	vkDestroyImage(device, m_image, nullptr);
+	m_image = VK_NULL_HANDLE;
 	vkFreeMemory(device, m_image_memory, nullptr);
+	m_image_memory = VK_NULL_HANDLE;
+}
+
+Texture::Texture(Texture && other)
+	: m_graphics_api(other.m_graphics_api)
+{
+	*this = std::move(other);
+}
+
+Texture & Texture::operator=(Texture && other)
+{
+	if (this == &other)
+		return *this;
+
+	destroy_texture();
+
+	m_image = other.m_image;
+	m_image_memory = other.m_image_memory;
+	m_image_view = other.m_image_view;
+	m_sampler = other.m_sampler;
+
+	other.m_image = VK_NULL_HANDLE;
+	other.m_image_memory = VK_NULL_HANDLE;
+	other.m_image_view = VK_NULL_HANDLE;
+	other.m_sampler = VK_NULL_HANDLE;
+
+	return *this;
 }
 
 bool Texture::IsValid() const

@@ -18,10 +18,19 @@ public:
 	Texture(GraphicsApi const & graphics_api, std::array<std::filesystem::path, 6> const & filepaths); // cubemap
 	~Texture();
 
+	Texture(Texture && other);
+	Texture & operator=(Texture && other);
+
+	Texture(Texture &) = delete;
+	Texture & operator=(Texture &) = delete;
+
 	bool IsValid() const;
 
 	VkImageView GetImageView() const { return m_image_view; }
 	VkSampler GetSampler() const { return m_sampler; }
+
+private:
+	void destroy_texture();
 
 private:
 	GraphicsApi const & m_graphics_api;

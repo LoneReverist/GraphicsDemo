@@ -159,10 +159,10 @@ int Renderer::AddMesh(Mesh && mesh)
 	return static_cast<int>(m_meshes.size() - 1);
 }
 
-int Renderer::LoadTexture(std::filesystem::path const & tex_path)
+int Renderer::LoadTexture(std::filesystem::path const & filepath)
 {
-	Texture texture;
-	if (!texture.LoadTexture(tex_path))
+	Texture texture{ filepath };
+	if (!texture.IsValid())
 		return -1;
 
 	m_textures.push_back(std::move(texture));
@@ -171,8 +171,8 @@ int Renderer::LoadTexture(std::filesystem::path const & tex_path)
 
 int Renderer::LoadCubeMap(std::array<std::filesystem::path, 6> const & filepaths)
 {
-	Texture texture;
-	if (!texture.LoadCubeMap(filepaths))
+	Texture texture{ filepaths };
+	if (!texture.IsValid())
 		return -1;
 
 	m_textures.push_back(std::move(texture));

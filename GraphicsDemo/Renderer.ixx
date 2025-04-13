@@ -43,7 +43,7 @@ public:
 	int LoadShaderProgram(std::filesystem::path const & vert_shader_path, std::filesystem::path const & frag_shader_path);
 	int LoadMesh(std::filesystem::path const & mesh_path);
 	int AddMesh(Mesh && mesh_var);
-	int LoadTexture(std::filesystem::path const & tex_path);
+	int LoadTexture(std::filesystem::path const & filepath);
 	int LoadCubeMap(std::array<std::filesystem::path, 6> const & filepaths);
 
 	void AddRenderObject(std::weak_ptr<RenderObject> render_object);

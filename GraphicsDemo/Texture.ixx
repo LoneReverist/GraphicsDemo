@@ -1,18 +1,31 @@
 // Texture.ixx
 
-export module Texture;
+#include <array>
+#include <filesystem>
 
-import <filesystem>;
+export module Texture;
 
 export class Texture
 {
 public:
-	bool LoadTexture(std::filesystem::path const & filepath);
-	bool LoadCubeMap(std::array<std::filesystem::path, 6> const & filepaths);
+	Texture(std::filesystem::path const & filepath);
+	Texture(std::array<std::filesystem::path, 6> const & filepaths); // cubemap
+	~Texture();
+
+	Texture(Texture && other);
+	Texture & operator=(Texture && other);
+
+	Texture(Texture &) = delete;
+	Texture & operator=(Texture &) = delete;
+
+	bool IsValid() const;
 
 	void Bind() const;
 
 private:
-	int m_type{ -1 };
+	void destroy_texture();
+
+private:
+	unsigned int m_type{ 0 };
 	unsigned int m_tex_id{ 0 };
 };
