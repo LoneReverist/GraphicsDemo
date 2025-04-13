@@ -94,6 +94,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="Camera.ixx" />
     <ClCompile Include="GLApp.cpp" />
     <ClCompile Include="GraphicApi.ixx" />
     <ClCompile Include="GraphicsApi.cpp" />
@@ -101,9 +102,11 @@
     <ClCompile Include="Input.ixx" />
     <ClCompile Include="Mesh.ixx" />
     <ClCompile Include="ObjLoader.cpp" />
+    <ClCompile Include="PipelineBuilder.cpp" />
+    <ClCompile Include="PipelineBuilder.ixx" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="Scene.cpp" />
-    <ClCompile Include="ShaderProgram.cpp" />
+    <ClCompile Include="GraphicsPipeline.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Vertex.ixx" />
   </ItemGroup>
@@ -128,7 +131,7 @@
     <ClCompile Include="Scene.ixx">
       <FileType>Document</FileType>
     </ClCompile>
-    <ClCompile Include="ShaderProgram.ixx">
+    <ClCompile Include="GraphicsPipeline.ixx">
       <FileType>Document</FileType>
     </ClCompile>
     <ClCompile Include="Texture.ixx">

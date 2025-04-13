@@ -11,7 +11,6 @@ module;
 module GLApp;
 
 import GraphicsApi;
-import Renderer;
 import Scene;
 
 GLApp::GLApp(WindowSize window_size, std::string title)
@@ -65,9 +64,8 @@ void GLApp::Run()
 
 			GraphicsApi graphics_api{ reinterpret_cast<GraphicsApi::LoadProcFn *>(glfwGetProcAddress) };
 
-			Renderer renderer;
-			renderer.Init();
-			Scene scene(renderer);
+			Scene scene;
+			scene;
 			scene.Init();
 
 			double last_update_time = glfwGetTime();
@@ -76,15 +74,14 @@ void GLApp::Run()
 			{
 				std::optional<WindowSize> size = new_window_size.exchange(std::nullopt);
 				if (size.has_value())
-					renderer.ResizeViewport(size->m_width, size->m_height);
+					scene.OnViewportResized(size->m_width, size->m_height);
 
 				double cur_time = glfwGetTime();
 				double delta_time = cur_time - last_update_time;
 				last_update_time = cur_time;
 
 				scene.Update(delta_time, input);
-
-				renderer.Render();
+				scene.Render();
 
 				glfwSwapBuffers(window);
 			}

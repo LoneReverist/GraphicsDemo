@@ -16,7 +16,6 @@ import GraphicsPipeline;
 import Mesh;
 import ObjLoader;
 import PipelineBuilder;
-import Texture;
 import Vertex;
 
 namespace
@@ -282,7 +281,7 @@ namespace
 					});
 				pipeline.SetUniform(1 /*binding*/,
 					LightsUniform{
-						.m_ambient_light_color = scene.GetAmbientLightColor(),
+						.m_ambient_light_color = scene.GetAmbientLight().m_color,
 						.m_pointlight_1 = scene.GetPointLight1(),
 						.m_pointlight_2 = scene.GetPointLight2(),
 						.m_pointlight_3 = scene.GetPointLight3(),
@@ -387,7 +386,7 @@ namespace
 					});
 				pipeline.SetUniform(1 /*binding*/,
 					LightsUniform{
-						.m_ambient_light_color = scene.GetAmbientLightColor(),
+						.m_ambient_light_color = scene.GetAmbientLight().m_color,
 						.m_pointlight_1 = scene.GetPointLight1(),
 						.m_pointlight_2 = scene.GetPointLight2(),
 						.m_pointlight_3 = scene.GetPointLight3(),
@@ -562,7 +561,7 @@ namespace
 					});
 				pipeline.SetUniform(1 /*binding*/,
 					LightsUniform{
-						.m_ambient_light_color = scene.GetAmbientLightColor(),
+						.m_ambient_light_color = scene.GetAmbientLight().m_color,
 						.m_pointlight_1 = scene.GetPointLight1(),
 						.m_pointlight_2 = scene.GetPointLight2(),
 						.m_pointlight_3 = scene.GetPointLight3(),
@@ -737,7 +736,6 @@ namespace
 	{
 		transform = glm::rotate(glm::mat4(1.0), delta_time * 0.5f, glm::vec3(0.0, 0.0, 1.0)) * transform;
 	}
-
 }
 
 void Scene::Init()
@@ -791,7 +789,7 @@ void Scene::Init()
 	init_gem_transform(1, m_green_gem->ModifyModelTransform());
 	init_gem_transform(2, m_blue_gem->ModifyModelTransform());
 
-	m_ambient_light_color = glm::vec3(0.5, 0.5, 0.5);
+	m_ambient_light = AmbientLight{ glm::vec3{ 0.5, 0.5, 0.5 } };
 
 	m_spotlight = SpotLight{
 		.m_pos{ 0.0f, 0.0f, 25.0f },

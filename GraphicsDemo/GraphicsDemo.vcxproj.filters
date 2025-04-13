@@ -63,10 +63,10 @@
     <ClCompile Include="RenderObject.ixx">
       <Filter>Source Files\Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="ShaderProgram.cpp">
+    <ClCompile Include="GraphicsPipeline.cpp">
       <Filter>Source Files\Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="ShaderProgram.ixx">
+    <ClCompile Include="GraphicsPipeline.ixx">
       <Filter>Source Files\Renderer</Filter>
     </ClCompile>
     <ClCompile Include="Texture.cpp">
@@ -77,6 +77,15 @@
     </ClCompile>
     <ClCompile Include="Vertex.ixx">
       <Filter>Source Files\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="PipelineBuilder.cpp">
+      <Filter>Source Files\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="PipelineBuilder.ixx">
+      <Filter>Source Files\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Camera.ixx">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

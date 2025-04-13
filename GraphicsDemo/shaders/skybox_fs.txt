@@ -1,4 +1,4 @@
-#version 330 core
+#version 450 core
 
 uniform samplerCube cube_map;
 
@@ -8,5 +8,6 @@ out vec4 FragColor;
 
 void main()
 {
+	gl_FragDepth = 1.0;
 	FragColor = texture(cube_map, tex_coords);
 }
