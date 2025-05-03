@@ -95,6 +95,7 @@
     <ClCompile Include="ObjLoader.ixx" />
     <ClCompile Include="PipelineBuilder.cpp" />
     <ClCompile Include="PipelineBuilder.ixx" />
+    <ClCompile Include="PlatformUtils.ixx" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="Renderer.ixx" />
     <ClCompile Include="RenderObject.ixx" />

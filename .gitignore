@@ -1,5 +1,8 @@
 .vs/
 x64/
 packages/
+build/*
+!build/Run-CMake.ps1
+!build/Install-Dependencies.ps1
 
 *.user

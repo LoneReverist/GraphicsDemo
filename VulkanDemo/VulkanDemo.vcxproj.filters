@@ -84,6 +84,9 @@
     <ClCompile Include="Vertex.ixx">
       <Filter>Source Files\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="PlatformUtils.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

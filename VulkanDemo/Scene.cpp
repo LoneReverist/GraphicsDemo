@@ -16,6 +16,7 @@ import GraphicsPipeline;
 import Mesh;
 import ObjLoader;
 import PipelineBuilder;
+import PlatformUtils;
 import Vertex;
 
 namespace
@@ -740,18 +741,20 @@ namespace
 
 void Scene::Init()
 {
-	const std::filesystem::path resources_path = std::filesystem::path("..") / "resources";
-	const std::filesystem::path shaders_path = "shaders";
+	const std::filesystem::path resources_path = PlatformUtils::GetExecutableDir() / "resources";
+	const std::filesystem::path shaders_path = resources_path / "shaders";
+	const std::filesystem::path textures_path = resources_path / "textures";
+	const std::filesystem::path objects_path = resources_path / "objects";
 
 	m_ground_tex = std::make_unique<Texture>(m_graphics_api,
-		resources_path / "textures" / "skybox" / "top.jpg");
+		textures_path / "skybox" / "top.jpg");
 	m_skybox_tex = std::make_unique<Texture>(m_graphics_api, std::array<std::filesystem::path, 6>{
-		resources_path / "textures" / "skybox" / "right.jpg",
-		resources_path / "textures" / "skybox" / "left.jpg",
-		resources_path / "textures" / "skybox" / "top.jpg",
-		resources_path / "textures" / "skybox" / "bottom.jpg",
-		resources_path / "textures" / "skybox" / "front.jpg",
-		resources_path / "textures" / "skybox" / "back.jpg"
+		textures_path / "skybox" / "right.jpg",
+		textures_path / "skybox" / "left.jpg",
+		textures_path / "skybox" / "top.jpg",
+		textures_path / "skybox" / "bottom.jpg",
+		textures_path / "skybox" / "front.jpg",
+		textures_path / "skybox" / "back.jpg"
 	});
 
 	AssetId<TexturePipeline::VertexT> texture_pipeline_id = TexturePipeline::Create(m_renderer, *this, shaders_path, *m_ground_tex);
@@ -761,13 +764,13 @@ void Scene::Init()
 	//AssetId<ColorPipeline::VertexT> color_pipeline_id = ColorPipeline::Create(m_renderer, *this, shaders_path);
 
 	AssetId<FileMesh::VertexT> sword_mesh_id = FileMesh::Create(m_renderer, m_graphics_api,
-		resources_path / "objects" / "skullsword.obj");
+		objects_path / "skullsword.obj");
 	AssetId<FileMesh::VertexT> red_gem_mesh_id = FileMesh::Create(m_renderer, m_graphics_api,
-		resources_path / "objects" / "redgem.obj");
+		objects_path / "redgem.obj");
 	AssetId<FileMesh::VertexT> green_gem_mesh_id = FileMesh::Create(m_renderer, m_graphics_api,
-		resources_path / "objects" / "greengem.obj");
+		objects_path / "greengem.obj");
 	AssetId<FileMesh::VertexT> blue_gem_mesh_id = FileMesh::Create(m_renderer, m_graphics_api,
-		resources_path / "objects" / "bluegem.obj");
+		objects_path / "bluegem.obj");
 	AssetId<GroundMesh::VertexT> ground_mesh_id = GroundMesh::Create(m_renderer, m_graphics_api);
 	AssetId<SkyboxMesh::VertexT> skybox_mesh_id = SkyboxMesh::Create(m_renderer, m_graphics_api);
 
