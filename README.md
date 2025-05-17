@@ -3,22 +3,17 @@
 ![](https://github.com/chill-gamer-dev/GraphicsDemo/blob/master/GraphicsDemo.gif)
 
 ## Build:
-1. Run Install-Dependencies.ps1, this will install vcpkg, glfw, glm and vulkan.
+1. Run Install-Dependencies.ps1, this will install vcpkg, glfw, glm, vulkan and glslang.
 ```
 build/Install-Dependencies.ps1
 ```
 
-2. Run Run-CMake.ps1, this has some default settings for lib locations and will generate Visual Studio files
+2. Run Run-CMake.ps1, this will generate Visual Studio files and build VulkanDemo
 ```
 build/Run-CMake.ps1
 ```
 
-3. Build the Vulkan Demo project
+3. Run the Vulkan demo
 ```
-cmake --build build --config Release
-```
-
-4. Run the Vulkan demo
-```
-build/Release/GraphicsDemo.exe
+build/Release/VulkanDemo.exe
 ```

@@ -264,8 +264,8 @@ namespace
 
 		PipelineBuilder builder{ scene.GetGraphicsApi() };
 		builder.LoadShaders(
-			shaders_path / "texture_vert.spv",
-			shaders_path / "texture_frag.spv");
+			shaders_path / "texture.vert.spv",
+			shaders_path / "texture.frag.spv");
 		builder.SetVertexType<VertexT>();
 		builder.SetPushConstantTypes<VSPushConstant, std::nullopt_t>();
 		builder.SetVSUniformTypes<ViewProjUniform>();
@@ -369,8 +369,8 @@ namespace
 
 		PipelineBuilder builder{ scene.GetGraphicsApi() };
 		builder.LoadShaders(
-			shaders_path / "reflection_vert.spv",
-			shaders_path / "reflection_frag.spv");
+			shaders_path / "reflection.vert.spv",
+			shaders_path / "reflection.frag.spv");
 		builder.SetVertexType<VertexT>();
 		builder.SetPushConstantTypes<VSPushConstant, std::nullopt_t>();
 		builder.SetVSUniformTypes<ViewProjUniform>();
@@ -462,8 +462,8 @@ namespace
 
 		PipelineBuilder builder{ scene.GetGraphicsApi() };
 		builder.LoadShaders(
-			shaders_path / "skybox_vert.spv",
-			shaders_path / "skybox_frag.spv");
+			shaders_path / "skybox.vert.spv",
+			shaders_path / "skybox.frag.spv");
 		builder.SetVertexType<VertexT>();
 		builder.SetVSUniformTypes<ViewProjUniform>();
 		builder.SetTexture(skybox);
@@ -545,8 +545,8 @@ namespace
 
 		PipelineBuilder builder{ scene.GetGraphicsApi() };
 		builder.LoadShaders(
-			shaders_path / "color_vert.spv",
-			shaders_path / "color_frag.spv");
+			shaders_path / "color.vert.spv",
+			shaders_path / "color.frag.spv");
 		builder.SetVertexType<VertexT>();
 		builder.SetPushConstantTypes<VSPushConstant, std::nullopt_t>();
 		builder.SetVSUniformTypes<ViewProjUniform>();
@@ -641,8 +641,8 @@ namespace
 
 		PipelineBuilder builder{ scene.GetGraphicsApi() };
 		builder.LoadShaders(
-			shaders_path / "light_source_vert.spv",
-			shaders_path / "light_source_frag.spv");
+			shaders_path / "light_source.vert.spv",
+			shaders_path / "light_source.frag.spv");
 		builder.SetVertexType<VertexT>();
 		builder.SetPushConstantTypes<VSPushConstant, FSPushConstant>();
 		builder.SetVSUniformTypes<ViewProjUniform>();
