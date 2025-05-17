@@ -18,10 +18,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="GraphicsDemo.cpp">
+    <ClCompile Include="OpenGLDemo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="GLApp.cpp">
+    <ClCompile Include="OpenGLApp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ObjLoader.cpp">
@@ -36,7 +36,7 @@
     <ClCompile Include="Scene.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="GLApp.ixx">
+    <ClCompile Include="OpenGLApp.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Input.ixx">
@@ -45,7 +45,7 @@
     <ClCompile Include="..\glad\src\glad.c">
       <Filter>Source Files\Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="GraphicApi.ixx">
+    <ClCompile Include="GraphicsApi.ixx">
       <Filter>Source Files\Renderer</Filter>
     </ClCompile>
     <ClCompile Include="GraphicsApi.cpp">

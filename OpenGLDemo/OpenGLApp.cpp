@@ -1,4 +1,4 @@
-// GLApp.cpp
+// OpenGLApp.cpp
 
 module;
 
@@ -8,12 +8,12 @@ module;
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
-module GLApp;
+module OpenGLApp;
 
 import GraphicsApi;
 import Scene;
 
-GLApp::GLApp(WindowSize window_size, std::string title)
+OpenGLApp::OpenGLApp(WindowSize window_size, std::string title)
 {
 	glfwSetErrorCallback([](int error, const char * description)
 		{
@@ -35,25 +35,25 @@ GLApp::GLApp(WindowSize window_size, std::string title)
 	glfwSetWindowUserPointer(m_window, this);
 	glfwSetFramebufferSizeCallback(m_window, [](GLFWwindow * window, int width, int height)
 		{
-			GLApp * app = static_cast<GLApp *>(glfwGetWindowUserPointer(window));
+			OpenGLApp * app = static_cast<OpenGLApp *>(glfwGetWindowUserPointer(window));
 			app->OnWindowResize(WindowSize{ width, height });
 		});
 	glfwSetKeyCallback(m_window, [](GLFWwindow * window, int key, int scan_code, int action, int mods)
 		{
-			GLApp * app = static_cast<GLApp *>(glfwGetWindowUserPointer(window));
+			OpenGLApp * app = static_cast<OpenGLApp *>(glfwGetWindowUserPointer(window));
 			app->OnKeyEvent(key, scan_code, action, mods);
 		});
 
 	OnWindowResize(window_size);
 }
 
-GLApp::~GLApp()
+OpenGLApp::~OpenGLApp()
 {
 	if (IsInitialized())
 		glfwTerminate();
 }
 
-void GLApp::Run()
+void OpenGLApp::Run()
 {
 	if (!IsInitialized() || !HasWindow())
 		return;
@@ -65,7 +65,6 @@ void GLApp::Run()
 			GraphicsApi graphics_api{ reinterpret_cast<GraphicsApi::LoadProcFn *>(glfwGetProcAddress) };
 
 			Scene scene;
-			scene;
 			scene.Init();
 
 			double last_update_time = glfwGetTime();
@@ -91,12 +90,12 @@ void GLApp::Run()
 		glfwPollEvents(); // must only be called from main thread
 }
 
-void GLApp::OnWindowResize(WindowSize size)
+void OpenGLApp::OnWindowResize(WindowSize size)
 {
 	m_new_window_size.store(size);
 }
 
-void GLApp::OnKeyEvent(int key, int /*scan_code*/, int action, int /*mods*/)
+void OpenGLApp::OnKeyEvent(int key, int /*scan_code*/, int action, int /*mods*/)
 {
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(m_window, true);

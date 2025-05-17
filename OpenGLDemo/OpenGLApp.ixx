@@ -1,11 +1,11 @@
-// GLApp.ixx
+// OpenGLApp.ixx
 
 module;
 
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
-export module GLApp;
+export module OpenGLApp;
 
 import <atomic>;
 import <optional>;
@@ -19,11 +19,11 @@ export struct WindowSize
 	int m_height{ 0 };
 };
 
-export class GLApp
+export class OpenGLApp
 {
 public:
-	GLApp(WindowSize window_size, std::string title);
-	~GLApp();
+	OpenGLApp(WindowSize window_size, std::string title);
+	~OpenGLApp();
 
 	void Run();
 

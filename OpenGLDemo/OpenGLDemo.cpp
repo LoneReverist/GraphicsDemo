@@ -1,14 +1,14 @@
-// GraphicsDemo.cpp
+// OpenGLDemo.cpp
 
 #include <iostream>
 
-import GLApp;
+import OpenGLApp;
 
 int main()
 {
 	std::cout << "Initializing app..." << std::endl;
 
-	GLApp app(WindowSize{ 1920, 1080 }, "Graphics Demo");
+	OpenGLApp app(WindowSize{ 1920, 1080 }, "OpenGL Demo");
 	if (!app.IsInitialized() || !app.HasWindow())
 		return -1;
 
