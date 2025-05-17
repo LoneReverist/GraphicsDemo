@@ -81,6 +81,11 @@ target_sources(${PROJECT_NAME}
 		VulkanDemo/VulkanApp.cpp
 		VulkanDemo/VulkanDemo.cpp
 )
+target_sources(${PROJECT_NAME}
+	PRIVATE
+	${SHADER_SOURCES}
+)
+source_group("Shaders" FILES ${SHADER_SOURCES})
 
 # Link dependencies (provided via vcpkg toolchain)
 target_link_libraries(${PROJECT_NAME} PRIVATE glfw Vulkan::Vulkan glm::glm)
