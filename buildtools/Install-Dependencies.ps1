@@ -9,7 +9,7 @@ Push-Location C:\vcpkg
 .\vcpkg integrate install
 
 # install VulkanDemo dependencies
-.\vcpkg install glfw3:x64-windows-static glm:x64-windows vulkan:x64-windows-static glslang
+.\vcpkg install glfw3:x64-windows-static glm:x64-windows-static vulkan:x64-windows-static
 
 # add vcpkg to path
 [Environment]::SetEnvironmentVariable("Path", $env:Path + ";C:\vcpkg", [EnvironmentVariableTarget]::Machine)
