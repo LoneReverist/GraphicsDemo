@@ -32,9 +32,9 @@ target_sources(VulkanRenderer
 
 # Link dependencies (provided via vcpkg toolchain)
 target_link_libraries(VulkanRenderer PUBLIC
+	Vulkan::Vulkan
 	glfw
 	glm::glm
-	Vulkan::Vulkan
 )
 
 # Add stbi include directory, (this should perhaps be installed with vcpkg instead)

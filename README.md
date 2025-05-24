@@ -3,7 +3,7 @@
 ![](https://github.com/chill-gamer-dev/GraphicsDemo/blob/master/GraphicsDemo.gif)
 
 ## Build:
-1. Run buildtools/Install-Dependencies.ps1, this will install vcpkg and then the glfw, glm, glad and vulkan packages.
+1. Run buildtools/Install-Dependencies.ps1, this will install vcpkg and then packages used by OpenGLDemo and VulkanDemo.
 ```
 buildtools/Install-Dependencies.ps1
 ```

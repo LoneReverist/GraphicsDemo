@@ -8,6 +8,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(glfw3 CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
+#find_package(stb CONFIG REQUIRED) # not needed, stb headers are globally available when vcpkg toolchain is set
 
 add_subdirectory(VulkanRenderer)
 add_subdirectory(VulkanDemo)

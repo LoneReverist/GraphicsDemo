@@ -28,9 +28,9 @@ target_sources(OpenGLRenderer
 
 # Link dependencies (provided via vcpkg toolchain)
 target_link_libraries(OpenGLRenderer PUBLIC
+	glad::glad
 	glfw
 	glm::glm
-	glad::glad
 )
 
 # Add stbi include directory, (TODO: install with vcpkg)
