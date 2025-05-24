@@ -10,8 +10,6 @@ module;
 
 module Renderer;
 
-import ObjLoader;
-
 void Renderer::Render() const
 {
 	glEnable(GL_DEPTH_TEST);

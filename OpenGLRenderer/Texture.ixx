@@ -1,5 +1,7 @@
 // Texture.ixx
 
+module;
+
 #include <array>
 #include <filesystem>
 

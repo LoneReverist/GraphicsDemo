@@ -3,21 +3,22 @@ add_executable(VulkanDemo)
 # Build shaders
 set(GLSLANG_VALIDATOR_EXECUTABLE ${CMAKE_SOURCE_DIR}/buildtools/glslangValidator.exe)
 
+set(SHADER_SOURCE_DIR ${CMAKE_SOURCE_DIR}/VulkanDemo/shaders)
+set(SHADER_SOURCES
+	${SHADER_SOURCE_DIR}/light_source.vert
+	${SHADER_SOURCE_DIR}/light_source.frag
+	${SHADER_SOURCE_DIR}/color.vert
+	${SHADER_SOURCE_DIR}/color.frag
+	${SHADER_SOURCE_DIR}/texture.vert
+	${SHADER_SOURCE_DIR}/texture.frag
+	${SHADER_SOURCE_DIR}/skybox.vert
+	${SHADER_SOURCE_DIR}/skybox.frag
+	${SHADER_SOURCE_DIR}/reflection.vert
+	${SHADER_SOURCE_DIR}/reflection.frag
+)
+
 set(SHADER_BINARY_DIR ${CMAKE_BINARY_DIR}/shaders)
 file(MAKE_DIRECTORY ${SHADER_BINARY_DIR})
-
-set(SHADER_SOURCES
-	${CMAKE_SOURCE_DIR}/VulkanDemo/shaders/light_source.vert
-	${CMAKE_SOURCE_DIR}/VulkanDemo/shaders/light_source.frag
-	${CMAKE_SOURCE_DIR}/VulkanDemo/shaders/color.vert
-	${CMAKE_SOURCE_DIR}/VulkanDemo/shaders/color.frag
-	${CMAKE_SOURCE_DIR}/VulkanDemo/shaders/texture.vert
-	${CMAKE_SOURCE_DIR}/VulkanDemo/shaders/texture.frag
-	${CMAKE_SOURCE_DIR}/VulkanDemo/shaders/skybox.vert
-	${CMAKE_SOURCE_DIR}/VulkanDemo/shaders/skybox.frag
-	${CMAKE_SOURCE_DIR}/VulkanDemo/shaders/reflection.vert
-	${CMAKE_SOURCE_DIR}/VulkanDemo/shaders/reflection.frag
-)
 
 foreach(SHADER ${SHADER_SOURCES})
     get_filename_component(FILE_NAME ${SHADER} NAME)

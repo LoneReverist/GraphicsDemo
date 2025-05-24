@@ -67,3 +67,8 @@ GraphicsApi::GraphicsApi(LoadProcFn * load_proc_fn)
 GraphicsApi::~GraphicsApi()
 {
 }
+
+void GraphicsApi::SetViewport(int width, int height) const
+{
+	glViewport(0, 0, width, height);
+}

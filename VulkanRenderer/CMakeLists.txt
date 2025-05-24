@@ -1,3 +1,9 @@
+add_library(Vulkan::Vulkan STATIC IMPORTED)
+set_target_properties(Vulkan::Vulkan PROPERTIES
+    IMPORTED_LOCATION "${VCPKG_ROOT}/installed/x64-windows-static/lib/vulkan-1.lib"
+    INTERFACE_INCLUDE_DIRECTORIES "${VCPKG_ROOT}/installed/x64-windows-static/include"
+)
+
 add_library(VulkanRenderer STATIC)
 
 target_sources(VulkanRenderer
@@ -34,5 +40,4 @@ target_link_libraries(VulkanRenderer PUBLIC
 # Add stbi include directory, (this should perhaps be installed with vcpkg instead)
 target_include_directories(VulkanRenderer PRIVATE
 	${CMAKE_SOURCE_DIR}/stbi/include
-	${Vulkan_INCLUDE_DIRS}
 )

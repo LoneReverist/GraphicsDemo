@@ -29,14 +29,14 @@ public:
 
 	void Run();
 
-	bool IsInitialized() const { return m_intialized; }
+	bool IsInitialized() const { return m_initialized; }
 	bool HasWindow() const { return m_window != nullptr; }
 
 	void OnWindowResize(WindowSize size);
 	void OnKeyEvent(int key, int scan_code, int action, int mods);
 
 private:
-	bool m_intialized{ false };
+	bool m_initialized{ false };
 	GLFWwindow * m_window{ nullptr };
 	std::string m_title;
 

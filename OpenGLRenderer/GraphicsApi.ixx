@@ -13,4 +13,6 @@ public:
 
 	GraphicsApi(LoadProcFn * load_proc_fn);
 	~GraphicsApi();
+
+	void SetViewport(int width, int height) const;
 };

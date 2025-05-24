@@ -24,7 +24,7 @@ VulkanApp::VulkanApp(WindowSize window_size, std::string title)
 
 	if (!glfwInit())
 		return;
-	m_intialized = true;
+	m_initialized = true;
 
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 

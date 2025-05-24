@@ -22,10 +22,10 @@ OpenGLApp::OpenGLApp(WindowSize window_size, std::string title)
 
 	if (!glfwInit())
 		return;
-	m_intialized = true;
+	m_initialized = true;
 
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	m_window = glfwCreateWindow(window_size.m_width, window_size.m_height, title.c_str(), nullptr, nullptr);
@@ -73,7 +73,10 @@ void OpenGLApp::Run()
 			{
 				std::optional<WindowSize> size = new_window_size.exchange(std::nullopt);
 				if (size.has_value())
+				{
+					graphics_api.SetViewport(size->m_width, size->m_height);
 					scene.OnViewportResized(size->m_width, size->m_height);
+				}
 
 				double cur_time = glfwGetTime();
 				double delta_time = cur_time - last_update_time;
