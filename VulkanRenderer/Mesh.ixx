@@ -2,6 +2,8 @@
 
 module;
 
+#include <cstdint>
+#include <cstring>
 #include <iostream>
 #include <vector>
 
@@ -48,59 +50,55 @@ private:
 	std::uint32_t m_index_count = 0;
 };
 
-namespace
+template <typename T>
+VkResult init_buffer(
+	GraphicsApi const & graphics_api,
+	std::vector<T> objects,
+	VkBufferUsageFlags buffer_usage,
+	VkBuffer & out_buffer,
+	VkDeviceMemory & out_buffer_memory)
 {
-	template <typename T>
-	VkResult init_buffer(
-		GraphicsApi const & graphics_api,
-		std::vector<T> objects,
-		VkBufferUsageFlags buffer_usage,
-		VkBuffer & out_buffer,
-		VkDeviceMemory & out_buffer_memory
-		)
+	VkDevice device = graphics_api.GetDevice();
+
+	VkBuffer staging_buffer;
+	VkDeviceMemory staging_buffer_memory;
+
+	VkDeviceSize buffer_size = sizeof(objects[0]) * objects.size();
+	VkResult result = graphics_api.CreateBuffer(
+		buffer_size,
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+		staging_buffer,
+		staging_buffer_memory);
+	if (result != VK_SUCCESS)
 	{
-		VkDevice device = graphics_api.GetDevice();
-
-		VkBuffer staging_buffer;
-		VkDeviceMemory staging_buffer_memory;
-
-		VkDeviceSize buffer_size = sizeof(objects[0]) * objects.size();
-		VkResult result = graphics_api.CreateBuffer(
-			buffer_size,
-			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-			staging_buffer,
-			staging_buffer_memory);
-		if (result != VK_SUCCESS)
-		{
-			std::cout << "Failed to create staging buffer" << std::endl;
-			return result;
-		}
-
-		void * data;
-		vkMapMemory(device, staging_buffer_memory, 0, buffer_size, 0, &data);
-		memcpy(data, objects.data(), (size_t)buffer_size);
-		vkUnmapMemory(device, staging_buffer_memory);
-
-		result = graphics_api.CreateBuffer(
-			buffer_size,
-			VK_BUFFER_USAGE_TRANSFER_DST_BIT | buffer_usage,
-			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-			out_buffer,
-			out_buffer_memory);
-		if (result != VK_SUCCESS)
-		{
-			std::cout << "Failed to create device local buffer" << std::endl;
-			return result;
-		}
-
-		graphics_api.CopyBuffer(staging_buffer, out_buffer, buffer_size);
-
-		vkDestroyBuffer(device, staging_buffer, nullptr);
-		vkFreeMemory(device, staging_buffer_memory, nullptr);
-
-		return VK_SUCCESS;
+		std::cout << "Failed to create staging buffer" << std::endl;
+		return result;
 	}
+
+	void * data;
+	vkMapMemory(device, staging_buffer_memory, 0, buffer_size, 0, &data);
+	std::memcpy(data, objects.data(), (size_t)buffer_size);
+	vkUnmapMemory(device, staging_buffer_memory);
+
+	result = graphics_api.CreateBuffer(
+		buffer_size,
+		VK_BUFFER_USAGE_TRANSFER_DST_BIT | buffer_usage,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		out_buffer,
+		out_buffer_memory);
+	if (result != VK_SUCCESS)
+	{
+		std::cout << "Failed to create device local buffer" << std::endl;
+		return result;
+	}
+
+	graphics_api.CopyBuffer(staging_buffer, out_buffer, buffer_size);
+
+	vkDestroyBuffer(device, staging_buffer, nullptr);
+	vkFreeMemory(device, staging_buffer_memory, nullptr);
+
+	return VK_SUCCESS;
 }
 
 template<IsVertex VertexT>

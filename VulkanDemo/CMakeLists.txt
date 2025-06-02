@@ -1,7 +1,15 @@
 add_executable(VulkanDemo)
 
+target_compile_features(VulkanDemo PRIVATE cxx_std_20)
+
+set_target_properties(VulkanDemo PROPERTIES CXX_SCAN_FOR_MODULES ON)
+
 # Build shaders
-set(GLSLANG_VALIDATOR_EXECUTABLE ${CMAKE_SOURCE_DIR}/buildtools/glslangValidator.exe)
+if (WIN32)
+	set(GLSLANG_VALIDATOR_EXECUTABLE ${CMAKE_SOURCE_DIR}/buildtools/glslangValidator.exe)
+elseif(UNIX)
+	set(GLSLANG_VALIDATOR_EXECUTABLE glslangValidator)
+endif()
 
 set(SHADER_SOURCE_DIR ${CMAKE_SOURCE_DIR}/VulkanDemo/shaders)
 set(SHADER_SOURCES
@@ -51,17 +59,15 @@ target_sources(VulkanDemo
 		PlatformUtils.ixx
 		Scene.ixx
 		VulkanApp.ixx
-)
-target_sources(VulkanDemo
+
 	PRIVATE
 		ObjLoader.cpp
 		Scene.cpp
 		VulkanApp.cpp
 		VulkanDemo.cpp
-)
-target_sources(VulkanDemo
+
 	PRIVATE
-	${SHADER_SOURCES}
+		${SHADER_SOURCES}
 )
 source_group("Shaders" FILES ${SHADER_SOURCES})
 

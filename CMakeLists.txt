@@ -1,4 +1,6 @@
-cmake_minimum_required(VERSION 3.28) # for C++20 module support
+cmake_minimum_required(VERSION 3.29) # for C++20 module support
+
+set(CMAKE_EXPERIMENTAL_CXX_MODULE_CMAKE_API ON) # still required for gcc
 
 project(GraphicsDemo)
 

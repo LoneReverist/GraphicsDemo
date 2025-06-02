@@ -28,6 +28,6 @@ private:
 	void destroy_texture();
 
 private:
-	unsigned int m_type{ 0 };
-	unsigned int m_tex_id{ 0 };
+	unsigned int m_type = 0;
+	unsigned int m_tex_id = 0;
 };

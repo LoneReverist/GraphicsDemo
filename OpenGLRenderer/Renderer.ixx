@@ -2,6 +2,7 @@
 
 module;
 
+#include <filesystem>
 #include <memory>
 #include <string>
 #include <vector>
@@ -9,8 +10,6 @@ module;
 #include <glm/vec3.hpp>
 
 export module Renderer;
-
-import <filesystem>;
 
 import GraphicsPipeline;
 import Mesh;

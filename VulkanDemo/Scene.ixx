@@ -24,7 +24,7 @@ struct PointLight
 {
 	alignas(16) glm::vec3 m_pos{ 0.0, 0.0, 0.0 };
 	alignas(16) glm::vec3 m_color{ 1.0, 1.0, 1.0 };
-	alignas(4) float m_radius{ 0.0f };
+	alignas(4) float m_radius = 0.0f;
 };
 
 struct SpotLight
@@ -32,8 +32,8 @@ struct SpotLight
 	alignas(16) glm::vec3 m_pos{ 0.0, 0.0, 0.0 };
 	alignas(16) glm::vec3 m_dir{ 0.0, 0.0, -1.0 };
 	alignas(16) glm::vec3 m_color{ 1.0, 1.0, 1.0 };
-	alignas(4) float m_inner_radius{ 0.0 };
-	alignas(4) float m_outer_radius{ 0.0 };
+	alignas(4) float m_inner_radius = 0.0;
+	alignas(4) float m_outer_radius = 0.0;
 };
 
 export class Scene
@@ -83,5 +83,5 @@ private:
 	PointLight m_pointlight_3;
 	SpotLight m_spotlight;
 
-	float m_timer{ 0.0 };
+	float m_timer = 0.0;
 };

@@ -3,6 +3,7 @@
 module;
 
 #include <filesystem>
+#include <vector>
 
 export module ObjLoader;
 

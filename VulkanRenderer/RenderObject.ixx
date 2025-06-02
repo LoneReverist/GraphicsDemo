@@ -38,13 +38,13 @@ public:
 private:
 	std::string m_name; // for debugging
 
-	int m_mesh_id{ -1 };
-	int m_pipeline_id{ -1 };
-	int m_tex_id{ -1 };
+	int m_mesh_id = -1;
+	int m_pipeline_id = -1;
+	int m_tex_id = -1;
 
 	glm::vec3 m_color;
 
-	bool m_draw_wireframe{ false };
+	bool m_draw_wireframe = false;
 
 	glm::mat4 m_model_transform{ 1.0 };
 };

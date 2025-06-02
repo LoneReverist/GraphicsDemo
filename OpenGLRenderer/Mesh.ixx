@@ -2,6 +2,7 @@
 
 module;
 
+#include <cstdint>
 #include <iostream>
 #include <vector>
 
@@ -35,11 +36,11 @@ private:
 	void destroy_buffers();
 
 private:
-	unsigned int m_vbo_id{ 0 }; // vertex buffer object
-	unsigned int m_ebo_id{ 0 }; // element buffer object
-	unsigned int m_vao_id{ 0 }; // vertex array object
+	unsigned int m_vbo_id = 0; // vertex buffer object
+	unsigned int m_ebo_id = 0; // element buffer object
+	unsigned int m_vao_id = 0; // vertex array object
 
-	GLsizei m_index_count{ 0 };
+	GLsizei m_index_count = 0;
 };
 
 template <IsVertex VertexT>

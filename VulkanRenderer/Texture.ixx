@@ -35,8 +35,8 @@ private:
 private:
 	GraphicsApi const & m_graphics_api;
 
-	VkImage m_image{ VK_NULL_HANDLE };
-	VkDeviceMemory m_image_memory{ VK_NULL_HANDLE };
-	VkImageView m_image_view{ VK_NULL_HANDLE };
-	VkSampler m_sampler{ VK_NULL_HANDLE };
+	VkImage m_image = VK_NULL_HANDLE;
+	VkDeviceMemory m_image_memory = VK_NULL_HANDLE;
+	VkImageView m_image_view = VK_NULL_HANDLE;
+	VkSampler m_sampler = VK_NULL_HANDLE;
 };

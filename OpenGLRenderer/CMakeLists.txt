@@ -2,22 +2,26 @@ find_package(glad CONFIG REQUIRED)
 
 add_library(OpenGLRenderer STATIC)
 
+target_compile_features(OpenGLRenderer PRIVATE cxx_std_20)
+
+set_target_properties(OpenGLRenderer PROPERTIES CXX_SCAN_FOR_MODULES ON)
+
 target_sources(OpenGLRenderer
-	PRIVATE
+	PUBLIC
 	FILE_SET cxx_modules TYPE CXX_MODULES
 	BASE_DIRS
 		.
 	FILES
 		GraphicsApi.ixx
 		GraphicsPipeline.ixx
+		ImageData.ixx
 		Mesh.ixx
 		PipelineBuilder.ixx
 		Renderer.ixx
 		RenderObject.ixx
 		Texture.ixx
 		Vertex.ixx
-)
-target_sources(OpenGLRenderer
+
 	PRIVATE
 		GraphicsApi.cpp
 		GraphicsPipeline.cpp

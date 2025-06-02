@@ -29,9 +29,9 @@ export enum class DepthCompareOp
 
 export struct DepthTestOptions
 {
-	bool m_enable_depth_test{ true };
-	bool m_enable_depth_write{ true };
-	DepthCompareOp m_depth_compare_op{ DepthCompareOp::LESS };
+	bool m_enable_depth_test = true;
+	bool m_enable_depth_write = true;
+	DepthCompareOp m_depth_compare_op = DepthCompareOp::LESS;
 };
 
 export class GraphicsPipeline
@@ -67,7 +67,7 @@ private:
 	void destroy_pipeline();
 
 private:
-	unsigned int m_program_id{ 0 };
+	unsigned int m_program_id = 0;
 
 	DepthTestOptions m_depth_test_options;
 

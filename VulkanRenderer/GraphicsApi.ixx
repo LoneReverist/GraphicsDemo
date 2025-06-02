@@ -3,7 +3,11 @@
 module;
 
 #include <array>
+#include <cstdint>
 #include <functional>
+#include <optional>
+#include <string>
+#include <vector>
 
 #include <vulkan/vulkan.h>
 
@@ -13,10 +17,6 @@ module;
 #include <glm/ext/matrix_float4x4.hpp>
 
 export module GraphicsApi;
-
-import <optional>;
-import <string>;
-import <vector>;
 
 struct QueueFamilyIndices
 {
@@ -131,30 +131,30 @@ private:
 		VkImageView & out_image_view) const;
 
 private:
-	VkInstance m_instance{ VK_NULL_HANDLE };
-	VkSurfaceKHR m_surface{ VK_NULL_HANDLE };
+	VkInstance m_instance = VK_NULL_HANDLE;
+	VkSurfaceKHR m_surface = VK_NULL_HANDLE;
 
 	PhysicalDeviceInfo m_phys_device_info; // Automatically cleaned up when m_instance is destroyed
-	VkDevice m_logical_device{ VK_NULL_HANDLE };
-	VkQueue m_graphics_queue{ VK_NULL_HANDLE }; // Automatically cleaned up when m_logical_device is destroyed
-	VkQueue m_present_queue{ VK_NULL_HANDLE }; // Automatically cleaned up when m_logical_device is destroyed
+	VkDevice m_logical_device = VK_NULL_HANDLE;
+	VkQueue m_graphics_queue = VK_NULL_HANDLE; // Automatically cleaned up when m_logical_device is destroyed
+	VkQueue m_present_queue = VK_NULL_HANDLE; // Automatically cleaned up when m_logical_device is destroyed
 
-	VkSwapchainKHR m_swap_chain{ VK_NULL_HANDLE };
-	VkFormat m_swap_chain_image_format{ VK_FORMAT_UNDEFINED };
+	VkSwapchainKHR m_swap_chain = VK_NULL_HANDLE;
+	VkFormat m_swap_chain_image_format = VK_FORMAT_UNDEFINED;
 	VkExtent2D m_swap_chain_extent{ 0, 0 };
 	std::vector<VkImage> m_swap_chain_images; // Automatically cleaned up when m_swap_chain is destroyed
 	std::vector<VkImageView> m_swap_chain_image_views;
 	std::vector<VkFramebuffer> m_swap_chain_framebuffers;
 	std::uint32_t m_current_image_index = 0;
 
-	VkRenderPass m_render_pass{ VK_NULL_HANDLE };
+	VkRenderPass m_render_pass = VK_NULL_HANDLE;
 
-	VkFormat m_depth_format{ VK_FORMAT_UNDEFINED };
-	VkImage m_depth_image{ VK_NULL_HANDLE };
-	VkDeviceMemory m_depth_image_memory{ VK_NULL_HANDLE };
-	VkImageView m_depth_image_view{ VK_NULL_HANDLE };
+	VkFormat m_depth_format = VK_FORMAT_UNDEFINED;
+	VkImage m_depth_image = VK_NULL_HANDLE;
+	VkDeviceMemory m_depth_image_memory = VK_NULL_HANDLE;
+	VkImageView m_depth_image_view = VK_NULL_HANDLE;
 
-	VkCommandPool m_command_pool{ VK_NULL_HANDLE };
+	VkCommandPool m_command_pool = VK_NULL_HANDLE;
 	std::array<VkCommandBuffer, m_max_frames_in_flight> m_command_buffers; // Automatically cleaned up when m_comand_pool is destroyed
 
 	std::array<VkSemaphore, m_max_frames_in_flight> m_image_available_semaphores;

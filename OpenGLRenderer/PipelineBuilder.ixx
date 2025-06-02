@@ -3,6 +3,7 @@
 module;
 
 #include <filesystem>
+#include <optional>
 
 export module PipelineBuilder;
 
@@ -30,8 +31,8 @@ public:
 	std::optional<GraphicsPipeline> CreatePipeline() const;
 
 private:
-	unsigned int m_vert_shader_id{ 0 };
-	unsigned int m_frag_shader_id{ 0 };
+	unsigned int m_vert_shader_id = 0;
+	unsigned int m_frag_shader_id = 0;
 
 	DepthTestOptions m_depth_test_options;
 

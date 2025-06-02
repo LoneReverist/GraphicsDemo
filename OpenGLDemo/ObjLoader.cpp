@@ -5,11 +5,13 @@ module;
 #include <algorithm>
 #include <array>
 #include <charconv>
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <ranges>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 module ObjLoader;
 
@@ -17,8 +19,8 @@ namespace
 {
 	struct ObjVertex
 	{
-		unsigned int m_position_index{ 0 };
-		unsigned int m_normal_index{ 0 };
+		unsigned int m_position_index = 0;
+		unsigned int m_normal_index = 0;
 
 		bool operator==(ObjVertex const & other) const { return m_position_index == other.m_position_index && m_normal_index == other.m_normal_index; }
 	};

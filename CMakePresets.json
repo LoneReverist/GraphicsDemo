@@ -3,13 +3,23 @@
   "configurePresets": [
     {
       "name": "x64-windows-static",
-      "description": "Static build using vcpkg",
+      "description": "Static Windows build using vcpkg",
       "generator": "Visual Studio 17 2022",
 	  "architecture": "x64",
       "cacheVariables": {
         "CMAKE_TOOLCHAIN_FILE": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake",
         "VCPKG_ROOT": "C:/vcpkg",
         "VCPKG_TARGET_TRIPLET": "x64-windows-static"
+      }
+    },
+    {
+      "name": "x64-linux",
+      "description": "Linux build using vcpkg",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "/opt/vcpkg/scripts/buildsystems/vcpkg.cmake",
+        "VCPKG_ROOT": "/opt/vcpkg",
+        "VCPKG_TARGET_TRIPLET": "x64-linux"
       }
     }
   ]

@@ -3,6 +3,7 @@
 module;
 
 #include <concepts>
+#include <cstdint>
 #include <vector>
 
 #include <vulkan/vulkan.h>

@@ -3,7 +3,6 @@
 module;
 
 #include <atomic>
-#include <optional>
 #include <string>
 
 #define GLFW_INCLUDE_NONE
@@ -15,8 +14,8 @@ import Input;
 
 export struct WindowSize
 {
-	int m_width{ 0 };
-	int m_height{ 0 };
+	int m_width = 0;
+	int m_height = 0;
 
 	auto operator<=>(WindowSize const &) const = default;
 };
@@ -36,8 +35,8 @@ public:
 	void OnKeyEvent(int key, int scan_code, int action, int mods);
 
 private:
-	bool m_initialized{ false };
-	GLFWwindow * m_window{ nullptr };
+	bool m_initialized = false;
+	GLFWwindow * m_window = nullptr;
 	std::string m_title;
 
 	std::atomic<WindowSize> m_window_size;

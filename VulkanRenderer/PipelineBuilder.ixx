@@ -2,7 +2,10 @@
 
 module;
 
+#include <cstdint>
 #include <filesystem>
+#include <optional>
+#include <vector>
 
 #include <vulkan/vulkan.h>
 
@@ -48,8 +51,8 @@ public:
 private:
 	GraphicsApi const & m_graphics_api;
 
-	VkShaderModule m_vert_shader_module{ VK_NULL_HANDLE };
-	VkShaderModule m_frag_shader_module{ VK_NULL_HANDLE };
+	VkShaderModule m_vert_shader_module = VK_NULL_HANDLE;
+	VkShaderModule m_frag_shader_module = VK_NULL_HANDLE;
 
 	VkVertexInputBindingDescription m_vert_binding_desc;
 	std::vector<VkVertexInputAttributeDescription> m_vert_attrib_descs;
@@ -57,7 +60,7 @@ private:
 	std::vector<VkPushConstantRange> m_push_constants_ranges;
 	std::vector<VkDeviceSize> m_vs_uniform_sizes;
 	std::vector<VkDeviceSize> m_fs_uniform_sizes;
-	Texture const * m_texture{ nullptr };
+	Texture const * m_texture = nullptr;
 
 	DepthTestOptions m_depth_test_options;
 

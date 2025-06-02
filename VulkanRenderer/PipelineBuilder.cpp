@@ -2,8 +2,11 @@
 
 module;
 
+#include <cstdint>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <optional>
 #include <vector>
 
 #include <vulkan/vulkan.h>

@@ -2,6 +2,8 @@
 
 module;
 
+#include <atomic>
+#include <cstdint>
 #include <iostream>
 #include <thread>
 

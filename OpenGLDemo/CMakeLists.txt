@@ -1,5 +1,9 @@
 add_executable(OpenGLDemo)
 
+target_compile_features(OpenGLDemo PRIVATE cxx_std_20)
+
+set_target_properties(OpenGLDemo PROPERTIES CXX_SCAN_FOR_MODULES ON)
+
 set(SHADER_SOURCE_DIR ${CMAKE_SOURCE_DIR}/OpenGLDemo/shaders)
 set(SHADER_SOURCES
 	${SHADER_SOURCE_DIR}/light_source.vert
@@ -27,17 +31,15 @@ target_sources(OpenGLDemo
 		PlatformUtils.ixx
 		Scene.ixx
 		OpenGLApp.ixx
-)
-target_sources(OpenGLDemo
+
 	PRIVATE
 		ObjLoader.cpp
 		Scene.cpp
 		OpenGLApp.cpp
 		OpenGLDemo.cpp
-)
-target_sources(OpenGLDemo
+
 	PRIVATE
-	${SHADER_SOURCES}
+		${SHADER_SOURCES}
 )
 source_group("Shaders" FILES ${SHADER_SOURCES})
 

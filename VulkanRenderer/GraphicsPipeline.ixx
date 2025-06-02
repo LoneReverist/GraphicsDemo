@@ -3,6 +3,8 @@
 module;
 
 #include <array>
+#include <cstdint>
+#include <cstring>
 #include <functional>
 #include <optional>
 
@@ -16,14 +18,14 @@ import Texture;
 
 struct UniformBuffer
 {
-	VkBuffer m_buffer{ VK_NULL_HANDLE };
-	VkDeviceMemory m_memory{ VK_NULL_HANDLE };
+	VkBuffer m_buffer = VK_NULL_HANDLE;
+	VkDeviceMemory m_memory = VK_NULL_HANDLE;
 	void * m_mapping{ nullptr };
 };
 
 struct DescriptorSet
 {
-	VkDescriptorSet m_descriptor_set{ VK_NULL_HANDLE }; // Automatically cleaned up when m_descriptor_pool is destroyed
+	VkDescriptorSet m_descriptor_set = VK_NULL_HANDLE; // Automatically cleaned up when m_descriptor_pool is destroyed
 	std::vector<UniformBuffer> m_uniform_buffers;
 };
 
@@ -106,7 +108,7 @@ template <typename UniformData>
 void GraphicsPipeline::SetUniform(std::uint32_t binding, UniformData const & data) const
 {
 	UniformBuffer const & buffer = m_descriptor_sets[m_graphics_api.GetCurFrameIndex()].m_uniform_buffers[binding];
-	memcpy(buffer.m_mapping, &data, sizeof(data));
+	std::memcpy(buffer.m_mapping, &data, sizeof(data));
 }
 
 template <typename VSConstantData /*= std::nullopt_t*/, typename FSConstantData /*= std::nullopt_t*/>

@@ -3,11 +3,14 @@
 module;
 
 #include <algorithm>
+#include <cstdint>
+#include <functional>
 #include <iostream>
 #include <limits>
 #include <optional>
 #include <ranges>
 #include <set>
+#include <vector>
 
 #include <vulkan/vulkan.h>
 

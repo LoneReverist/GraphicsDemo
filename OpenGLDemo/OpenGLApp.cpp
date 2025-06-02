@@ -2,7 +2,9 @@
 
 module;
 
+#include <atomic>
 #include <iostream>
+#include <optional>
 #include <thread>
 
 #define GLFW_INCLUDE_NONE
@@ -69,13 +71,14 @@ void OpenGLApp::Run()
 
 			double last_update_time = glfwGetTime();
 
+			WindowSize size = new_window_size.load();
 			while (!s_token.stop_requested())
 			{
-				std::optional<WindowSize> size = new_window_size.exchange(std::nullopt);
-				if (size.has_value())
+				WindowSize new_size = new_window_size.load();
+				if (size != new_size)
 				{
-					graphics_api.SetViewport(size->m_width, size->m_height);
-					scene.OnViewportResized(size->m_width, size->m_height);
+					graphics_api.SetViewport(new_size.m_width, new_size.m_height);
+					scene.OnViewportResized(new_size.m_width, new_size.m_height);
 				}
 
 				double cur_time = glfwGetTime();

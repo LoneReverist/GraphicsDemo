@@ -2,9 +2,9 @@
 
 module;
 
-export module GraphicsApi;
+#include <string>
 
-import <string>;
+export module GraphicsApi;
 
 export class GraphicsApi
 {

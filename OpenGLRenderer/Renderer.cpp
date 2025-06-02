@@ -3,6 +3,7 @@
 module;
 
 #include <iostream>
+#include <memory>
 
 #include <glad/glad.h>
 

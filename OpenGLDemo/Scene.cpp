@@ -6,7 +6,9 @@ module;
 #include <filesystem>
 #include <iostream>
 #include <numbers>
+#include <optional>
 #include <stdexcept>
+#include <vector>
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -25,7 +27,7 @@ namespace
 	struct AssetId
 	{
 		using VertexT = T;
-		int m_index{ -1 };
+		int m_index = -1;
 	};
 
 	template <typename AssetId1, typename AssetId2>
@@ -667,8 +669,8 @@ void Scene::Init()
 		.m_pos{ 0.0f, 0.0f, 25.0f },
 		.m_dir{ 0.0f, 0.0f, -1.0f },
 		.m_color{ 1.0f, 1.0f, 1.0f },
-		.m_inner_radius{ 0.988f },
-		.m_outer_radius{ 0.986f }
+		.m_inner_radius = 0.988f,
+		.m_outer_radius = 0.986f
 	};
 
 	glm::vec3 camera_pos{ 0.0f, -10.0f, 5.0f };
@@ -704,19 +706,22 @@ void Scene::Update(double delta_time, Input const & input)
 	m_pointlight_1 = PointLight{
 		.m_pos{ red_gem_transform[3][0], red_gem_transform[3][1], red_gem_transform[3][2] },
 		.m_color{ 1.0, 0.0, 0.0 },
-		.m_radius{ 20.0f } };
+		.m_radius = 20.0f
+	};
 
 	glm::mat4 const & green_gem_transform = m_green_gem->GetModelTransform();
 	m_pointlight_2 = PointLight{
 		.m_pos{ green_gem_transform[3][0], green_gem_transform[3][1], green_gem_transform[3][2] },
 		.m_color{ 0.0, 1.0, 0.0 },
-		.m_radius{ 20.0f } };
+		.m_radius = 20.0f
+	};
 
 	glm::mat4 const & blue_gem_transform = m_blue_gem->GetModelTransform();
 	m_pointlight_3 = PointLight{
 		.m_pos{ blue_gem_transform[3][0], blue_gem_transform[3][1], blue_gem_transform[3][2] },
 		.m_color{ 0.0, 0.0, 1.0 },
-		.m_radius{ 20.0f } };
+		.m_radius = 20.0f
+	};
 }
 
 void Scene::Render() const

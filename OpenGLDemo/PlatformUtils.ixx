@@ -11,6 +11,7 @@ module;
 #include <mach-o/dyld.h>
 #elif defined(__linux__)
 #include <unistd.h>
+#include <limits.h>
 #endif
 
 export module PlatformUtils;

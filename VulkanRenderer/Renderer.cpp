@@ -2,7 +2,9 @@
 
 module;
 
+#include <cstdint>
 #include <iostream>
+#include <memory>
 
 #include <vulkan/vulkan.h>
 
