@@ -71,12 +71,13 @@ void OpenGLApp::Run()
 
 			double last_update_time = glfwGetTime();
 
-			WindowSize size = new_window_size.load();
+			WindowSize size;
 			while (!s_token.stop_requested())
 			{
 				WindowSize new_size = new_window_size.load();
 				if (size != new_size)
 				{
+					size = new_size;
 					graphics_api.SetViewport(new_size.m_width, new_size.m_height);
 					scene.OnViewportResized(new_size.m_width, new_size.m_height);
 				}
