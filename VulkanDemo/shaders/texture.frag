@@ -24,7 +24,7 @@ layout(binding = 1) uniform LightsUniform {
 	PointLight pointlight_3;
 
 	SpotLight spotlight_1;
-} lights_ubo;
+} lights;
 
 layout(binding = 2) uniform sampler2D tex_sampler;
 
@@ -56,13 +56,13 @@ void main()
 {
 	vec3 normal = normalize(in_normal_world);
 
-	vec3 light_color = lights_ubo.ambient_light_color;
+	vec3 light_color = lights.ambient_light_color;
 
-	light_color += ColorFromPointLight(lights_ubo.pointlight_1, normal);
-	light_color += ColorFromPointLight(lights_ubo.pointlight_2, normal);
-	light_color += ColorFromPointLight(lights_ubo.pointlight_3, normal);
+	light_color += ColorFromPointLight(lights.pointlight_1, normal);
+	light_color += ColorFromPointLight(lights.pointlight_2, normal);
+	light_color += ColorFromPointLight(lights.pointlight_3, normal);
 
-	light_color += ColorFromSpotLight(lights_ubo.spotlight_1, normal);
+	light_color += ColorFromSpotLight(lights.spotlight_1, normal);
 
 	out_frag_color = texture(tex_sampler, in_tex_coord) * vec4(light_color, 1.0);
 }

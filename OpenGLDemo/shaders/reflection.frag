@@ -1,4 +1,4 @@
-#version 330 core
+#version 420 core
 
 struct PointLight
 {
@@ -16,22 +16,26 @@ struct SpotLight
 	float outer_radius;
 };
 
-uniform samplerCube cube_map;
+layout(std140, binding = 1) uniform LightsUniform {
+	vec3 ambient_light_color;
 
-uniform vec3 camera_pos_world;
+	PointLight pointlight_1;
+	PointLight pointlight_2;
+	PointLight pointlight_3;
 
-uniform vec3 ambient_light_color;
+	SpotLight spotlight_1;
+} lights;
 
-uniform PointLight pointlight_1;
-uniform PointLight pointlight_2;
-uniform PointLight pointlight_3;
+layout(std140, binding = 2) uniform CameraPosUniform {
+	vec3 pos_world;
+} camera;
 
-uniform SpotLight spotlight_1;
+uniform samplerCube cube_map_sampler;
 
-in vec3 pos_world;
-in vec3 normal_world;
+layout(location = 0) in vec3 in_pos_world;
+layout(location = 1) in vec3 in_normal_world;
 
-out vec4 FragColor;
+layout(location = 0) out vec4 out_frag_color;
 
 // returns a 90 degree x-axis rotation matrix
 mat3 get_z_correction_matrix()
@@ -47,15 +51,15 @@ mat3 get_z_correction_matrix()
 
 vec3 ColorFromPointLight(PointLight light, vec3 normal)
 {
-	vec3 pos_to_light = normalize(light.pos - pos_world);
+	vec3 pos_to_light = normalize(light.pos - in_pos_world);
 	float light_ratio = max(dot(normal, pos_to_light), 0.0f);
-	float attenuation = pow(1.0f - max(0.0f, distance(light.pos, pos_world) / light.radius), 2.0f);
+	float attenuation = pow(1.0f - max(0.0f, distance(light.pos, in_pos_world) / light.radius), 2.0f);
 	return light_ratio * attenuation * light.color;
 }
 
 vec3 ColorFromSpotLight(SpotLight light, vec3 normal)
 {
-	vec3 pos_to_light = normalize(light.pos - pos_world);
+	vec3 pos_to_light = normalize(light.pos - in_pos_world);
 	float surface_ratio = max(0.0f, dot(-pos_to_light, light.dir));
 	float spot_factor = (surface_ratio > light.outer_radius) ? 1 : 0;
 	float light_ratio = max(0.0f, dot(pos_to_light, normal));
@@ -65,19 +69,19 @@ vec3 ColorFromSpotLight(SpotLight light, vec3 normal)
 
 void main()
 {
-	vec3 normal = normalize(normal_world);
+	vec3 normal = normalize(in_normal_world);
 
-	vec3 light_color = ambient_light_color;
+	vec3 light_color = lights.ambient_light_color;
 
-	light_color += ColorFromPointLight(pointlight_1, normal);
-	light_color += ColorFromPointLight(pointlight_2, normal);
-	light_color += ColorFromPointLight(pointlight_3, normal);
+	light_color += ColorFromPointLight(lights.pointlight_1, normal);
+	light_color += ColorFromPointLight(lights.pointlight_2, normal);
+	light_color += ColorFromPointLight(lights.pointlight_3, normal);
 
-	light_color += ColorFromSpotLight(spotlight_1, normal);
+	light_color += ColorFromSpotLight(lights.spotlight_1, normal);
 
-	vec3 camera_to_surface = pos_world - camera_pos_world;
+	vec3 camera_to_surface = in_pos_world - camera.pos_world;
 	vec3 reflect_dir = reflect(camera_to_surface, normal);
 	vec3 sample_dir = get_z_correction_matrix() * reflect_dir;
 
-	FragColor = vec4(light_color, 1.0) * texture(cube_map, sample_dir);
+	out_frag_color = texture(cube_map_sampler, sample_dir) * vec4(light_color, 1.0);
 }

@@ -5,18 +5,14 @@ target_compile_features(OpenGLDemo PRIVATE cxx_std_20)
 set_target_properties(OpenGLDemo PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
 set(SHADER_SOURCE_DIR ${CMAKE_SOURCE_DIR}/OpenGLDemo/shaders)
-set(SHADER_SOURCES
-	${SHADER_SOURCE_DIR}/light_source.vert
-	${SHADER_SOURCE_DIR}/light_source.frag
-	${SHADER_SOURCE_DIR}/color.vert
-	${SHADER_SOURCE_DIR}/color.frag
-	${SHADER_SOURCE_DIR}/texture.vert
-	${SHADER_SOURCE_DIR}/texture.frag
-	${SHADER_SOURCE_DIR}/skybox.vert
-	${SHADER_SOURCE_DIR}/skybox.frag
-	${SHADER_SOURCE_DIR}/reflection.vert
-	${SHADER_SOURCE_DIR}/reflection.frag
+file(GLOB SHADER_FILES "${SHADER_SOURCE_DIR}/*")
+
+add_custom_target(OpenGLShaders ALL
+    COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:OpenGLDemo>/resources/shaders"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${SHADER_SOURCE_DIR}" "$<TARGET_FILE_DIR:OpenGLDemo>/resources/shaders"
+    DEPENDS ${SHADER_FILES}
 )
+add_dependencies(OpenGLDemo OpenGLShaders)
 
 # Target Source Files
 target_sources(OpenGLDemo
@@ -39,9 +35,9 @@ target_sources(OpenGLDemo
 		OpenGLDemo.cpp
 
 	PRIVATE
-		${SHADER_SOURCES}
+		${SHADER_FILES}
 )
-source_group("Shaders" FILES ${SHADER_SOURCES})
+source_group("Shaders" FILES ${SHADER_FILES})
 
 # Link dependencies (provided via vcpkg toolchain)
 target_link_libraries(OpenGLDemo PRIVATE
@@ -55,10 +51,4 @@ add_custom_command(TARGET OpenGLDemo POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
     "${CMAKE_SOURCE_DIR}/resources"
     "$<TARGET_FILE_DIR:OpenGLDemo>/resources"
-)
-
-add_custom_command(TARGET OpenGLDemo POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-    "${SHADER_SOURCE_DIR}"
-    "$<TARGET_FILE_DIR:OpenGLDemo>/resources/shaders"
 )

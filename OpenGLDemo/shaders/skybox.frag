@@ -1,13 +1,13 @@
-#version 450 core
+#version 420 core
 
-uniform samplerCube cube_map;
+uniform samplerCube cube_map_sampler;
 
-in vec3 tex_coords;
+layout(location = 0) in vec3 in_tex_coord;
 
-out vec4 FragColor;
+layout(location = 0) out vec4 out_frag_color;
 
 void main()
 {
 	gl_FragDepth = 1.0;
-	FragColor = texture(cube_map, tex_coords);
+	out_frag_color = texture(cube_map_sampler, in_tex_coord);
 }

@@ -7,7 +7,7 @@ layout(push_constant) uniform ObjectData {
 layout(binding = 0) uniform ViewProjUniform {
 	mat4 view;
 	mat4 proj;
-} transform_ubo;
+} transforms;
 
 layout(location = 0) in vec3 in_pos;
 layout(location = 1) in vec3 in_normal;
@@ -25,5 +25,5 @@ void main()
 	out_normal_world = vec3(obj_data.model * vec4(in_normal, 0.0));
 	out_color = in_color;
 
-	gl_Position = transform_ubo.proj * transform_ubo.view * pos_world_vec4;
+	gl_Position = transforms.proj * transforms.view * pos_world_vec4;
 }

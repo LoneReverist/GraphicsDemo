@@ -1,21 +1,24 @@
-#version 330 core
-
-layout (location = 0) in vec3 vert_pos;
-layout (location = 1) in vec3 vert_normal;
+#version 420 core
 
 uniform mat4 model_transform;
-uniform mat4 view_transform;
-uniform mat4 proj_transform;
 
-out vec3 pos_world;
-out vec3 normal_world;
+layout(std140, binding = 0) uniform ViewProjUniform {
+	mat4 view;
+	mat4 proj;
+} transforms;
+
+layout(location = 0) in vec3 in_pos;
+layout(location = 1) in vec3 in_normal;
+
+layout(location = 0) out vec3 out_pos_world;
+layout(location = 1) out vec3 out_normal_world;
 
 void main()
 {
-	vec4 pos_world_vec4 = model_transform * vec4(vert_pos, 1.0);
+	vec4 pos_world_vec4 = model_transform * vec4(in_pos, 1.0);
 
-	pos_world = vec3(pos_world_vec4);
-	normal_world = vec3(model_transform * vec4(vert_normal, 0.0));
+	out_pos_world = vec3(pos_world_vec4);
+	out_normal_world = vec3(model_transform * vec4(in_normal, 0.0));
 
-	gl_Position = proj_transform * view_transform * pos_world_vec4;
+	gl_Position = transforms.proj * transforms.view * pos_world_vec4;
 }

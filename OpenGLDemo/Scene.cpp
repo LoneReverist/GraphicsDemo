@@ -230,32 +230,43 @@ namespace
 		Scene const & scene,
 		std::filesystem::path const & shaders_path)
 	{
+		struct ViewProjUniform
+		{
+			alignas(16) glm::mat4 view;
+			alignas(16) glm::mat4 proj;
+		};
+		struct LightsUniform
+		{
+			alignas(16) glm::vec3 m_ambient_light_color;
+			alignas(16) PointLight m_pointlight_1;
+			alignas(16) PointLight m_pointlight_2;
+			alignas(16) PointLight m_pointlight_3;
+			alignas(16) SpotLight m_spotlight;
+		};
+
 		PipelineBuilder builder;
 		builder.LoadShaders(
 			shaders_path / "texture.vert",
 			shaders_path / "texture.frag");
+		builder.SetVSUniformTypes<ViewProjUniform>();
+		builder.SetFSUniformTypes<LightsUniform>();
 
 		builder.SetPerFrameConstantsCallback(
 			[&scene](GraphicsPipeline const & pipeline)
 			{
-				pipeline.SetUniform("view_transform", scene.GetCamera().GetViewTransform());
-				pipeline.SetUniform("proj_transform", scene.GetCamera().GetProjTransform());
-
-				pipeline.SetUniform("ambient_light_color", scene.GetAmbientLight().m_color);
-				pipeline.SetUniform("pointlight_1.pos", scene.GetPointLight1().m_pos);
-				pipeline.SetUniform("pointlight_1.color", scene.GetPointLight1().m_color);
-				pipeline.SetUniform("pointlight_1.radius", scene.GetPointLight1().m_radius);
-				pipeline.SetUniform("pointlight_2.pos", scene.GetPointLight2().m_pos);
-				pipeline.SetUniform("pointlight_2.color", scene.GetPointLight2().m_color);
-				pipeline.SetUniform("pointlight_2.radius", scene.GetPointLight2().m_radius);
-				pipeline.SetUniform("pointlight_3.pos", scene.GetPointLight3().m_pos);
-				pipeline.SetUniform("pointlight_3.color", scene.GetPointLight3().m_color);
-				pipeline.SetUniform("pointlight_3.radius", scene.GetPointLight3().m_radius);
-				pipeline.SetUniform("spotlight_1.pos", scene.GetSpotLight().m_pos);
-				pipeline.SetUniform("spotlight_1.dir", scene.GetSpotLight().m_dir);
-				pipeline.SetUniform("spotlight_1.color", scene.GetSpotLight().m_color);
-				pipeline.SetUniform("spotlight_1.inner_radius", scene.GetSpotLight().m_inner_radius);
-				pipeline.SetUniform("spotlight_1.outer_radius", scene.GetSpotLight().m_outer_radius);
+				pipeline.SetUniform(0 /*binding*/,
+					ViewProjUniform{
+						.view = scene.GetCamera().GetViewTransform(),
+						.proj = scene.GetCamera().GetProjTransform()
+					});
+				pipeline.SetUniform(1 /*binding*/,
+					LightsUniform{
+						.m_ambient_light_color = scene.GetAmbientLight().m_color,
+						.m_pointlight_1 = scene.GetPointLight1(),
+						.m_pointlight_2 = scene.GetPointLight2(),
+						.m_pointlight_3 = scene.GetPointLight3(),
+						.m_spotlight = scene.GetSpotLight()
+					});
 			});
 		builder.SetPerObjectConstantsCallback(
 			[&scene](GraphicsPipeline const & pipeline, RenderObject const & obj)
@@ -309,34 +320,51 @@ namespace
 		Scene const & scene,
 		std::filesystem::path const & shaders_path)
 	{
+		struct ViewProjUniform
+		{
+			alignas(16) glm::mat4 view;
+			alignas(16) glm::mat4 proj;
+		};
+		struct LightsUniform
+		{
+			alignas(16) glm::vec3 m_ambient_light_color;
+			alignas(16) PointLight m_pointlight_1;
+			alignas(16) PointLight m_pointlight_2;
+			alignas(16) PointLight m_pointlight_3;
+			alignas(16) SpotLight m_spotlight;
+		};
+		struct CameraUniform
+		{
+			alignas(16) glm::vec3 pos_world;
+		};
+
 		PipelineBuilder builder;
 		builder.LoadShaders(
 			shaders_path / "reflection.vert",
 			shaders_path / "reflection.frag");
+		builder.SetVSUniformTypes<ViewProjUniform>();
+		builder.SetFSUniformTypes<LightsUniform, CameraUniform>();
 
 		builder.SetPerFrameConstantsCallback(
 			[&scene](GraphicsPipeline const & pipeline)
 			{
-				pipeline.SetUniform("view_transform", scene.GetCamera().GetViewTransform());
-				pipeline.SetUniform("proj_transform", scene.GetCamera().GetProjTransform());
-
-				pipeline.SetUniform("ambient_light_color", scene.GetAmbientLight().m_color);
-				pipeline.SetUniform("pointlight_1.pos", scene.GetPointLight1().m_pos);
-				pipeline.SetUniform("pointlight_1.color", scene.GetPointLight1().m_color);
-				pipeline.SetUniform("pointlight_1.radius", scene.GetPointLight1().m_radius);
-				pipeline.SetUniform("pointlight_2.pos", scene.GetPointLight2().m_pos);
-				pipeline.SetUniform("pointlight_2.color", scene.GetPointLight2().m_color);
-				pipeline.SetUniform("pointlight_2.radius", scene.GetPointLight2().m_radius);
-				pipeline.SetUniform("pointlight_3.pos", scene.GetPointLight3().m_pos);
-				pipeline.SetUniform("pointlight_3.color", scene.GetPointLight3().m_color);
-				pipeline.SetUniform("pointlight_3.radius", scene.GetPointLight3().m_radius);
-				pipeline.SetUniform("spotlight_1.pos", scene.GetSpotLight().m_pos);
-				pipeline.SetUniform("spotlight_1.dir", scene.GetSpotLight().m_dir);
-				pipeline.SetUniform("spotlight_1.color", scene.GetSpotLight().m_color);
-				pipeline.SetUniform("spotlight_1.inner_radius", scene.GetSpotLight().m_inner_radius);
-				pipeline.SetUniform("spotlight_1.outer_radius", scene.GetSpotLight().m_outer_radius);
-
-				pipeline.SetUniform("camera_pos_world", scene.GetCamera().GetPos());
+				pipeline.SetUniform(0 /*binding*/,
+					ViewProjUniform{
+						.view = scene.GetCamera().GetViewTransform(),
+						.proj = scene.GetCamera().GetProjTransform()
+					});
+				pipeline.SetUniform(1 /*binding*/,
+					LightsUniform{
+						.m_ambient_light_color = scene.GetAmbientLight().m_color,
+						.m_pointlight_1 = scene.GetPointLight1(),
+						.m_pointlight_2 = scene.GetPointLight2(),
+						.m_pointlight_3 = scene.GetPointLight3(),
+						.m_spotlight = scene.GetSpotLight()
+					});
+				pipeline.SetUniform(2 /*binding*/,
+					CameraUniform{
+						.pos_world = scene.GetCamera().GetPos()
+					});
 			});
 		builder.SetPerObjectConstantsCallback(
 			[](GraphicsPipeline const & pipeline, RenderObject const & obj)
@@ -386,10 +414,17 @@ namespace
 		Scene const & scene,
 		std::filesystem::path const & shaders_path)
 	{
+		struct ViewProjUniform
+		{
+			alignas(16) glm::mat4 view;
+			alignas(16) glm::mat4 proj;
+		};
+
 		PipelineBuilder builder;
 		builder.LoadShaders(
 			shaders_path / "skybox.vert",
 			shaders_path / "skybox.frag");
+		builder.SetVSUniformTypes<ViewProjUniform>();
 		builder.SetDepthTestOptions(DepthTestOptions{
 			.m_enable_depth_test = true,
 			.m_enable_depth_write = false,
@@ -399,8 +434,11 @@ namespace
 		builder.SetPerFrameConstantsCallback(
 			[&scene](GraphicsPipeline const & pipeline)
 			{
-				pipeline.SetUniform("view_transform", scene.GetCamera().GetViewTransform());
-				pipeline.SetUniform("proj_transform", scene.GetCamera().GetProjTransform());
+				pipeline.SetUniform(0 /*binding*/,
+					ViewProjUniform{
+						.view = scene.GetCamera().GetViewTransform(),
+						.proj = scene.GetCamera().GetProjTransform()
+					});
 			});
 
 		return builder.CreatePipeline();
@@ -445,32 +483,43 @@ namespace
 		Scene const & scene,
 		std::filesystem::path const & shaders_path)
 	{
+		struct ViewProjUniform
+		{
+			alignas(16) glm::mat4 view;
+			alignas(16) glm::mat4 proj;
+		};
+		struct LightsUniform
+		{
+			alignas(16) glm::vec3 m_ambient_light_color;
+			alignas(16) PointLight m_pointlight_1;
+			alignas(16) PointLight m_pointlight_2;
+			alignas(16) PointLight m_pointlight_3;
+			alignas(16) SpotLight m_spotlight;
+		};
+
 		PipelineBuilder builder;
 		builder.LoadShaders(
 			shaders_path / "color.vert",
 			shaders_path / "color.frag");
+		builder.SetVSUniformTypes<ViewProjUniform>();
+		builder.SetFSUniformTypes<LightsUniform>();
 
 		builder.SetPerFrameConstantsCallback(
 			[&scene](GraphicsPipeline const & pipeline)
 			{
-				pipeline.SetUniform("view_transform", scene.GetCamera().GetViewTransform());
-				pipeline.SetUniform("proj_transform", scene.GetCamera().GetProjTransform());
-
-				pipeline.SetUniform("ambient_light_color", scene.GetAmbientLight().m_color);
-				pipeline.SetUniform("pointlight_1.pos", scene.GetPointLight1().m_pos);
-				pipeline.SetUniform("pointlight_1.color", scene.GetPointLight1().m_color);
-				pipeline.SetUniform("pointlight_1.radius", scene.GetPointLight1().m_radius);
-				pipeline.SetUniform("pointlight_2.pos", scene.GetPointLight2().m_pos);
-				pipeline.SetUniform("pointlight_2.color", scene.GetPointLight2().m_color);
-				pipeline.SetUniform("pointlight_2.radius", scene.GetPointLight2().m_radius);
-				pipeline.SetUniform("pointlight_3.pos", scene.GetPointLight3().m_pos);
-				pipeline.SetUniform("pointlight_3.color", scene.GetPointLight3().m_color);
-				pipeline.SetUniform("pointlight_3.radius", scene.GetPointLight3().m_radius);
-				pipeline.SetUniform("spotlight_1.pos", scene.GetSpotLight().m_pos);
-				pipeline.SetUniform("spotlight_1.dir", scene.GetSpotLight().m_dir);
-				pipeline.SetUniform("spotlight_1.color", scene.GetSpotLight().m_color);
-				pipeline.SetUniform("spotlight_1.inner_radius", scene.GetSpotLight().m_inner_radius);
-				pipeline.SetUniform("spotlight_1.outer_radius", scene.GetSpotLight().m_outer_radius);
+				pipeline.SetUniform(0 /*binding*/,
+					ViewProjUniform{
+						.view = scene.GetCamera().GetViewTransform(),
+						.proj = scene.GetCamera().GetProjTransform()
+					});
+				pipeline.SetUniform(1 /*binding*/,
+					LightsUniform{
+						.m_ambient_light_color = scene.GetAmbientLight().m_color,
+						.m_pointlight_1 = scene.GetPointLight1(),
+						.m_pointlight_2 = scene.GetPointLight2(),
+						.m_pointlight_3 = scene.GetPointLight3(),
+						.m_spotlight = scene.GetSpotLight()
+					});
 			});
 		builder.SetPerObjectConstantsCallback(
 			[](GraphicsPipeline const & pipeline, RenderObject const & obj)
@@ -520,18 +569,35 @@ namespace
 		Scene const & scene,
 		std::filesystem::path const & shaders_path)
 	{
+		struct ViewProjUniform
+		{
+			alignas(16) glm::mat4 view;
+			alignas(16) glm::mat4 proj;
+		};
+		struct CameraPosUniform
+		{
+			alignas(16) glm::vec3 pos_world;
+		};
+
 		PipelineBuilder builder;
 		builder.LoadShaders(
 			shaders_path / "light_source.vert",
 			shaders_path / "light_source.frag");
+		builder.SetVSUniformTypes<ViewProjUniform>();
+		builder.SetFSUniformTypes<CameraPosUniform>();
 
 		builder.SetPerFrameConstantsCallback(
 			[&scene](GraphicsPipeline const & pipeline)
 			{
-				pipeline.SetUniform("view_transform", scene.GetCamera().GetViewTransform());
-				pipeline.SetUniform("proj_transform", scene.GetCamera().GetProjTransform());
-
-				pipeline.SetUniform("camera_pos_world", scene.GetCamera().GetPos());
+				pipeline.SetUniform(0 /*binding*/,
+					ViewProjUniform{
+						.view = scene.GetCamera().GetViewTransform(),
+						.proj = scene.GetCamera().GetProjTransform()
+					});
+				pipeline.SetUniform(1 /*binding*/,
+					CameraPosUniform{
+						.pos_world = scene.GetCamera().GetPos()
+					});
 			});
 		builder.SetPerObjectConstantsCallback(
 			[](GraphicsPipeline const & pipeline, RenderObject const & obj)

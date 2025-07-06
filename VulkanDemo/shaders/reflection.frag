@@ -24,11 +24,11 @@ layout(binding = 1) uniform LightsUniform {
 	PointLight pointlight_3;
 
 	SpotLight spotlight_1;
-} lights_ubo;
+} lights;
 
 layout(binding = 2) uniform CameraUniform {
 	vec3 pos_world;
-} camera_ubo;
+} camera;
 
 layout(binding = 3) uniform samplerCube cube_map_sampler;
 
@@ -71,15 +71,15 @@ void main()
 {
 	vec3 normal = normalize(in_normal_world);
 
-	vec3 light_color = lights_ubo.ambient_light_color;
+	vec3 light_color = lights.ambient_light_color;
 
-	light_color += ColorFromPointLight(lights_ubo.pointlight_1, normal);
-	light_color += ColorFromPointLight(lights_ubo.pointlight_2, normal);
-	light_color += ColorFromPointLight(lights_ubo.pointlight_3, normal);
+	light_color += ColorFromPointLight(lights.pointlight_1, normal);
+	light_color += ColorFromPointLight(lights.pointlight_2, normal);
+	light_color += ColorFromPointLight(lights.pointlight_3, normal);
 
-	light_color += ColorFromSpotLight(lights_ubo.spotlight_1, normal);
+	light_color += ColorFromSpotLight(lights.spotlight_1, normal);
 
-	vec3 camera_to_surface = in_pos_world - camera_ubo.pos_world;
+	vec3 camera_to_surface = in_pos_world - camera.pos_world;
 	vec3 reflect_dir = reflect(camera_to_surface, normal);
 	vec3 sample_dir = get_z_correction_matrix() * reflect_dir;
 

@@ -59,7 +59,7 @@ namespace
 		{
 			char info_log[512];
 			glGetShaderInfoLog(shader_id, 512, nullptr, info_log);
-			std::cout << "Failed to compile shader. Type: " << std::hex << shader_type << std::endl << info_log << std::endl;
+			std::cout << "Failed to compile shader: " << shader_path << std::endl << info_log << std::endl;
 		}
 
 		return shader_id;
@@ -91,6 +91,8 @@ std::optional<GraphicsPipeline> PipelineBuilder::CreatePipeline() const
 	return GraphicsPipeline{
 		m_vert_shader_id,
 		m_frag_shader_id,
+		m_vs_uniform_sizes,
+		m_fs_uniform_sizes,
 		m_depth_test_options,
 		m_per_frame_constants_callback,
 		m_per_object_constants_callback };

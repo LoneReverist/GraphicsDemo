@@ -258,10 +258,10 @@ namespace
 		struct LightsUniform
 		{
 			alignas(16) glm::vec3 m_ambient_light_color;
-			PointLight m_pointlight_1;
-			PointLight m_pointlight_2;
-			PointLight m_pointlight_3;
-			SpotLight m_spotlight;
+			alignas(16) PointLight m_pointlight_1;
+			alignas(16) PointLight m_pointlight_2;
+			alignas(16) PointLight m_pointlight_3;
+			alignas(16) SpotLight m_spotlight;
 		};
 
 		PipelineBuilder builder{ scene.GetGraphicsApi() };
@@ -359,14 +359,14 @@ namespace
 		struct LightsUniform
 		{
 			alignas(16) glm::vec3 m_ambient_light_color;
-			PointLight m_pointlight_1;
-			PointLight m_pointlight_2;
-			PointLight m_pointlight_3;
-			SpotLight m_spotlight;
+			alignas(16) PointLight m_pointlight_1;
+			alignas(16) PointLight m_pointlight_2;
+			alignas(16) PointLight m_pointlight_3;
+			alignas(16) SpotLight m_spotlight;
 		};
 		struct CameraUniform
 		{
-			alignas(16) glm::vec3 camera_pos_world;
+			alignas(16) glm::vec3 pos_world;
 		};
 
 		PipelineBuilder builder{ scene.GetGraphicsApi() };
@@ -397,7 +397,7 @@ namespace
 					});
 				pipeline.SetUniform(2 /*binding*/,
 					CameraUniform{
-						.camera_pos_world = scene.GetCamera().GetPos()
+						.pos_world = scene.GetCamera().GetPos()
 					});
 			});
 		builder.SetPerObjectConstantsCallback(
@@ -539,10 +539,10 @@ namespace
 		struct LightsUniform
 		{
 			alignas(16) glm::vec3 m_ambient_light_color;
-			PointLight m_pointlight_1;
-			PointLight m_pointlight_2;
-			PointLight m_pointlight_3;
-			SpotLight m_spotlight;
+			alignas(16) PointLight m_pointlight_1;
+			alignas(16) PointLight m_pointlight_2;
+			alignas(16) PointLight m_pointlight_3;
+			alignas(16) SpotLight m_spotlight;
 		};
 
 		PipelineBuilder builder{ scene.GetGraphicsApi() };
@@ -638,7 +638,7 @@ namespace
 		};
 		struct CameraPosUniform
 		{
-			alignas(16) glm::vec3 camera_pos_world;
+			alignas(16) glm::vec3 pos_world;
 		};
 
 		PipelineBuilder builder{ scene.GetGraphicsApi() };
@@ -660,7 +660,7 @@ namespace
 					});
 				pipeline.SetUniform(1 /*binding*/,
 					CameraPosUniform{
-						.camera_pos_world = scene.GetCamera().GetPos()
+						.pos_world = scene.GetCamera().GetPos()
 					});
 			});
 		builder.SetPerObjectConstantsCallback(

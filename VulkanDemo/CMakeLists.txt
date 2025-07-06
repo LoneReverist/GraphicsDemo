@@ -43,8 +43,8 @@ foreach(SHADER ${SHADER_SOURCES})
     list(APPEND COMPILED_SHADERS ${OUTPUT_FILE})
 endforeach()
 
-add_custom_target(Shaders ALL DEPENDS ${COMPILED_SHADERS})
-add_dependencies(VulkanDemo Shaders)
+add_custom_target(VulkanShaders ALL DEPENDS ${COMPILED_SHADERS})
+add_dependencies(VulkanDemo VulkanShaders)
 
 # Target Source Files
 target_sources(VulkanDemo

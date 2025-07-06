@@ -3,7 +3,7 @@
 layout(binding = 0) uniform ViewProjUniform {
 	mat4 view;
 	mat4 proj;
-} transform_ubo;
+} transforms;
 
 layout(location = 0) in vec3 in_pos;
 
@@ -26,10 +26,10 @@ void main()
 	// vulkan cubemaps expect the Y-axis to be the up direction but we want the Z-axis to be up, so rotate the texture coordinate
 	out_tex_coord = get_z_correction_matrix() * in_pos;
 
-	mat4 view = transform_ubo.view;
+	mat4 view = transforms.view;
 	view[3][0] = 0.0;
 	view[3][1] = 0.0;
 	view[3][2] = 0.0;
 
-	gl_Position = transform_ubo.proj * view * vec4(in_pos, 1.0);
+	gl_Position = transforms.proj * view * vec4(in_pos, 1.0);
 }

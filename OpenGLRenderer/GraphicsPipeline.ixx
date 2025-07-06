@@ -15,6 +15,17 @@ export module GraphicsPipeline;
 
 import RenderObject;
 
+struct UniformBuffer
+{
+	unsigned int m_buffer_id = 0;
+	size_t m_size = 0;
+};
+
+struct DescriptorSet
+{
+	std::vector<UniformBuffer> m_uniform_buffers;
+};
+
 export enum class DepthCompareOp
 {
 	NEVER = GL_NEVER,
@@ -43,6 +54,8 @@ public:
 	GraphicsPipeline(
 		unsigned int vert_shader_id,
 		unsigned int frag_shader_id,
+		std::vector<size_t> vs_uniform_sizes,
+		std::vector<size_t> fs_uniform_sizes,
 		DepthTestOptions const & depth_options,
 		PerFrameConstantsCallback per_frame_constants_callback,
 		PerObjectConstantsCallback per_object_constants_callback);
@@ -60,8 +73,11 @@ public:
 	void UpdatePerFrameConstants() const;
 	void UpdatePerObjectConstants(RenderObject const & obj) const;
 
-	template <typename T>
-	void SetUniform(std::string const & label, T const & data) const;
+	template <typename UniformData>
+	void SetUniform(std::string const & label, UniformData const & data) const;
+
+	template <typename UniformData>
+	void SetUniform(std::uint32_t binding, UniformData const & data) const;
 
 private:
 	void destroy_pipeline();
@@ -69,14 +85,16 @@ private:
 private:
 	unsigned int m_program_id = 0;
 
+	DescriptorSet m_descriptor_set;
+
 	DepthTestOptions m_depth_test_options;
 
 	PerFrameConstantsCallback m_per_frame_constants_callback;
 	PerObjectConstantsCallback m_per_object_constants_callback;
 };
 
-template <typename T>
-void GraphicsPipeline::SetUniform(std::string const & label, T const & data) const
+template <typename UniformData>
+void GraphicsPipeline::SetUniform(std::string const & label, UniformData const & data) const
 {
 	GLint uniform_loc = glGetUniformLocation(m_program_id, label.c_str());
 	if (uniform_loc == -1)
@@ -85,16 +103,42 @@ void GraphicsPipeline::SetUniform(std::string const & label, T const & data) con
 		return;
 	}
 
-	if constexpr (std::same_as<T, float>)
+	if constexpr (std::same_as<UniformData, float>)
 		glUniform1fv(uniform_loc, 1, &data);
-	else if constexpr (std::same_as<T, glm::vec2>)
+	else if constexpr (std::same_as<UniformData, glm::vec2>)
 		glUniform2fv(uniform_loc, 1, glm::value_ptr(data));
-	else if constexpr (std::same_as<T, glm::vec3>)
+	else if constexpr (std::same_as<UniformData, glm::vec3>)
 		glUniform3fv(uniform_loc, 1, glm::value_ptr(data));
-	else if constexpr (std::same_as<T, glm::vec4>)
+	else if constexpr (std::same_as<UniformData, glm::vec4>)
 		glUniform4fv(uniform_loc, 1, glm::value_ptr(data));
-	else if constexpr (std::same_as<T, glm::mat4>)
+	else if constexpr (std::same_as<UniformData, glm::mat4>)
 		glUniformMatrix4fv(uniform_loc, 1, GL_FALSE, glm::value_ptr(data));
 	else
 		static_assert(false, "Unsupported uniform type");
+}
+
+template <typename UniformData>
+void GraphicsPipeline::SetUniform(std::uint32_t binding, UniformData const & data) const
+{
+	if (binding >= m_descriptor_set.m_uniform_buffers.size())
+	{
+		std::cout << "Invalid uniform binding: " << binding << std::endl;
+		return;
+	}
+	UniformBuffer const & buffer = m_descriptor_set.m_uniform_buffers[binding];
+	if (buffer.m_buffer_id == 0)
+	{
+		std::cout << "Uniform buffer not initialized for binding: " << binding << std::endl;
+		return;
+	}
+	if (buffer.m_size != sizeof(data))
+	{
+		std::cout << "Uniform buffer size is different from data size: " << binding << std::endl;
+		return;
+	}
+
+	glBindBuffer(GL_UNIFORM_BUFFER, buffer.m_buffer_id);
+	glBindBufferBase(GL_UNIFORM_BUFFER, binding, buffer.m_buffer_id);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(data), &data);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
