@@ -36,8 +36,3 @@ target_link_libraries(OpenGLRenderer PUBLIC
 	glfw
 	glm::glm
 )
-
-# Add stbi include directory, (TODO: install with vcpkg)
-target_include_directories(OpenGLRenderer PRIVATE
-	${CMAKE_SOURCE_DIR}/stbi/include
-)

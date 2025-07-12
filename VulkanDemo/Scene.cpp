@@ -19,10 +19,66 @@ import Mesh;
 import ObjLoader;
 import PipelineBuilder;
 import PlatformUtils;
+import StbImage;
 import Vertex;
 
 namespace
 {
+	std::unique_ptr<Texture> create_texture(GraphicsApi const & graphics_api, std::filesystem::path const & filepath)
+	{
+		StbImage image(filepath);
+		if (!image.IsValid())
+		{
+			std::cout << "Failed to load image: " << filepath << std::endl;
+			return nullptr;
+		}
+
+		Texture::ImageData image_data{
+			.m_data = image.GetData(),
+			.m_width = static_cast<std::uint32_t>(image.GetWidth()),
+			.m_height = static_cast<std::uint32_t>(image.GetHeight())
+		};
+		return std::make_unique<Texture>(graphics_api, image_data);
+	}
+
+	std::unique_ptr<Texture> create_cubemap_texture(
+		GraphicsApi const & graphics_api,
+		std::array<std::filesystem::path, 6> const & filepaths)
+	{
+		int width = 0, height = 0;
+		std::array<StbImage, 6> images;
+		for (size_t i = 0; i < filepaths.size(); ++i)
+		{
+			images[i].LoadImage(filepaths[i]);
+			if (!images[i].IsValid())
+			{
+				std::cout << "Failed to load cubemap image: " << filepaths[i] << std::endl;
+				return nullptr;
+			}
+
+			if (i == 0)
+			{
+				width = images[i].GetWidth();
+				height = images[i].GetHeight();
+			}
+			else if (images[i].GetWidth() != width || images[i].GetHeight() != height)
+			{
+				std::cout << "Cubemap images must have the same dimensions." << std::endl;
+				return nullptr;
+			}
+		}
+
+		std::array<std::uint8_t const *, 6> data;
+		std::ranges::transform(images, data.begin(),
+			[](StbImage const & img) { return img.GetData(); });
+		Texture::CubeImageData cubemap_data{
+			.m_data = data,
+			.m_width = static_cast<std::uint32_t>(width),
+			.m_height = static_cast<std::uint32_t>(height)
+		};
+		return std::make_unique<Texture>(graphics_api, cubemap_data);
+	}
+
 	template <IsVertex T>
 	struct AssetId
 	{
@@ -748,9 +804,9 @@ void Scene::Init()
 	const std::filesystem::path textures_path = resources_path / "textures";
 	const std::filesystem::path objects_path = resources_path / "objects";
 
-	m_ground_tex = std::make_unique<Texture>(m_graphics_api,
+	m_ground_tex = create_texture(m_graphics_api,
 		textures_path / "skybox" / "top.jpg");
-	m_skybox_tex = std::make_unique<Texture>(m_graphics_api, std::array<std::filesystem::path, 6>{
+	m_skybox_tex = create_cubemap_texture(m_graphics_api, std::array<std::filesystem::path, 6>{
 		textures_path / "skybox" / "right.jpg",
 		textures_path / "skybox" / "left.jpg",
 		textures_path / "skybox" / "top.jpg",

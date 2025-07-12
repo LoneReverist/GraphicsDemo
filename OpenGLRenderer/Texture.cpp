@@ -11,13 +11,10 @@ module;
 
 module Texture;
 
-import ImageData;
-
-Texture::Texture(std::filesystem::path const & filepath)
+Texture::Texture(ImageData const & image_data)
 {
-	ImageData image(filepath);
-	if (!image.IsValid())
-		return;
+	if (!image_data.IsValid())
+		throw std::runtime_error("Texture() image_data not valid");
 
 	m_type = GL_TEXTURE_2D;
 	glGenTextures(1, &m_tex_id);
@@ -28,18 +25,14 @@ Texture::Texture(std::filesystem::path const & filepath)
 	glTexParameteri(m_type, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(m_type, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	glTexImage2D(m_type, 0 /*level*/, GL_RGBA, image.GetWidth(), image.GetHeight(), 0 /*border*/, GL_RGBA, GL_UNSIGNED_BYTE, image.GetData());
+	glTexImage2D(m_type, 0 /*level*/, GL_RGBA, image_data.m_width, image_data.m_height, 0 /*border*/, GL_RGBA, GL_UNSIGNED_BYTE, image_data.m_data);
 	glGenerateMipmap(m_type);
 }
 
-Texture::Texture(std::array<std::filesystem::path, 6> const & filepaths)
+Texture::Texture(CubeImageData const & image_data)
 {
-	std::array<ImageData, 6> images;
-	for (unsigned int i = 0; i < filepaths.size(); i++)
-		images[i].LoadImage(filepaths[i]);
-
-	if (std::ranges::any_of(images, [](ImageData const & image) { return !image.IsValid(); }))
-		return;
+	if (!image_data.IsValid())
+		throw std::runtime_error("Texture() image_data not valid");
 
 	m_type = GL_TEXTURE_CUBE_MAP;
 	glGenTextures(1, &m_tex_id);
@@ -51,10 +44,10 @@ Texture::Texture(std::array<std::filesystem::path, 6> const & filepaths)
 	glTexParameteri(m_type, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(m_type, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
-	for (unsigned int i = 0; i < images.size(); i++)
+	for (unsigned int i = 0; i < image_data.m_data.size(); i++)
 	{
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-			0, GL_RGBA, images[i].GetWidth(), images[i].GetHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, images[i].GetData());
+			0, GL_RGBA, image_data.m_width, image_data.m_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data.m_data[i]);
 	}
 }
 

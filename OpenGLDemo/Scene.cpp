@@ -19,10 +19,65 @@ import Mesh;
 import ObjLoader;
 import PipelineBuilder;
 import PlatformUtils;
+import StbImage;
 import Vertex;
 
 namespace
 {
+	std::unique_ptr<Texture> create_texture(std::filesystem::path const & filepath)
+	{
+		StbImage image(filepath);
+		if (!image.IsValid())
+		{
+			std::cout << "Failed to load image: " << filepath << std::endl;
+			return nullptr;
+		}
+
+		Texture::ImageData image_data{
+			.m_data = image.GetData(),
+			.m_width = static_cast<std::uint32_t>(image.GetWidth()),
+			.m_height = static_cast<std::uint32_t>(image.GetHeight())
+		};
+		return std::make_unique<Texture>(image_data);
+	}
+
+	std::unique_ptr<Texture> create_cubemap_texture(
+		std::array<std::filesystem::path, 6> const & filepaths)
+	{
+		int width = 0, height = 0;
+		std::array<StbImage, 6> images;
+		for (size_t i = 0; i < filepaths.size(); ++i)
+		{
+			images[i].LoadImage(filepaths[i]);
+			if (!images[i].IsValid())
+			{
+				std::cout << "Failed to load cubemap image: " << filepaths[i] << std::endl;
+				return nullptr;
+			}
+
+			if (i == 0)
+			{
+				width = images[i].GetWidth();
+				height = images[i].GetHeight();
+			}
+			else if (images[i].GetWidth() != width || images[i].GetHeight() != height)
+			{
+				std::cout << "Cubemap images must have the same dimensions." << std::endl;
+				return nullptr;
+			}
+		}
+
+		std::array<std::uint8_t const *, 6> data;
+		std::ranges::transform(images, data.begin(),
+			[](StbImage const & img) { return img.GetData(); });
+		Texture::CubeImageData cubemap_data{
+			.m_data = data,
+			.m_width = static_cast<std::uint32_t>(width),
+			.m_height = static_cast<std::uint32_t>(height)
+		};
+		return std::make_unique<Texture>(cubemap_data);
+	}
+
 	template <IsVertex T>
 	struct AssetId
 	{
@@ -682,17 +737,17 @@ void Scene::Init()
 	const std::filesystem::path objects_path = resources_path / "objects";
 
 	int ground_tex_id = static_cast<int>(m_textures.size());
-	m_textures.emplace_back(textures_path / "skybox" / "top.jpg");
+	m_textures.push_back(create_texture(textures_path / "skybox" / "top.jpg"));
 
 	int skybox_tex_id = static_cast<int>(m_textures.size());
-	m_textures.emplace_back(std::array<std::filesystem::path, 6>{
+	m_textures.push_back(create_cubemap_texture(std::array<std::filesystem::path, 6>{
 		textures_path / "skybox" / "right.jpg",
 		textures_path / "skybox" / "left.jpg",
 		textures_path / "skybox" / "top.jpg",
 		textures_path / "skybox" / "bottom.jpg",
 		textures_path / "skybox" / "front.jpg",
 		textures_path / "skybox" / "back.jpg"
-	});
+	}));
 
 	AssetId<TexturePipeline::VertexT> texture_pipeline_id = TexturePipeline::Create(m_renderer, *this, shaders_path);
 	AssetId<LightSourcePipeline::VertexT> light_source_pipeline_id = LightSourcePipeline::Create(m_renderer, *this, shaders_path);
@@ -799,5 +854,5 @@ Texture const & Scene::GetTexture(int id) const
 {
 	if (id < 0 || id >= static_cast<int>(m_textures.size()))
 		throw std::out_of_range("Invalid texture ID");
-	return m_textures[id];
+	return *m_textures[id];
 }

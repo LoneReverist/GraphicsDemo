@@ -13,8 +13,6 @@ module;
 
 module Texture;
 
-import ImageData;
-
 namespace
 {
 	VkSampler create_texture_sampler(GraphicsApi const & graphics_api)
@@ -50,24 +48,11 @@ namespace
 
 	VkResult load_image_into_buffer(
 		GraphicsApi const & graphics_api,
-		std::filesystem::path const & filepath,
+		Texture::ImageData const & image_data,
 		VkBuffer & out_buffer,
-		VkDeviceMemory & out_buffer_memory,
-		VkExtent2D & out_extents)
+		VkDeviceMemory & out_buffer_memory)
 	{
-		ImageData image{ filepath };
-		if (!image.IsValid())
-		{
-			std::cout << "load_image_into_buffer() Failed to load image: " << filepath << std::endl;
-			return VK_ERROR_UNKNOWN;
-		}
-
-		out_extents = VkExtent2D{
-			.width = static_cast<std::uint32_t>(image.GetWidth()),
-			.height = static_cast<std::uint32_t>(image.GetHeight())
-		};
-
-		VkDeviceSize buffer_size = static_cast<VkDeviceSize>(image.GetSize());
+		std::uint64_t buffer_size = image_data.GetSize();
 
 		VkResult result = graphics_api.CreateBuffer(
 			buffer_size,
@@ -76,48 +61,26 @@ namespace
 			out_buffer,
 			out_buffer_memory);
 		if (result != VK_SUCCESS)
-		{
-			std::cout << "load_image_into_buffer() Failed to create staging buffer: " << filepath << std::endl;
-			return result;
-		}
+			throw std::runtime_error("load_image_into_buffer() Failed to create staging buffer");
 
 		VkDevice device = graphics_api.GetDevice();
 
-		void * data = nullptr;
-		vkMapMemory(device, out_buffer_memory, 0, buffer_size, 0, &data);
-		std::memcpy(data, image.GetData(), image.GetSize());
+		void * buffer_data = nullptr;
+		vkMapMemory(device, out_buffer_memory, 0, buffer_size, 0, &buffer_data);
+		std::memcpy(buffer_data, image_data.m_data, buffer_size);
 		vkUnmapMemory(device, out_buffer_memory);
 
 		return VK_SUCCESS; // image goes out of scope and frees memory
 	}
 
-	VkResult load_images_into_buffer(
+	VkResult load_cube_image_into_buffer(
 		GraphicsApi const & graphics_api,
-		std::array<std::filesystem::path, 6> const & filepaths,
+		Texture::CubeImageData const & image_data,
 		VkBuffer & out_buffer,
-		VkDeviceMemory & out_buffer_memory,
-		VkExtent2D & out_extents)
+		VkDeviceMemory & out_buffer_memory)
 	{
-		std::array<ImageData, 6> images;
-		for (size_t i = 0; i < filepaths.size(); ++i)
-		{
-			images[i].LoadImage(filepaths[i]);
-
-			if (!images[i].IsValid())
-			{
-				std::cout << "load_images_into_buffer() Failed to load image: " << filepaths[i] << std::endl;
-				return VK_ERROR_UNKNOWN;
-			}
-		}
-
-		out_extents = VkExtent2D{
-			.width = static_cast<std::uint32_t>(images[0].GetWidth()),
-			.height = static_cast<std::uint32_t>(images[0].GetHeight())
-		};
-
-		VkDeviceSize buffer_size = 0;
-		for (ImageData const & image : images)
-			buffer_size += static_cast<VkDeviceSize>(image.GetSize());
+		std::uint64_t image_size = image_data.GetSize();
+		std::uint64_t buffer_size = image_size * image_data.m_data.size();
 
 		VkResult result = graphics_api.CreateBuffer(
 			buffer_size,
@@ -126,40 +89,39 @@ namespace
 			out_buffer,
 			out_buffer_memory);
 		if (result != VK_SUCCESS)
-		{
-			std::cout << "load_images_into_buffer() Failed to create staging buffer" << std::endl;
-			return result;
-		}
+			throw std::runtime_error("load_images_into_buffer() Failed to create staging buffer");
 
 		VkDevice device = graphics_api.GetDevice();
 
-		void * data = nullptr;
-		vkMapMemory(device, out_buffer_memory, 0, buffer_size, 0, &data);
-		for (ImageData const & image : images)
+		void * buffer_data = nullptr;
+		vkMapMemory(device, out_buffer_memory, 0, buffer_size, 0, &buffer_data);
+		for (std::uint8_t const * data : image_data.m_data)
 		{
-			std::memcpy(data, image.GetData(), image.GetSize());
-			data = static_cast<unsigned char *>(data) + image.GetSize();
+			std::memcpy(buffer_data, data, image_size);
+			buffer_data = static_cast<std::uint8_t *>(buffer_data) + image_size;
 		}
 		vkUnmapMemory(device, out_buffer_memory);
 		return VK_SUCCESS;
 	}
 }
 
-Texture::Texture(GraphicsApi const & graphics_api, std::filesystem::path const & filepath)
+Texture::Texture(GraphicsApi const & graphics_api, ImageData const & image_data)
 	: m_graphics_api(graphics_api)
 {
+	if (!image_data.IsValid())
+		throw std::runtime_error("Texture() image_data not valid");
+
 	VkDevice device = m_graphics_api.GetDevice();
 
 	VkBuffer staging_buffer = VK_NULL_HANDLE;
 	VkDeviceMemory staging_buffer_memory = VK_NULL_HANDLE;
-	VkExtent2D extents;
-	VkResult result = load_image_into_buffer(graphics_api, filepath, staging_buffer, staging_buffer_memory, extents);
+	VkResult result = load_image_into_buffer(graphics_api, image_data, staging_buffer, staging_buffer_memory);
 	if (result != VK_SUCCESS)
 		return;
 
 	result = graphics_api.Create2dImage(
-		extents.width,
-		extents.height,
+		image_data.m_width,
+		image_data.m_height,
 		1 /*layers*/,
 		VK_FORMAT_R8G8B8A8_SRGB,
 		VK_IMAGE_TILING_OPTIMAL,
@@ -169,10 +131,7 @@ Texture::Texture(GraphicsApi const & graphics_api, std::filesystem::path const &
 		m_image,
 		m_image_memory);
 	if (result != VK_SUCCESS)
-	{
-		std::cout << "Texture() Failed to create image: " << filepath << std::endl;
-		return;
-	}
+		throw std::runtime_error("Texture() Failed to create image");
 
 	m_graphics_api.TransitionImageLayout(
 		m_image,
@@ -183,8 +142,8 @@ Texture::Texture(GraphicsApi const & graphics_api, std::filesystem::path const &
 	m_graphics_api.CopyBufferToImage(
 		staging_buffer,
 		m_image,
-		extents.width,
-		extents.height,
+		image_data.m_width,
+		image_data.m_height,
 		1 /*layers*/);
 	m_graphics_api.TransitionImageLayout(
 		m_image,
@@ -201,10 +160,7 @@ Texture::Texture(GraphicsApi const & graphics_api, std::filesystem::path const &
 		1 /*layers*/,
 		m_image_view);
 	if (result != VK_SUCCESS)
-	{
 		throw std::runtime_error("Failed to create vulkan image view for texture");
-		return;
-	}
 
 	m_sampler = create_texture_sampler(m_graphics_api);
 
@@ -212,19 +168,21 @@ Texture::Texture(GraphicsApi const & graphics_api, std::filesystem::path const &
 	vkFreeMemory(device, staging_buffer_memory, nullptr);
 }
 
-Texture::Texture(GraphicsApi const & graphics_api, std::array<std::filesystem::path, 6> const & filepaths)
+Texture::Texture(GraphicsApi const & graphics_api, CubeImageData const & image_data)
 	: m_graphics_api(graphics_api)
 {
+	if (!image_data.IsValid())
+		throw std::runtime_error("Texture() image_data not valid");
+
 	VkBuffer staging_buffer = VK_NULL_HANDLE;
 	VkDeviceMemory staging_buffer_memory = VK_NULL_HANDLE;
-	VkExtent2D extents;
-	VkResult result = load_images_into_buffer(graphics_api, filepaths, staging_buffer, staging_buffer_memory, extents);
+	VkResult result = load_cube_image_into_buffer(graphics_api, image_data, staging_buffer, staging_buffer_memory);
 	if (result != VK_SUCCESS)
 		return;
 
 	result = graphics_api.Create2dImage(
-		extents.width,
-		extents.height,
+		image_data.m_width,
+		image_data.m_height,
 		6 /*layers*/,
 		VK_FORMAT_R8G8B8A8_SRGB,
 		VK_IMAGE_TILING_OPTIMAL,
@@ -234,10 +192,7 @@ Texture::Texture(GraphicsApi const & graphics_api, std::array<std::filesystem::p
 		m_image,
 		m_image_memory);
 	if (result != VK_SUCCESS)
-	{
-		std::cout << "Texture() Failed to create cubemap: " << filepaths[0] << std::endl;
-		return;
-	}
+		throw std::runtime_error("Texture() Failed to create cubemap");
 
 	m_graphics_api.TransitionImageLayout(
 		m_image,
@@ -249,8 +204,8 @@ Texture::Texture(GraphicsApi const & graphics_api, std::array<std::filesystem::p
 	m_graphics_api.CopyBufferToImage(
 		staging_buffer,
 		m_image,
-		extents.width,
-		extents.height,
+		image_data.m_width,
+		image_data.m_height,
 		6 /*layers*/);
 
 	m_graphics_api.TransitionImageLayout(
@@ -268,10 +223,7 @@ Texture::Texture(GraphicsApi const & graphics_api, std::array<std::filesystem::p
 		6 /*layers*/,
 		m_image_view);
 	if (result != VK_SUCCESS)
-	{
 		throw std::runtime_error("Failed to create vulkan image view for texture");
-		return;
-	}
 
 	m_sampler = create_texture_sampler(m_graphics_api);
 

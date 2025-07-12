@@ -41,8 +41,3 @@ target_link_libraries(VulkanRenderer PUBLIC
 	glfw
 	glm::glm
 )
-
-# Add stbi include directory, (this should perhaps be installed with vcpkg instead)
-target_include_directories(VulkanRenderer PRIVATE
-	${CMAKE_SOURCE_DIR}/stbi/include
-)

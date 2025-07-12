@@ -62,7 +62,7 @@ private:
 	Renderer m_renderer;
 	Camera m_camera;
 
-	std::vector<Texture> m_textures;
+	std::vector<std::unique_ptr<Texture>> m_textures;
 
 	std::shared_ptr<RenderObject> m_sword0;
 	std::shared_ptr<RenderObject> m_sword1;

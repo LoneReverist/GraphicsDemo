@@ -1,4 +1,4 @@
-// ImageData.ixx
+// StbImage.ixx
 
 module;
 
@@ -9,22 +9,27 @@ module;
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-export module ImageData;
+export module StbImage;
 
-export class ImageData
+export class StbImage
 {
 public:
-	ImageData() = default;
-	ImageData(std::filesystem::path const & filepath)
+	StbImage() = default;
+	StbImage(std::filesystem::path const & filepath)
 	{
 		LoadImage(filepath);
 	}
 
-	~ImageData()
+	~StbImage()
 	{
 		if (m_data != nullptr)
 			stbi_image_free(m_data);
 	}
+
+	StbImage(StbImage const &) = delete;
+	StbImage(StbImage const &&) = delete;
+	StbImage & operator=(StbImage const &) = delete;
+	StbImage & operator=(StbImage const &&) = delete;
 
 	void LoadImage(std::filesystem::path const & filepath)
 	{
@@ -48,5 +53,5 @@ private:
 	int m_width{ 0 };
 	int m_height{ 0 };
 	int m_channels{ 0 };
-	unsigned char * m_data{ nullptr };
+	std::uint8_t * m_data{ nullptr };
 };
