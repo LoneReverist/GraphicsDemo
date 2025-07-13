@@ -42,6 +42,7 @@ public:
 	explicit Scene(GraphicsApi const & graphics_api)
 		: m_graphics_api{ graphics_api }
 		, m_renderer{ graphics_api }
+		, m_camera{ true /*flip_proj_y*/ }
 	{}
 
 	void Init();

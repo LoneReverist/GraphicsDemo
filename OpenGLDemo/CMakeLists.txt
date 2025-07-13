@@ -14,8 +14,14 @@ add_custom_target(OpenGLShaders ALL
 )
 add_dependencies(OpenGLDemo OpenGLShaders)
 
-file(GLOB MODULE_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.ixx")
-file(GLOB SOURCE_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
+file(GLOB MODULE_FILES CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/*.ixx"
+    "${CMAKE_SOURCE_DIR}/DemoShared/*.ixx"
+)
+file(GLOB SOURCE_FILES CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
+    "${CMAKE_SOURCE_DIR}/DemoShared/*.cpp"
+)
 
 # Target Source Files
 target_sources(OpenGLDemo
@@ -23,6 +29,7 @@ target_sources(OpenGLDemo
 	FILE_SET cxx_modules TYPE CXX_MODULES
 	BASE_DIRS
 		.
+		"${CMAKE_SOURCE_DIR}/DemoShared"
 	FILES
 		${MODULE_FILES}
 

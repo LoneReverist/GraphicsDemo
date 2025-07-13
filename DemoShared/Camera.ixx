@@ -15,6 +15,8 @@ import Input;
 export class Camera
 {
 public:
+	Camera(bool flip_proj_y = false) : m_flip_proj_y(flip_proj_y) {}
+
 	void Init(glm::vec3 const & pos, glm::vec3 const & dir);
 	void OnViewportResized(int width, int height);
 
@@ -28,8 +30,10 @@ public:
 private:
 	glm::vec3 m_pos{ 0.0f, 0.0f, 0.0f };
 	glm::vec3 m_dir{ 0.0f, 0.0f, -1.0f };
-	glm::mat4 m_view_transform{ 1.0f };
-	glm::mat4 m_proj_transform{ 1.0f };
+	glm::mat4 m_view_transform = 1.0f;
+	glm::mat4 m_proj_transform = 1.0f;
+
+	bool m_flip_proj_y = false; // whether to flip the y-axis in the projection matrix
 
 	static constexpr glm::vec3 m_up_dir{ 0.0f, 0.0f, 1.0f }; // a little atypical, but i prefer Z to be up
 	static constexpr float m_fov = glm::radians(45.0f);
@@ -49,7 +53,8 @@ void Camera::OnViewportResized(int width, int height)
 	const float aspect_ratio = static_cast<float>(width) / static_cast<float>(height);
 	m_proj_transform = glm::perspective(m_fov, aspect_ratio, m_near_plane, m_far_plane);
 
-	m_proj_transform[1][1] *= -1; // account for vulkan having flipped y-axis compared to opengl
+	if (m_flip_proj_y)
+		m_proj_transform[1][1] *= -1; // account for vulkan having flipped y-axis compared to opengl
 }
 
 void Camera::Update(double delta_time, Input const & input)

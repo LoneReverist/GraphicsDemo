@@ -35,8 +35,14 @@ endforeach()
 add_custom_target(VulkanShaders ALL DEPENDS ${COMPILED_SHADERS})
 add_dependencies(VulkanDemo VulkanShaders)
 
-file(GLOB MODULE_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.ixx")
-file(GLOB SOURCE_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
+file(GLOB MODULE_FILES CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/*.ixx"
+    "${CMAKE_SOURCE_DIR}/DemoShared/*.ixx"
+)
+file(GLOB SOURCE_FILES CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
+    "${CMAKE_SOURCE_DIR}/DemoShared/*.cpp"
+)
 
 # Target Source Files
 target_sources(VulkanDemo
@@ -44,6 +50,7 @@ target_sources(VulkanDemo
 	FILE_SET cxx_modules TYPE CXX_MODULES
 	BASE_DIRS
 		.
+		"${CMAKE_SOURCE_DIR}/DemoShared"
 	FILES
 		${MODULE_FILES}
 
