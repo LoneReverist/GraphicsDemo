@@ -11,24 +11,13 @@ elseif(UNIX)
 	set(GLSLANG_VALIDATOR_EXECUTABLE glslangValidator)
 endif()
 
-set(SHADER_SOURCE_DIR ${CMAKE_SOURCE_DIR}/VulkanDemo/shaders)
-set(SHADER_SOURCES
-	${SHADER_SOURCE_DIR}/light_source.vert
-	${SHADER_SOURCE_DIR}/light_source.frag
-	${SHADER_SOURCE_DIR}/color.vert
-	${SHADER_SOURCE_DIR}/color.frag
-	${SHADER_SOURCE_DIR}/texture.vert
-	${SHADER_SOURCE_DIR}/texture.frag
-	${SHADER_SOURCE_DIR}/skybox.vert
-	${SHADER_SOURCE_DIR}/skybox.frag
-	${SHADER_SOURCE_DIR}/reflection.vert
-	${SHADER_SOURCE_DIR}/reflection.frag
-)
+set(SHADER_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/shaders)
+file(GLOB SHADER_FILES "${SHADER_SOURCE_DIR}/*")
 
 set(SHADER_BINARY_DIR ${CMAKE_BINARY_DIR}/shaders)
 file(MAKE_DIRECTORY ${SHADER_BINARY_DIR})
 
-foreach(SHADER ${SHADER_SOURCES})
+foreach(SHADER ${SHADER_FILES})
     get_filename_component(FILE_NAME ${SHADER} NAME)
     set(OUTPUT_FILE ${SHADER_BINARY_DIR}/${FILE_NAME}.spv)
 
@@ -46,6 +35,9 @@ endforeach()
 add_custom_target(VulkanShaders ALL DEPENDS ${COMPILED_SHADERS})
 add_dependencies(VulkanDemo VulkanShaders)
 
+file(GLOB MODULE_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.ixx")
+file(GLOB SOURCE_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
+
 # Target Source Files
 target_sources(VulkanDemo
 	PRIVATE
@@ -53,29 +45,22 @@ target_sources(VulkanDemo
 	BASE_DIRS
 		.
 	FILES
-		Camera.ixx
-		Input.ixx
-		ObjLoader.ixx
-		PlatformUtils.ixx
-		Scene.ixx
-		VulkanApp.ixx
+		${MODULE_FILES}
 
 	PRIVATE
-		ObjLoader.cpp
-		Scene.cpp
-		VulkanApp.cpp
-		VulkanDemo.cpp
+		${SOURCE_FILES}
 
 	PRIVATE
-		${SHADER_SOURCES}
+		${SHADER_FILES}
 )
-source_group("Shaders" FILES ${SHADER_SOURCES})
+source_group("Shaders" FILES ${SHADER_FILES})
 
 # Link dependencies (provided via vcpkg toolchain)
 target_link_libraries(VulkanDemo PRIVATE
+	VulkanRenderer
 	glfw
 	glm::glm
-	VulkanRenderer
+	nlohmann_json::nlohmann_json
 )
 
 # Copy resources into output folder

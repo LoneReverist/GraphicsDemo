@@ -4,7 +4,7 @@ target_compile_features(OpenGLDemo PRIVATE cxx_std_20)
 
 set_target_properties(OpenGLDemo PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
-set(SHADER_SOURCE_DIR ${CMAKE_SOURCE_DIR}/OpenGLDemo/shaders)
+set(SHADER_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/shaders)
 file(GLOB SHADER_FILES "${SHADER_SOURCE_DIR}/*")
 
 add_custom_target(OpenGLShaders ALL
@@ -14,6 +14,9 @@ add_custom_target(OpenGLShaders ALL
 )
 add_dependencies(OpenGLDemo OpenGLShaders)
 
+file(GLOB MODULE_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.ixx")
+file(GLOB SOURCE_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
+
 # Target Source Files
 target_sources(OpenGLDemo
 	PRIVATE
@@ -21,18 +24,10 @@ target_sources(OpenGLDemo
 	BASE_DIRS
 		.
 	FILES
-		Camera.ixx
-		Input.ixx
-		ObjLoader.ixx
-		PlatformUtils.ixx
-		Scene.ixx
-		OpenGLApp.ixx
+		${MODULE_FILES}
 
 	PRIVATE
-		ObjLoader.cpp
-		Scene.cpp
-		OpenGLApp.cpp
-		OpenGLDemo.cpp
+		${SOURCE_FILES}
 
 	PRIVATE
 		${SHADER_FILES}
@@ -41,9 +36,10 @@ source_group("Shaders" FILES ${SHADER_FILES})
 
 # Link dependencies (provided via vcpkg toolchain)
 target_link_libraries(OpenGLDemo PRIVATE
+	OpenGLRenderer
 	glfw
 	glm::glm
-	OpenGLRenderer
+	nlohmann_json::nlohmann_json
 )
 
 # Copy resources into output folder

@@ -735,6 +735,7 @@ void Scene::Init()
 	const std::filesystem::path shaders_path = resources_path / "shaders";
 	const std::filesystem::path textures_path = resources_path / "textures";
 	const std::filesystem::path objects_path = resources_path / "objects";
+	const std::filesystem::path fonts_path = resources_path / "fonts";
 
 	int ground_tex_id = static_cast<int>(m_textures.size());
 	m_textures.push_back(create_texture(textures_path / "skybox" / "top.jpg"));
@@ -748,6 +749,8 @@ void Scene::Init()
 		textures_path / "skybox" / "front.jpg",
 		textures_path / "skybox" / "back.jpg"
 	}));
+
+	m_arial_font = std::make_unique<FontAtlas>(fonts_path / "ArialAtlas.png", fonts_path / "ArialAtlas.json");
 
 	AssetId<TexturePipeline::VertexT> texture_pipeline_id = TexturePipeline::Create(m_renderer, *this, shaders_path);
 	AssetId<LightSourcePipeline::VertexT> light_source_pipeline_id = LightSourcePipeline::Create(m_renderer, *this, shaders_path);

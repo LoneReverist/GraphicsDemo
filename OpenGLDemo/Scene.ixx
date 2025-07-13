@@ -10,6 +10,7 @@ module;
 export module Scene;
 
 import Camera;
+import FontAtlas;
 import Input;
 import Renderer;
 import RenderObject;
@@ -63,6 +64,7 @@ private:
 	Camera m_camera;
 
 	std::vector<std::unique_ptr<Texture>> m_textures;
+	std::unique_ptr<FontAtlas> m_arial_font;
 
 	std::shared_ptr<RenderObject> m_sword0;
 	std::shared_ptr<RenderObject> m_sword1;

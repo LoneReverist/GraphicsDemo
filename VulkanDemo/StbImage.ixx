@@ -31,13 +31,13 @@ public:
 	StbImage & operator=(StbImage const &) = delete;
 	StbImage & operator=(StbImage const &&) = delete;
 
-	void LoadImage(std::filesystem::path const & filepath)
+	void LoadImage(std::filesystem::path const & filepath, int req_comp = STBI_rgb_alpha)
 	{
 		static_assert(std::same_as<stbi_uc, unsigned char>);
 
 		//stbi_set_flip_vertically_on_load(true);
 
-		m_data = stbi_load(filepath.string().c_str(), &m_width, &m_height, &m_channels, STBI_rgb_alpha);
+		m_data = stbi_load(filepath.string().c_str(), &m_width, &m_height, &m_channels, req_comp);
 		if (!IsValid())
 			std::cout << "ImageData::LoadImage() failed to load image: " << filepath << std::endl;
 	}
