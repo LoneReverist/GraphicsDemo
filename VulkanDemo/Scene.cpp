@@ -13,6 +13,7 @@ module;
 
 module Scene;
 
+import AssetId;
 import GraphicsApi;
 import GraphicsPipeline;
 import Mesh;
@@ -78,16 +79,6 @@ namespace
 		};
 		return std::make_unique<Texture>(graphics_api, cubemap_data);
 	}
-
-	template <IsVertex T>
-	struct AssetId
-	{
-		using VertexT = T;
-		int m_index = -1;
-	};
-
-	template <typename AssetId1, typename AssetId2>
-	concept AssetsAreCompatible = std::same_as<typename AssetId1::VertexT, typename AssetId2::VertexT>;
 
 	class GroundMesh
 	{
