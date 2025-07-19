@@ -49,12 +49,12 @@ Mesh::Mesh(std::vector<VertexT> const & vertices,
 {
 	if (vertices.empty())
 	{
-		std::cout << "Mesh verts empty" << std::endl;
+		//std::cout << "Mesh verts empty" << std::endl;
 		return;
 	}
 	if (indices.empty())
 	{
-		std::cout << "Mesh indices empty" << std::endl;
+		//std::cout << "Mesh indices empty" << std::endl;
 		return;
 	}
 

@@ -19,6 +19,7 @@ module;
 export module FontAtlas;
 
 import StbImage;
+import Texture;
 
 export class FontAtlas
 {
@@ -34,10 +35,47 @@ public:
 public:
 	FontAtlas(std::filesystem::path const & image_path, std::filesystem::path const & json_path)
 	{
-		m_image.LoadImage(image_path, 3 /*rgb*/);
-		if (!m_image.IsValid())
+		init_texture(image_path);
+		init_glyphs(json_path);
+	}
+
+	std::optional<std::reference_wrapper<const Glyph>> GetGlyph(std::uint32_t unicode) const
+	{
+		auto it = m_glyphs.find(unicode);
+		if (it != m_glyphs.end())
+			return std::cref(it->second);
+		return std::nullopt; // glyph not found
+	}
+
+	Texture const & GetTexture() const { return *m_texture; }
+	std::uint32_t GetWidth() const { return m_width; }
+	std::uint32_t GetHeight() const { return m_height; }
+	float GetPxRange() const { return m_px_range; }
+
+private:
+	void init_texture(std::filesystem::path const & image_path)
+	{
+		PixelFormat format = PixelFormat::RGB;
+
+		StbImage image;
+		image.LoadImage(image_path, GetPixelSize(format) /*STBI_rgb*/, true /*flip_vertically*/);
+		if (!image.IsValid())
 			throw std::runtime_error("Failed to load image for font atlas: " + image_path.string());
 
+		m_width = static_cast<std::uint32_t>(image.GetWidth());
+		m_height = static_cast<std::uint32_t>(image.GetHeight());
+
+		m_texture = std::make_unique<Texture>(
+			Texture::ImageData{
+				.m_data = image.GetData(),
+				.m_format = format,
+				.m_width = m_width,
+				.m_height = m_height
+			}, false /*use_mip_map*/);
+	}
+
+	void init_glyphs(std::filesystem::path const & json_path)
+	{
 		std::ifstream file(json_path);
 		if (!file)
 			throw std::runtime_error("Failed to open JSON file: " + json_path.string());
@@ -66,66 +104,11 @@ public:
 		}
 	}
 
-	std::optional<std::reference_wrapper<const Glyph>> GetGlyph(std::uint32_t unicode) const
-	{
-		auto it = m_glyphs.find(unicode);
-		if (it != m_glyphs.end())
-			return std::cref(it->second);
-		return std::nullopt; // glyph not found
-	}
-
-	int GetWidth() const { return m_image.GetWidth(); }
-	int GetHeight() const { return m_image.GetHeight(); }
-
 private:
-	StbImage m_image;
+	std::unique_ptr<Texture> m_texture;
+	std::uint32_t m_width = 0;
+	std::uint32_t m_height = 0;
+
 	std::unordered_map<std::uint32_t, const Glyph> m_glyphs;
 	float m_px_range = 0.0f;
 };
-
-struct Vertex
-{
-	glm::vec2 position;
-	glm::vec2 texCoord;
-};
-
-export std::vector<Vertex> create_text_mesh(const std::string & text, const FontAtlas & atlas, float font_size, glm::vec2 origin)
-{
-	std::vector<Vertex> vertices;
-	glm::vec2 pen = origin;
-
-	for (char c : text)
-	{
-		auto glyph = atlas.GetGlyph(static_cast<std::uint32_t>(c));
-		if (!glyph.has_value())
-			continue; // skip missing glyphs
-
-		FontAtlas::Glyph const & g = glyph.value();
-
-		// For the space character we just advance the pen position
-		if (!g.m_plane_bounds.has_value() || !g.m_atlas_bounds.has_value())
-		{
-			pen.x += g.m_advance * font_size;
-			continue;
-		}
-
-		glm::vec4 pb = g.m_plane_bounds.value() * font_size;
-		glm::vec4 ab = g.m_atlas_bounds.value();
-
-		glm::vec2 uv_bl = glm::vec2(ab.x / atlas.GetWidth(), ab.y / atlas.GetHeight());
-		glm::vec2 uv_tr = glm::vec2(ab.z / atlas.GetWidth(), ab.w / atlas.GetHeight());
-
-		// 2 triangles (6 vertices)
-		vertices.push_back({ {pen.x + pb.x, pen.y + pb.y}, {uv_bl.x, uv_bl.y} }); // bottom-left
-		vertices.push_back({ {pen.x + pb.x, pen.y + pb.w}, {uv_bl.x, uv_tr.y} }); // top-left
-		vertices.push_back({ {pen.x + pb.z, pen.y + pb.w}, {uv_tr.x, uv_tr.y} }); // top-right
-
-		vertices.push_back({ {pen.x + pb.x, pen.y + pb.y}, {uv_bl.x, uv_bl.y} }); // bottom-left
-		vertices.push_back({ {pen.x + pb.z, pen.y + pb.w}, {uv_tr.x, uv_tr.y} }); // top-right
-		vertices.push_back({ {pen.x + pb.z, pen.y + pb.y}, {uv_tr.x, uv_bl.y} }); // bottom-right
-
-		pen.x += g.m_advance * font_size;
-	}
-
-	return vertices;
-}

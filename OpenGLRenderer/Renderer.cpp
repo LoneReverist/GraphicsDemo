@@ -65,6 +65,11 @@ int Renderer::AddMesh(Mesh && mesh)
 	return static_cast<int>(m_meshes.size() - 1);
 }
 
+void Renderer::UpdateMesh(int index, Mesh && mesh)
+{
+	m_meshes[index] = std::move(mesh);
+}
+
 std::shared_ptr<RenderObject> Renderer::CreateRenderObject(std::string const & name, int mesh_id, int pipeline_id, int tex_id /*= -1*/)
 {
 	if (mesh_id < 0 || mesh_id >= static_cast<int>(m_meshes.size()))

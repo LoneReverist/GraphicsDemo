@@ -50,6 +50,9 @@ void Camera::Init(glm::vec3 const & pos, glm::vec3 const & dir)
 
 void Camera::OnViewportResized(int width, int height)
 {
+	if (height == 0)
+		return;
+
 	const float aspect_ratio = static_cast<float>(width) / static_cast<float>(height);
 	m_proj_transform = glm::perspective(m_fov, aspect_ratio, m_near_plane, m_far_plane);
 

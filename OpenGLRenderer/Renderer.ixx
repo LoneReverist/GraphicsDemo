@@ -29,7 +29,8 @@ public:
 	void Render() const;
 
 	int AddPipeline(GraphicsPipeline && pipeline);
-	int AddMesh(Mesh && mesh_var);
+	int AddMesh(Mesh && mesh);
+	void UpdateMesh(int index, Mesh && mesh);
 
 	std::shared_ptr<RenderObject> CreateRenderObject(std::string const & name, int mesh_id, int pipeline_id, int tex_id = -1);
 

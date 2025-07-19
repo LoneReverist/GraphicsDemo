@@ -15,41 +15,49 @@ module;
 module Scene;
 
 import AssetId;
+import FontAtlas;
 import GraphicsPipeline;
 import Mesh;
 import ObjLoader;
 import PipelineBuilder;
 import PlatformUtils;
 import StbImage;
+import TextMesh;
+import TextPipeline;
 import Vertex;
 
 namespace
 {
 	std::unique_ptr<Texture> create_texture(std::filesystem::path const & filepath)
 	{
-		StbImage image(filepath);
+		PixelFormat format = PixelFormat::RGBA;
+
+		StbImage image(filepath, GetPixelSize(format) /*STBI_rgb_alpha*/);
 		if (!image.IsValid())
 		{
 			std::cout << "Failed to load image: " << filepath << std::endl;
 			return nullptr;
 		}
 
-		Texture::ImageData image_data{
-			.m_data = image.GetData(),
-			.m_width = static_cast<std::uint32_t>(image.GetWidth()),
-			.m_height = static_cast<std::uint32_t>(image.GetHeight())
-		};
-		return std::make_unique<Texture>(image_data);
+		return std::make_unique<Texture>(
+			Texture::ImageData{
+				.m_data = image.GetData(),
+				.m_format = format,
+				.m_width = static_cast<std::uint32_t>(image.GetWidth()),
+				.m_height = static_cast<std::uint32_t>(image.GetHeight())
+			});
 	}
 
 	std::unique_ptr<Texture> create_cubemap_texture(
 		std::array<std::filesystem::path, 6> const & filepaths)
 	{
+		PixelFormat format = PixelFormat::RGBA;
+
 		int width = 0, height = 0;
 		std::array<StbImage, 6> images;
 		for (size_t i = 0; i < filepaths.size(); ++i)
 		{
-			images[i].LoadImage(filepaths[i]);
+			images[i].LoadImage(filepaths[i], GetPixelSize(format) /*STBI_rgb_alpha*/);
 			if (!images[i].IsValid())
 			{
 				std::cout << "Failed to load cubemap image: " << filepaths[i] << std::endl;
@@ -71,12 +79,14 @@ namespace
 		std::array<std::uint8_t const *, 6> data;
 		std::ranges::transform(images, data.begin(),
 			[](StbImage const & img) { return img.GetData(); });
-		Texture::CubeImageData cubemap_data{
-			.m_data = data,
-			.m_width = static_cast<std::uint32_t>(width),
-			.m_height = static_cast<std::uint32_t>(height)
-		};
-		return std::make_unique<Texture>(cubemap_data);
+
+		return std::make_unique<Texture>(
+			Texture::CubeImageData{
+				.m_data = data,
+				.m_format = format,
+				.m_width = static_cast<std::uint32_t>(width),
+				.m_height = static_cast<std::uint32_t>(height)
+			});
 	}
 
 	class GroundMesh
@@ -748,6 +758,7 @@ void Scene::Init()
 	AssetId<ReflectionPipeline::VertexT> reflection_pipeline_id = ReflectionPipeline::Create(m_renderer, *this, shaders_path);
 	AssetId<SkyboxPipeline::VertexT> skybox_pipeline_id = SkyboxPipeline::Create(m_renderer, *this, shaders_path);
 	//AssetId<ColorPipeline::VertexT> color_pipeline_id = ColorPipeline::Create(m_renderer, *this, shaders_path);
+	AssetId<TextPipeline::VertexT> text_pipeline_id = TextPipeline::Create(m_renderer, *m_arial_font, shaders_path);
 
 	AssetId<FileMesh::VertexT> sword_mesh_id = FileMesh::Create(m_renderer,
 		objects_path / "skullsword.obj");
@@ -760,6 +771,10 @@ void Scene::Init()
 	AssetId<GroundMesh::VertexT> ground_mesh_id = GroundMesh::Create(m_renderer);
 	AssetId<SkyboxMesh::VertexT> skybox_mesh_id = SkyboxMesh::Create(m_renderer);
 
+	TextMesh text_mesh = TextMesh::Create(m_renderer, "",
+		*m_arial_font, 36.0, glm::vec2{ -0.9, -0.9 }, m_viewport_width, m_viewport_height);
+	m_fps_label = std::make_unique<TextMesh>(std::move(text_mesh));
+
 	m_sword0 = create_render_object(m_renderer, "sword0", sword_mesh_id, reflection_pipeline_id, skybox_tex_id);
 	m_sword1 = create_render_object(m_renderer, "sword1", sword_mesh_id, reflection_pipeline_id, skybox_tex_id);
 	m_red_gem = create_render_object(m_renderer, "red gem", red_gem_mesh_id, light_source_pipeline_id);
@@ -767,6 +782,9 @@ void Scene::Init()
 	m_blue_gem = create_render_object(m_renderer, "blue gem", blue_gem_mesh_id, light_source_pipeline_id);
 	m_ground = create_render_object(m_renderer, "ground", ground_mesh_id, texture_pipeline_id, ground_tex_id);
 	m_skybox = create_render_object(m_renderer, "skybox", skybox_mesh_id, skybox_pipeline_id, skybox_tex_id);
+	m_text = create_render_object(m_renderer, "text", text_mesh.GetAssetId(), text_pipeline_id);
+
+	//m_text->SetColor({ 1.0, 0.0, 0.0 });
 
 	m_red_gem->SetColor({ 1.0, 0.0, 0.0 });
 	m_green_gem->SetColor({ 0.0, 1.0, 0.0 });
@@ -795,13 +813,27 @@ void Scene::Init()
 
 void Scene::OnViewportResized(int width, int height)
 {
+	m_viewport_width = width;
+	m_viewport_height = height;
+
 	m_camera.OnViewportResized(width, height);
+	m_fps_label->OnViewportResized(width, height);
 }
 
 void Scene::Update(double delta_time, Input const & input)
 {
 	const float dt = static_cast<float>(delta_time);
 	m_timer += dt;
+
+	m_frame_timer += dt;
+	m_frame_count++;
+	if (m_frame_timer >= 1.0)
+	{
+		float fps = static_cast<float>(m_frame_count) / m_frame_timer;
+		m_fps_label->SetText("FPS: " + std::to_string(static_cast<int>(fps)), m_viewport_width, m_viewport_height);
+		m_frame_timer = 0.0;
+		m_frame_count = 0;
+	}
 
 	m_camera.Update(delta_time, input);
 

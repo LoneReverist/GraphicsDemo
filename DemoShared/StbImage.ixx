@@ -15,9 +15,9 @@ export class StbImage
 {
 public:
 	StbImage() = default;
-	StbImage(std::filesystem::path const & filepath)
+	StbImage(std::filesystem::path const & filepath, int req_comp)
 	{
-		LoadImage(filepath);
+		LoadImage(filepath, req_comp);
 	}
 
 	~StbImage()
@@ -31,11 +31,11 @@ public:
 	StbImage & operator=(StbImage const &) = delete;
 	StbImage & operator=(StbImage const &&) = delete;
 
-	void LoadImage(std::filesystem::path const & filepath, int req_comp = STBI_rgb_alpha)
+	void LoadImage(std::filesystem::path const & filepath, int req_comp, bool flip_vertically = false)
 	{
 		static_assert(std::same_as<stbi_uc, unsigned char>);
 
-		//stbi_set_flip_vertically_on_load(true);
+		stbi_set_flip_vertically_on_load(flip_vertically);
 
 		m_data = stbi_load(filepath.string().c_str(), &m_width, &m_height, &m_channels, req_comp);
 		if (!IsValid())

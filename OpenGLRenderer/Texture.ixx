@@ -7,43 +7,45 @@ module;
 
 export module Texture;
 
+export enum class PixelFormat : std::uint8_t { RGB, RGBA };
+
+export std::uint8_t GetPixelSize(PixelFormat format)
+{
+	if (format == PixelFormat::RGBA)
+		return 4;
+	if (format == PixelFormat::RGB)
+		return 3;
+	throw std::runtime_error("GetPixelSize: Unexpected format");
+	return 0;
+}
+
 export class Texture
 {
 public:
 	struct ImageData
 	{
 		std::uint8_t const * m_data = nullptr;
+		PixelFormat m_format = PixelFormat::RGBA;
 		std::uint32_t m_width = 0;
 		std::uint32_t m_height = 0;
 
-		bool IsValid() const
-		{
-			return m_data != nullptr && m_width > 0 && m_height > 0;
-		}
-		std::uint64_t GetSize() const
-		{
-			return static_cast<std::uint64_t>(m_width * m_height * 4); // assuming RGBA format
-		}
+		bool IsValid() const;
+		std::uint64_t GetSize() const;
 	};
 
 	struct CubeImageData
 	{
 		std::array<std::uint8_t const *, 6> m_data;
+		PixelFormat m_format = PixelFormat::RGBA;
 		std::uint32_t m_width = 0;
 		std::uint32_t m_height = 0;
 
-		bool IsValid() const
-		{
-			return std::ranges::all_of(m_data, [](std::uint8_t  const * data) { return data != nullptr; }) && m_width > 0 && m_height > 0;
-		}
-		std::uint64_t GetSize() const
-		{
-			return static_cast<std::uint64_t>(m_width * m_height * 4); // assuming RGBA format
-		}
+		bool IsValid() const;
+		std::uint64_t GetSize() const;
 	};
 
 public:
-	Texture(ImageData const & image_data);
+	Texture(ImageData const & image_data, bool use_mip_map = true);
 	Texture(CubeImageData const & image_data);
 	~Texture();
 

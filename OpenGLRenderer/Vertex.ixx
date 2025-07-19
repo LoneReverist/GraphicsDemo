@@ -12,25 +12,35 @@ module;
 
 export module Vertex;
 
-export struct PositionVertex {
+export struct PositionVertex
+{
 	glm::vec3 m_pos;
 };
 
-export struct NormalVertex {
+export struct NormalVertex
+{
 	glm::vec3 m_pos;
 	glm::vec3 m_normal;
 };
 
-export struct TextureVertex {
+export struct TextureVertex
+{
 	glm::vec3 m_pos;
 	glm::vec3 m_normal;
 	glm::vec2 m_tex_coord;
 };
 
-export struct ColorVertex {
+export struct ColorVertex
+{
 	glm::vec3 m_pos;
 	glm::vec3 m_normal;
 	glm::vec3 m_color;
+};
+
+export struct Texture2dVertex
+{
+	glm::vec2 m_pos;
+	glm::vec2 m_tex_coord;
 };
 
 export template <typename T>
@@ -38,7 +48,8 @@ concept IsVertex =
 	std::same_as<T, PositionVertex>
 	|| std::same_as<T, NormalVertex>
 	|| std::same_as<T, TextureVertex>
-	|| std::same_as<T, ColorVertex>;
+	|| std::same_as<T, ColorVertex>
+	|| std::same_as<T, Texture2dVertex>;
 
 export template <typename T>
 concept VertexSupportsNormal = IsVertex<T> && requires(T v) { v.m_normal; };
@@ -55,36 +66,60 @@ namespace Vertex
 	void SetAttributes()
 	{
 		GLsizei stride = sizeof(VertexT);
-		size_t offset = 0;
+		int location = 0;
+
+		// All vertex types must have a position attribute.
+		int pos_num_floats = 0;
+		if constexpr (std::same_as<glm::vec3, decltype(VertexT::m_pos)>)
+			pos_num_floats = 3;
+		else if constexpr (std::same_as<glm::vec2, decltype(VertexT::m_pos)>)
+			pos_num_floats = 2;
+		else
+			static_assert(!std::same_as<VertexT, VertexT>, "Unsupported position format in VertexT");
+
 		glVertexAttribPointer(
-			0,				// layout (location = 0) in vertex shader
-			3,				// 3 floats per vertex position
+			location,		// layout (location = 0) in vertex shader
+			pos_num_floats,	// 2/3 floats per vertex position
 			GL_FLOAT,		// data type
 			GL_FALSE,		// normalize (not relevant)
 			stride,			// size of vertex
-			reinterpret_cast<void *>(offset));
-		glEnableVertexAttribArray(0);
-		offset += sizeof(glm::vec3);
+			reinterpret_cast<void *>(offsetof(VertexT, m_pos)));
+		glEnableVertexAttribArray(location++);
 
 		if constexpr (VertexSupportsNormal<VertexT>)
 		{
-			glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<void *>(offset));
-			glEnableVertexAttribArray(1);
-			offset += sizeof(glm::vec3);
+			glVertexAttribPointer(
+				location,
+				3,
+				GL_FLOAT,
+				GL_FALSE,
+				stride,
+				reinterpret_cast<void *>(offsetof(VertexT, m_normal)));
+			glEnableVertexAttribArray(location++);
 		}
 
 		if constexpr (VertexSupportsTexCoord<VertexT>)
 		{
-			glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<void *>(offset));
-			glEnableVertexAttribArray(2);
-			offset += sizeof(glm::vec2);
+			glVertexAttribPointer(
+				location,
+				2,
+				GL_FLOAT,
+				GL_FALSE,
+				stride,
+				reinterpret_cast<void *>(offsetof(VertexT, m_tex_coord)));
+			glEnableVertexAttribArray(location++);
 		}
 
 		if constexpr (VertexSupportsColor<VertexT>)
 		{
-			glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<void *>(offset));
-			glEnableVertexAttribArray(3);
-			//offset += sizeof(glm::vec3);
+			glVertexAttribPointer(
+				location,
+				3,
+				GL_FLOAT,
+				GL_FALSE,
+				stride,
+				reinterpret_cast<void *>(offsetof(VertexT, m_color)));
+			glEnableVertexAttribArray(location++);
 		}
 	}
 }
