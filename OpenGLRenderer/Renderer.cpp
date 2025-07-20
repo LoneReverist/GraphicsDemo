@@ -11,6 +11,11 @@ module;
 
 module Renderer;
 
+Renderer::Renderer(GraphicsApi const & graphics_api)
+	: m_graphics_api(graphics_api)
+{
+}
+
 void Renderer::Render() const
 {
 	glEnable(GL_DEPTH_TEST);

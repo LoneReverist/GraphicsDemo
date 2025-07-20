@@ -11,6 +11,7 @@ export module Scene;
 
 import Camera;
 import FontAtlas;
+import GraphicsApi;
 import Input;
 import Renderer;
 import RenderObject;
@@ -41,7 +42,12 @@ struct SpotLight
 export class Scene
 {
 public:
-	Scene() = default;
+	explicit Scene(GraphicsApi const & graphics_api)
+		: m_graphics_api{ graphics_api }
+		, m_renderer{ graphics_api }
+		, m_camera{ false /*flip_proj_y*/ }
+	{
+	}
 
 	void Init();
 	void OnViewportResized(int width, int height);
@@ -49,6 +55,7 @@ public:
 	void Update(double delta_time, Input const & input);
 	void Render() const;
 
+	GraphicsApi const & GetGraphicsApi() const { return m_graphics_api; }
 	Renderer const & GetRenderer() const { return m_renderer; }
 	Camera const & GetCamera() const { return m_camera; }
 
@@ -61,6 +68,7 @@ public:
 	Texture const & GetTexture(int id) const;
 
 private:
+	GraphicsApi const & m_graphics_api;
 	Renderer m_renderer;
 	Camera m_camera;
 

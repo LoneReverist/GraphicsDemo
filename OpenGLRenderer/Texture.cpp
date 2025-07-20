@@ -11,11 +11,25 @@ module;
 
 module Texture;
 
+GLenum to_gl_internal_format(PixelFormat format)
+{
+	if (format == PixelFormat::RGBA_UNORM)
+		return GL_RGBA8;
+	if (format == PixelFormat::RGB_UNORM)
+		return GL_RGB8;
+	if (format == PixelFormat::RGBA_SRGB)
+		return GL_SRGB8_ALPHA8;
+	if (format == PixelFormat::RGB_SRGB)
+		return GL_SRGB8;
+	throw std::runtime_error("to_gl_internal_format: Unexpected format");
+	return 0;
+}
+
 GLenum to_gl_format(PixelFormat format)
 {
-	if (format == PixelFormat::RGBA)
+	if (format == PixelFormat::RGBA_UNORM || format == PixelFormat::RGBA_SRGB)
 		return GL_RGBA;
-	if (format == PixelFormat::RGB)
+	if (format == PixelFormat::RGB_UNORM || format == PixelFormat::RGB_SRGB)
 		return GL_RGB;
 	throw std::runtime_error("to_gl_format: Unexpected format");
 	return 0;
@@ -41,7 +55,8 @@ std::uint64_t Texture::CubeImageData::GetSize() const
 	return static_cast<std::uint64_t>(m_width * m_height * GetPixelSize(m_format));
 }
 
-Texture::Texture(ImageData const & image_data, bool use_mip_map /*= true*/)
+Texture::Texture(GraphicsApi const & graphics_api, ImageData const & image_data, bool use_mip_map /*= true*/)
+	: m_graphics_api(graphics_api)
 {
 	if (!image_data.IsValid())
 		throw std::runtime_error("Texture() image_data not valid");
@@ -55,11 +70,12 @@ Texture::Texture(ImageData const & image_data, bool use_mip_map /*= true*/)
 	glTexParameteri(m_type, GL_TEXTURE_MIN_FILTER, use_mip_map ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
 	glTexParameteri(m_type, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+	GLenum internal_format = to_gl_internal_format(image_data.m_format);
 	GLenum format = to_gl_format(image_data.m_format);
 	glTexImage2D(
 		m_type,
 		0 /*level*/,
-		format,
+		internal_format,
 		image_data.m_width,
 		image_data.m_height,
 		0 /*border*/,
@@ -71,7 +87,8 @@ Texture::Texture(ImageData const & image_data, bool use_mip_map /*= true*/)
 		glGenerateMipmap(m_type);
 }
 
-Texture::Texture(CubeImageData const & image_data)
+Texture::Texture(GraphicsApi const & graphics_api, CubeImageData const & image_data)
+	: m_graphics_api(graphics_api)
 {
 	if (!image_data.IsValid())
 		throw std::runtime_error("Texture() image_data not valid");
@@ -86,13 +103,14 @@ Texture::Texture(CubeImageData const & image_data)
 	glTexParameteri(m_type, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(m_type, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
+	GLenum internal_format = to_gl_internal_format(image_data.m_format);
 	GLenum format = to_gl_format(image_data.m_format);
 	for (unsigned int i = 0; i < image_data.m_data.size(); i++)
 	{
 		glTexImage2D(
 			GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
 			0,
-			format,
+			internal_format,
 			image_data.m_width,
 			image_data.m_height,
 			0,
@@ -115,6 +133,7 @@ void Texture::destroy_texture()
 }
 
 Texture::Texture(Texture && other)
+	: m_graphics_api(other.m_graphics_api)
 {
 	*this = std::move(other);
 }

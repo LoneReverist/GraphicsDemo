@@ -18,6 +18,7 @@ module;
 
 export module FontAtlas;
 
+import GraphicsApi;
 import StbImage;
 import Texture;
 
@@ -33,9 +34,9 @@ public:
 	};
 
 public:
-	FontAtlas(std::filesystem::path const & image_path, std::filesystem::path const & json_path)
+	FontAtlas(GraphicsApi const & graphics_api, std::filesystem::path const & image_path, std::filesystem::path const & json_path)
 	{
-		init_texture(image_path);
+		init_texture(graphics_api, image_path);
 		init_glyphs(json_path);
 	}
 
@@ -53,9 +54,9 @@ public:
 	float GetPxRange() const { return m_px_range; }
 
 private:
-	void init_texture(std::filesystem::path const & image_path)
+	void init_texture(GraphicsApi const & graphics_api, std::filesystem::path const & image_path)
 	{
-		PixelFormat format = PixelFormat::RGB;
+		PixelFormat format = PixelFormat::RGB_UNORM;
 
 		StbImage image;
 		image.LoadImage(image_path, GetPixelSize(format) /*STBI_rgb*/, true /*flip_vertically*/);
@@ -66,6 +67,7 @@ private:
 		m_height = static_cast<std::uint32_t>(image.GetHeight());
 
 		m_texture = std::make_unique<Texture>(
+			graphics_api,
 			Texture::ImageData{
 				.m_data = image.GetData(),
 				.m_format = format,

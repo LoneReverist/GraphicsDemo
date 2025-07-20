@@ -62,6 +62,8 @@ GraphicsApi::GraphicsApi(LoadProcFn * load_proc_fn)
 
 	glEnable(GL_DEBUG_OUTPUT);
 	glDebugMessageCallback(debug_message_callback, 0);
+
+	glEnable(GL_FRAMEBUFFER_SRGB);
 }
 
 GraphicsApi::~GraphicsApi()

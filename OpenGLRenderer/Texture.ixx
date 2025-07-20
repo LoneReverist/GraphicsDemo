@@ -7,13 +7,15 @@ module;
 
 export module Texture;
 
-export enum class PixelFormat : std::uint8_t { RGB, RGBA };
+import GraphicsApi;
+
+export enum class PixelFormat : std::uint8_t { RGB_UNORM, RGBA_UNORM, RGB_SRGB, RGBA_SRGB };
 
 export std::uint8_t GetPixelSize(PixelFormat format)
 {
-	if (format == PixelFormat::RGBA)
+	if (format == PixelFormat::RGBA_UNORM || format == PixelFormat::RGBA_SRGB)
 		return 4;
-	if (format == PixelFormat::RGB)
+	if (format == PixelFormat::RGB_UNORM || format == PixelFormat::RGB_SRGB)
 		return 3;
 	throw std::runtime_error("GetPixelSize: Unexpected format");
 	return 0;
@@ -25,7 +27,7 @@ public:
 	struct ImageData
 	{
 		std::uint8_t const * m_data = nullptr;
-		PixelFormat m_format = PixelFormat::RGBA;
+		PixelFormat m_format = PixelFormat::RGBA_SRGB;
 		std::uint32_t m_width = 0;
 		std::uint32_t m_height = 0;
 
@@ -36,7 +38,7 @@ public:
 	struct CubeImageData
 	{
 		std::array<std::uint8_t const *, 6> m_data;
-		PixelFormat m_format = PixelFormat::RGBA;
+		PixelFormat m_format = PixelFormat::RGBA_SRGB;
 		std::uint32_t m_width = 0;
 		std::uint32_t m_height = 0;
 
@@ -45,8 +47,8 @@ public:
 	};
 
 public:
-	Texture(ImageData const & image_data, bool use_mip_map = true);
-	Texture(CubeImageData const & image_data);
+	Texture(GraphicsApi const & graphics_api, ImageData const & image_data, bool use_mip_map = true);
+	Texture(GraphicsApi const & graphics_api, CubeImageData const & image_data);
 	~Texture();
 
 	Texture(Texture && other);
@@ -63,6 +65,8 @@ private:
 	void destroy_texture();
 
 private:
+	GraphicsApi const & m_graphics_api;
+
 	unsigned int m_type = 0;
 	unsigned int m_tex_id = 0;
 };

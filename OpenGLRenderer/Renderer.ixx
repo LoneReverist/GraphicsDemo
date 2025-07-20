@@ -11,6 +11,7 @@ module;
 
 export module Renderer;
 
+import GraphicsApi;
 import GraphicsPipeline;
 import Mesh;
 import RenderObject;
@@ -24,7 +25,7 @@ struct PipelineContainer
 export class Renderer
 {
 public:
-	Renderer() = default;
+	explicit Renderer(GraphicsApi const & graphics_api);
 
 	void Render() const;
 
@@ -37,6 +38,8 @@ public:
 	void SetClearColor(glm::vec3 const & color) { m_clear_color = color; }
 
 private:
+	GraphicsApi const & m_graphics_api;
+
 	std::vector<PipelineContainer> m_pipeline_containers;
 
 	std::vector<Mesh> m_meshes; // TODO: need asset manager

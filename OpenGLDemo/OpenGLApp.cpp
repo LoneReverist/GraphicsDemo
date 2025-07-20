@@ -46,7 +46,7 @@ OpenGLApp::OpenGLApp(WindowSize window_size, std::string title)
 			app->OnKeyEvent(key, scan_code, action, mods);
 		});
 
-	OnWindowResize(window_size);
+	m_window_size.store(window_size);
 }
 
 OpenGLApp::~OpenGLApp()
@@ -60,36 +60,38 @@ void OpenGLApp::Run()
 	if (!IsInitialized() || !HasWindow())
 		return;
 
-	std::jthread update_render_loop([&window = m_window, &new_window_size = m_new_window_size, &input = m_input](std::stop_token s_token)
+	std::jthread update_render_loop([&window = m_window, &window_size = m_window_size, &input = m_input](std::stop_token s_token)
 		{
 			glfwMakeContextCurrent(window);
 
+			WindowSize size = window_size.load();
+
 			GraphicsApi graphics_api{ reinterpret_cast<GraphicsApi::LoadProcFn *>(glfwGetProcAddress) };
 
-			Scene scene;
+			Scene scene{ graphics_api };
 			scene.Init();
+			scene.OnViewportResized(size.m_width, size.m_height);
 
 			double last_update_time = glfwGetTime();
 
-			WindowSize size;
 			while (!s_token.stop_requested())
 			{
-				WindowSize new_size = new_window_size.load();
-				if (size != new_size)
-				{
-					size = new_size;
-					graphics_api.SetViewport(new_size.m_width, new_size.m_height);
-					scene.OnViewportResized(new_size.m_width, new_size.m_height);
-				}
-
 				double cur_time = glfwGetTime();
 				double delta_time = cur_time - last_update_time;
 				last_update_time = cur_time;
 
 				scene.Update(delta_time, input);
-				scene.Render();
 
+				scene.Render();
 				glfwSwapBuffers(window);
+
+				WindowSize new_size = window_size.load();
+				if (new_size != size)
+				{
+					graphics_api.SetViewport(new_size.m_width, new_size.m_height);
+					scene.OnViewportResized(new_size.m_width, new_size.m_height);
+					size = new_size;
+				}
 			}
 		});
 
@@ -99,7 +101,7 @@ void OpenGLApp::Run()
 
 void OpenGLApp::OnWindowResize(WindowSize size)
 {
-	m_new_window_size.store(size);
+	m_window_size.store(size);
 }
 
 void OpenGLApp::OnKeyEvent(int key, int /*scan_code*/, int action, int /*mods*/)

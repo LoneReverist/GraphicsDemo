@@ -12,6 +12,7 @@ export module TextMesh;
 
 import AssetId;
 import FontAtlas;
+import GraphicsApi;
 import Mesh;
 import Renderer;
 import Vertex;
@@ -22,6 +23,7 @@ public:
 	using VertexT = Texture2dVertex;
 
 	static TextMesh Create(
+		GraphicsApi const & graphics_api,
 		Renderer & renderer,
 		std::string const & text,
 		FontAtlas const & font_atlas,
@@ -30,55 +32,70 @@ public:
 		int viewport_width,
 		int viewport_height)
 	{
-		TextMesh text_mesh{ renderer, text, font_atlas, font_size, origin };
+		TextMesh text_mesh{ graphics_api, renderer, text, font_atlas, font_size, origin, viewport_width, viewport_height };
 
-		Mesh mesh = text_mesh.create_mesh(viewport_width, viewport_height);
+		Mesh mesh = text_mesh.create_mesh();
 		text_mesh.m_asset_id.m_index = renderer.AddMesh(std::move(mesh));
 		return text_mesh;
 	}
 
 	void OnViewportResized(int width, int height)
 	{
-		Mesh mesh = create_mesh(width, height);
+		if (width == m_viewport_width && height == m_viewport_height)
+			return; // no change
+
+		m_viewport_width = width;
+		m_viewport_height = height;
+
+		Mesh mesh = create_mesh();
 		m_renderer.UpdateMesh(m_asset_id.m_index, std::move(mesh));
 	}
 
-	void SetText(std::string const & text, int viewport_width, int viewport_height)
+	void SetText(std::string const & text)
 	{
 		if (m_text == text)
 			return; // no change
+
 		m_text = text;
-		OnViewportResized(viewport_width, viewport_height);
+
+		Mesh mesh = create_mesh();
+		m_renderer.UpdateMesh(m_asset_id.m_index, std::move(mesh));
 	}
 
 	AssetId<VertexT> GetAssetId() const { return m_asset_id; }
 
 private:
 	TextMesh(
+		GraphicsApi const & graphics_api,
 		Renderer & renderer,
 		std::string const & text,
 		FontAtlas const & font_atlas,
 		float font_size,
-		glm::vec2 origin)
-		: m_renderer(renderer)
+		glm::vec2 origin,
+		int viewport_width,
+		int viewport_height)
+		: m_graphics_api(graphics_api)
+		, m_renderer(renderer)
 		, m_text(text)
 		, m_font_atlas(font_atlas)
 		, m_font_size(font_size)
 		, m_origin(origin)
+		, m_viewport_width(viewport_width)
+		, m_viewport_height(viewport_height)
 	{
 	}
 
-	Mesh create_mesh(int viewport_width, int viewport_height)
+	Mesh create_mesh()
 	{
 		std::vector<VertexT> verts;
 		std::vector<Mesh::IndexT> indices;
 
-		if (viewport_height == 0)
-			return Mesh{ verts, indices };
+		if (m_viewport_width == 0 || m_viewport_height == 0)
+			return Mesh{ m_graphics_api, verts, indices };
 
 		// convert font size to screen coordinates -1 to 1
-		float height_scale = m_font_size * (2.0f / viewport_height);
-		float width_scale = m_font_size * (2.0f / viewport_width);
+		float height_scale = m_font_size * (2.0f / m_viewport_height);
+		float width_scale = m_font_size * (2.0f / m_viewport_width);
 
 		glm::vec2 pen = m_origin;
 		for (char c : m_text)
@@ -125,10 +142,11 @@ private:
 			pen.x += g.m_advance * width_scale;
 		}
 
-		return Mesh{ verts, indices };
+		return Mesh{ m_graphics_api, verts, indices };
 	}
 
 private:
+	GraphicsApi const & m_graphics_api;
 	Renderer & m_renderer;
 	AssetId<VertexT> m_asset_id;
 
@@ -136,4 +154,7 @@ private:
 	FontAtlas const & m_font_atlas;
 	float m_font_size;
 	glm::vec2 m_origin;
+
+	int m_viewport_width = 0;
+	int m_viewport_height = 0;
 };

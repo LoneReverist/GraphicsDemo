@@ -25,32 +25,40 @@ import Vertex;
 
 namespace
 {
-	std::unique_ptr<Texture> create_texture(GraphicsApi const & graphics_api, std::filesystem::path const & filepath)
+	std::unique_ptr<Texture> create_texture(
+		GraphicsApi const & graphics_api,
+		std::filesystem::path const & filepath)
 	{
-		StbImage image(filepath);
+		PixelFormat format = PixelFormat::RGBA_SRGB;
+
+		StbImage image(filepath, GetPixelSize(format) /*STBI_rgb_alpha*/);
 		if (!image.IsValid())
 		{
 			std::cout << "Failed to load image: " << filepath << std::endl;
 			return nullptr;
 		}
 
-		Texture::ImageData image_data{
-			.m_data = image.GetData(),
-			.m_width = static_cast<std::uint32_t>(image.GetWidth()),
-			.m_height = static_cast<std::uint32_t>(image.GetHeight())
-		};
-		return std::make_unique<Texture>(graphics_api, image_data);
+		return std::make_unique<Texture>(
+			graphics_api,
+			Texture::ImageData{
+				.m_data = image.GetData(),
+				.m_format = format,
+				.m_width = static_cast<std::uint32_t>(image.GetWidth()),
+				.m_height = static_cast<std::uint32_t>(image.GetHeight())
+			});
 	}
 
 	std::unique_ptr<Texture> create_cubemap_texture(
 		GraphicsApi const & graphics_api,
 		std::array<std::filesystem::path, 6> const & filepaths)
 	{
+		PixelFormat format = PixelFormat::RGBA_SRGB;
+
 		int width = 0, height = 0;
 		std::array<StbImage, 6> images;
 		for (size_t i = 0; i < filepaths.size(); ++i)
 		{
-			images[i].LoadImage(filepaths[i]);
+			images[i].LoadImage(filepaths[i], GetPixelSize(format) /*STBI_rgb_alpha*/);
 			if (!images[i].IsValid())
 			{
 				std::cout << "Failed to load cubemap image: " << filepaths[i] << std::endl;
@@ -72,12 +80,15 @@ namespace
 		std::array<std::uint8_t const *, 6> data;
 		std::ranges::transform(images, data.begin(),
 			[](StbImage const & img) { return img.GetData(); });
-		Texture::CubeImageData cubemap_data{
-			.m_data = data,
-			.m_width = static_cast<std::uint32_t>(width),
-			.m_height = static_cast<std::uint32_t>(height)
-		};
-		return std::make_unique<Texture>(graphics_api, cubemap_data);
+
+		return std::make_unique<Texture>(
+			graphics_api,
+			Texture::CubeImageData{
+				.m_data = data,
+				.m_format = format,
+				.m_width = static_cast<std::uint32_t>(width),
+				.m_height = static_cast<std::uint32_t>(height)
+			});
 	}
 
 	class GroundMesh
@@ -86,16 +97,16 @@ namespace
 		using VertexT = TextureVertex;
 
 		static AssetId<VertexT> Create(
-			Renderer & renderer,
-			GraphicsApi const & graphics_api);
+			GraphicsApi const & graphics_api,
+			Renderer & renderer);
 
 	private:
 		static Mesh create_ground_mesh(GraphicsApi const & graphics_api);
 	};
 
 	auto GroundMesh::Create(
-		Renderer & renderer,
-		GraphicsApi const & graphics_api)
+		GraphicsApi const & graphics_api,
+		Renderer & renderer)
 		-> AssetId<VertexT>
 	{
 		AssetId<VertexT> id;
@@ -142,16 +153,16 @@ namespace
 		using VertexT = PositionVertex;
 
 		static AssetId<VertexT> Create(
-			Renderer & renderer,
-			GraphicsApi const & graphics_api);
+			GraphicsApi const & graphics_api,
+			Renderer & renderer);
 
 	private:
 		static Mesh create_skybox_mesh(GraphicsApi const & graphics_api);
 	};
 
 	auto SkyboxMesh::Create(
-		Renderer & renderer,
-		GraphicsApi const & graphics_api)
+		GraphicsApi const & graphics_api,
+		Renderer & renderer)
 		-> AssetId<VertexT>
 	{
 		AssetId<VertexT> id;
@@ -203,8 +214,8 @@ namespace
 		using VertexT = NormalVertex;
 
 		static AssetId<VertexT> Create(
-			Renderer & renderer,
 			GraphicsApi const & graphics_api,
+			Renderer & renderer,
 			std::filesystem::path const & file_path);
 
 	private:
@@ -214,8 +225,8 @@ namespace
 	};
 
 	auto FileMesh::Create(
-		Renderer & renderer,
 		GraphicsApi const & graphics_api,
+		Renderer & renderer,
 		std::filesystem::path const & file_path)
 		-> AssetId<VertexT>
 	{
@@ -812,16 +823,16 @@ void Scene::Init()
 	AssetId<SkyboxPipeline::VertexT> skybox_pipeline_id = SkyboxPipeline::Create(m_renderer, *this, shaders_path, *m_skybox_tex);
 	//AssetId<ColorPipeline::VertexT> color_pipeline_id = ColorPipeline::Create(m_renderer, *this, shaders_path);
 
-	AssetId<FileMesh::VertexT> sword_mesh_id = FileMesh::Create(m_renderer, m_graphics_api,
+	AssetId<FileMesh::VertexT> sword_mesh_id = FileMesh::Create(m_graphics_api, m_renderer,
 		objects_path / "skullsword.obj");
-	AssetId<FileMesh::VertexT> red_gem_mesh_id = FileMesh::Create(m_renderer, m_graphics_api,
+	AssetId<FileMesh::VertexT> red_gem_mesh_id = FileMesh::Create(m_graphics_api, m_renderer,
 		objects_path / "redgem.obj");
-	AssetId<FileMesh::VertexT> green_gem_mesh_id = FileMesh::Create(m_renderer, m_graphics_api,
+	AssetId<FileMesh::VertexT> green_gem_mesh_id = FileMesh::Create(m_graphics_api, m_renderer,
 		objects_path / "greengem.obj");
-	AssetId<FileMesh::VertexT> blue_gem_mesh_id = FileMesh::Create(m_renderer, m_graphics_api,
+	AssetId<FileMesh::VertexT> blue_gem_mesh_id = FileMesh::Create(m_graphics_api, m_renderer,
 		objects_path / "bluegem.obj");
-	AssetId<GroundMesh::VertexT> ground_mesh_id = GroundMesh::Create(m_renderer, m_graphics_api);
-	AssetId<SkyboxMesh::VertexT> skybox_mesh_id = SkyboxMesh::Create(m_renderer, m_graphics_api);
+	AssetId<GroundMesh::VertexT> ground_mesh_id = GroundMesh::Create(m_graphics_api, m_renderer);
+	AssetId<SkyboxMesh::VertexT> skybox_mesh_id = SkyboxMesh::Create(m_graphics_api, m_renderer);
 
 	m_sword0 = create_render_object(m_renderer, "sword0", sword_mesh_id, reflection_pipeline_id);
 	m_sword1 = create_render_object(m_renderer, "sword1", sword_mesh_id, reflection_pipeline_id);

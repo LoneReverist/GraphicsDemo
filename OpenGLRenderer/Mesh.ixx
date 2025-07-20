@@ -10,6 +10,7 @@ module;
 
 export module Mesh;
 
+import GraphicsApi;
 import Vertex;
 
 export class Mesh
@@ -18,7 +19,9 @@ public:
 	using IndexT = std::uint16_t;
 
 	template <IsVertex VertexT>
-	Mesh(std::vector<VertexT> const & vertices,
+	Mesh(
+		GraphicsApi const & graphics_api,
+		std::vector<VertexT> const & vertices,
 		std::vector<IndexT> const & indices);
 	~Mesh();
 
@@ -36,6 +39,8 @@ private:
 	void destroy_buffers();
 
 private:
+	GraphicsApi const & m_graphics_api;
+
 	unsigned int m_vbo_id = 0; // vertex buffer object
 	unsigned int m_ebo_id = 0; // element buffer object
 	unsigned int m_vao_id = 0; // vertex array object
@@ -44,8 +49,11 @@ private:
 };
 
 template <IsVertex VertexT>
-Mesh::Mesh(std::vector<VertexT> const & vertices,
+Mesh::Mesh(
+	GraphicsApi const & graphics_api,
+	std::vector<VertexT> const & vertices,
 	std::vector<IndexT> const & indices)
+	: m_graphics_api{ graphics_api }
 {
 	if (vertices.empty())
 	{
@@ -96,6 +104,7 @@ void Mesh::destroy_buffers()
 }
 
 Mesh::Mesh(Mesh && other)
+	: m_graphics_api(other.m_graphics_api)
 {
 	*this = std::move(other);
 }

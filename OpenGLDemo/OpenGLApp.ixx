@@ -38,6 +38,6 @@ private:
 	bool m_initialized = false;
 	GLFWwindow * m_window = nullptr;
 
-	std::atomic<WindowSize> m_new_window_size;
+	std::atomic<WindowSize> m_window_size;
 	Input m_input;
 };
