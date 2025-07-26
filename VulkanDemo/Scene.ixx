@@ -9,10 +9,12 @@ module;
 export module Scene;
 
 import Camera;
+import FontAtlas;
 import GraphicsApi;
 import Input;
 import Renderer;
 import RenderObject;
+import TextMesh;
 import Texture;
 
 struct AmbientLight
@@ -69,6 +71,7 @@ private:
 
 	std::unique_ptr<Texture> m_ground_tex;
 	std::unique_ptr<Texture> m_skybox_tex;
+	std::unique_ptr<FontAtlas> m_arial_font;
 
 	std::shared_ptr<RenderObject> m_sword0;
 	std::shared_ptr<RenderObject> m_sword1;
@@ -77,6 +80,7 @@ private:
 	std::shared_ptr<RenderObject> m_blue_gem;
 	std::shared_ptr<RenderObject> m_ground;
 	std::shared_ptr<RenderObject> m_skybox;
+	std::shared_ptr<RenderObject> m_text;
 
 	AmbientLight m_ambient_light;
 	PointLight m_pointlight_1;
@@ -84,5 +88,9 @@ private:
 	PointLight m_pointlight_3;
 	SpotLight m_spotlight;
 
+	std::unique_ptr<TextMesh> m_fps_label;
+
 	float m_timer = 0.0;
+	float m_frame_timer = 0.0;
+	int m_frame_count = 0;
 };

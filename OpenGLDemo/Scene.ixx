@@ -95,7 +95,4 @@ private:
 	float m_timer = 0.0;
 	float m_frame_timer = 0.0;
 	int m_frame_count = 0;
-
-	int m_viewport_width = 0;
-	int m_viewport_height = 0;
 };

@@ -21,6 +21,7 @@ import ObjLoader;
 import PipelineBuilder;
 import PlatformUtils;
 import StbImage;
+import TextPipeline;
 import Vertex;
 
 namespace
@@ -805,6 +806,7 @@ void Scene::Init()
 	const std::filesystem::path shaders_path = resources_path / "shaders";
 	const std::filesystem::path textures_path = resources_path / "textures";
 	const std::filesystem::path objects_path = resources_path / "objects";
+	const std::filesystem::path fonts_path = resources_path / "fonts";
 
 	m_ground_tex = create_texture(m_graphics_api,
 		textures_path / "skybox" / "top.jpg");
@@ -817,11 +819,14 @@ void Scene::Init()
 		textures_path / "skybox" / "back.jpg"
 	});
 
+	m_arial_font = std::make_unique<FontAtlas>(m_graphics_api, fonts_path / "ArialAtlas.png", fonts_path / "ArialAtlas.json");
+
 	AssetId<TexturePipeline::VertexT> texture_pipeline_id = TexturePipeline::Create(m_renderer, *this, shaders_path, *m_ground_tex);
 	AssetId<LightSourcePipeline::VertexT> light_source_pipeline_id = LightSourcePipeline::Create(m_renderer, *this, shaders_path);
 	AssetId<ReflectionPipeline::VertexT> reflection_pipeline_id = ReflectionPipeline::Create(m_renderer, *this, shaders_path, *m_skybox_tex);
 	AssetId<SkyboxPipeline::VertexT> skybox_pipeline_id = SkyboxPipeline::Create(m_renderer, *this, shaders_path, *m_skybox_tex);
 	//AssetId<ColorPipeline::VertexT> color_pipeline_id = ColorPipeline::Create(m_renderer, *this, shaders_path);
+	AssetId<TextPipeline::VertexT> text_pipeline_id = TextPipeline::Create(m_graphics_api, m_renderer, *m_arial_font, shaders_path);
 
 	AssetId<FileMesh::VertexT> sword_mesh_id = FileMesh::Create(m_graphics_api, m_renderer,
 		objects_path / "skullsword.obj");
@@ -834,6 +839,10 @@ void Scene::Init()
 	AssetId<GroundMesh::VertexT> ground_mesh_id = GroundMesh::Create(m_graphics_api, m_renderer);
 	AssetId<SkyboxMesh::VertexT> skybox_mesh_id = SkyboxMesh::Create(m_graphics_api, m_renderer);
 
+	m_fps_label = std::make_unique<TextMesh>(TextMesh::Create(m_graphics_api, m_renderer,
+		"", *m_arial_font, 36.0 /*font_size*/, glm::vec2{ -0.9, -0.9 } /*origin*/,
+		0 /*viewport_width*/, 0/*viewport_height*/, true /*flip_y*/));
+
 	m_sword0 = create_render_object(m_renderer, "sword0", sword_mesh_id, reflection_pipeline_id);
 	m_sword1 = create_render_object(m_renderer, "sword1", sword_mesh_id, reflection_pipeline_id);
 	m_red_gem = create_render_object(m_renderer, "red gem", red_gem_mesh_id, light_source_pipeline_id);
@@ -841,6 +850,8 @@ void Scene::Init()
 	m_blue_gem = create_render_object(m_renderer, "blue gem", blue_gem_mesh_id, light_source_pipeline_id);
 	m_ground = create_render_object(m_renderer, "ground", ground_mesh_id, texture_pipeline_id);
 	m_skybox = create_render_object(m_renderer, "skybox", skybox_mesh_id, skybox_pipeline_id);
+	m_text = create_render_object(m_renderer, "text", m_fps_label->GetAssetId(), text_pipeline_id);
+	m_text->SetColor({ 1.0f, 1.0f, 0.0f });
 
 	m_red_gem->SetColor({ 1.0, 0.0, 0.0 });
 	m_green_gem->SetColor({ 0.0, 1.0, 0.0 });
@@ -870,12 +881,23 @@ void Scene::Init()
 void Scene::OnViewportResized(int width, int height)
 {
 	m_camera.OnViewportResized(width, height);
+	m_fps_label->OnViewportResized(width, height);
 }
 
 void Scene::Update(double delta_time, Input const & input)
 {
 	const float dt = static_cast<float>(delta_time);
 	m_timer += dt;
+
+	m_frame_timer += dt;
+	m_frame_count++;
+	if (m_frame_timer >= 1.0)
+	{
+		float fps = static_cast<float>(m_frame_count) / m_frame_timer;
+		m_fps_label->SetText("FPS: " + std::to_string(static_cast<int>(fps)));
+		m_frame_timer = 0.0;
+		m_frame_count = 0;
+	}
 
 	m_camera.Update(delta_time, input);
 

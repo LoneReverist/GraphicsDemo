@@ -167,13 +167,13 @@ private:
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME
 	};
 
-	std::vector<char const *> const m_validation_layers = {
+	std::vector<char const *> m_validation_layers = {
 		"VK_LAYER_KHRONOS_validation"
 	};
 
 #ifdef NDEBUG
-	bool const m_enable_validation_layers = false;
+	bool m_enable_validation_layers = false;
 #else
-	bool const m_enable_validation_layers = true;
+	bool m_enable_validation_layers = true;
 #endif
 };

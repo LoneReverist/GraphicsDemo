@@ -232,11 +232,11 @@ namespace
 			phys_device_info.qfis.present_family.value()
 		};
 		
+		float queue_priority = 1.0f;
 		std::vector<VkDeviceQueueCreateInfo> queue_create_infos(unique_queue_families.size());
 		std::ranges::transform(unique_queue_families, queue_create_infos.begin(),
-			[](std::uint32_t qfi)
+			[&queue_priority](std::uint32_t qfi)
 			{
-				constexpr float queue_priority = 1.0f;
 				return VkDeviceQueueCreateInfo{
 					.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
 					.queueFamilyIndex = qfi,
@@ -610,7 +610,11 @@ GraphicsApi::GraphicsApi(
 	char const ** extensions)
 {
 	if (m_enable_validation_layers && !validation_layers_are_supported(m_validation_layers))
-		throw std::runtime_error("Validation layers requested, but not available!");
+	{
+		std::cout << "Validation layers requested, but not available!" << std::endl;
+		m_enable_validation_layers = false;
+		m_validation_layers.clear();
+	}
 
 	m_instance = create_instance(app_title, extension_count, extensions, m_enable_validation_layers, m_validation_layers);
 	if (m_instance == VK_NULL_HANDLE)

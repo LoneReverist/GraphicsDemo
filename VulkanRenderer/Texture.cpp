@@ -18,12 +18,12 @@ VkFormat to_vk_format(PixelFormat format)
 	if (format == PixelFormat::RGBA_UNORM)
 		return VK_FORMAT_R8G8B8A8_UNORM;
 	if (format == PixelFormat::RGB_UNORM)
-		return VK_FORMAT_R8G8B8_UNORM;
+		return VK_FORMAT_R8G8B8A8_UNORM; //VK_FORMAT_R8G8B8_UNORM; getting a crash with this one, not well supported by drivers?
 	if (format == PixelFormat::RGBA_SRGB)
 		return VK_FORMAT_R8G8B8A8_SRGB;
 	if (format == PixelFormat::RGB_SRGB)
 		return VK_FORMAT_R8G8B8_SRGB;
-	throw std::runtime_error("to_gl_format: Unexpected format");
+	throw std::runtime_error("to_vk_format: Unexpected format");
 	return VK_FORMAT_UNDEFINED;
 }
 
@@ -84,7 +84,27 @@ VkResult load_image_into_buffer(
 	VkBuffer & out_buffer,
 	VkDeviceMemory & out_buffer_memory)
 {
-	std::uint64_t buffer_size = image_data.GetSize();
+	std::uint64_t input_size = image_data.GetSize();
+
+	const void * data_ptr = image_data.m_data;
+	std::uint64_t buffer_size = input_size;
+
+	std::vector<std::uint8_t> rgba_data;
+	if (image_data.m_format == PixelFormat::RGB_UNORM)
+	{
+		// Convert RGB to RGBA
+		const std::uint8_t * src = image_data.m_data;
+		const std::size_t pixel_count = image_data.m_width * image_data.m_height;
+		rgba_data.reserve(pixel_count * 4);
+		for (std::size_t i = 0; i < pixel_count; ++i) {
+			rgba_data.push_back(src[i * 3 + 0]);
+			rgba_data.push_back(src[i * 3 + 1]);
+			rgba_data.push_back(src[i * 3 + 2]);
+			rgba_data.push_back(255); // Opaque alpha
+		}
+		data_ptr = rgba_data.data();
+		buffer_size = pixel_count * 4;
+	}
 
 	VkResult result = graphics_api.CreateBuffer(
 		buffer_size,
@@ -99,7 +119,7 @@ VkResult load_image_into_buffer(
 
 	void * buffer_data = nullptr;
 	vkMapMemory(device, out_buffer_memory, 0, buffer_size, 0, &buffer_data);
-	std::memcpy(buffer_data, image_data.m_data, buffer_size);
+	std::memcpy(buffer_data, data_ptr, buffer_size);
 	vkUnmapMemory(device, out_buffer_memory);
 
 	return VK_SUCCESS; // image goes out of scope and frees memory

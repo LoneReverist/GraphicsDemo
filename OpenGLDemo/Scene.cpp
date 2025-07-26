@@ -789,9 +789,8 @@ void Scene::Init()
 	AssetId<GroundMesh::VertexT> ground_mesh_id = GroundMesh::Create(m_graphics_api, m_renderer);
 	AssetId<SkyboxMesh::VertexT> skybox_mesh_id = SkyboxMesh::Create(m_graphics_api, m_renderer);
 
-	TextMesh text_mesh = TextMesh::Create(m_graphics_api, m_renderer, "",
-		*m_arial_font, 36.0, glm::vec2{ -0.9, -0.9 }, m_viewport_width, m_viewport_height);
-	m_fps_label = std::make_unique<TextMesh>(std::move(text_mesh));
+	m_fps_label = std::make_unique<TextMesh>(TextMesh::Create(m_graphics_api, m_renderer,
+		"", *m_arial_font, 36.0 /*font_size*/, glm::vec2{ -0.9, -0.9 } /*origin*/, 0 /*viewport_width*/, 0/*viewport_height*/));
 
 	m_sword0 = create_render_object(m_renderer, "sword0", sword_mesh_id, reflection_pipeline_id, skybox_tex_id);
 	m_sword1 = create_render_object(m_renderer, "sword1", sword_mesh_id, reflection_pipeline_id, skybox_tex_id);
@@ -800,7 +799,7 @@ void Scene::Init()
 	m_blue_gem = create_render_object(m_renderer, "blue gem", blue_gem_mesh_id, light_source_pipeline_id);
 	m_ground = create_render_object(m_renderer, "ground", ground_mesh_id, texture_pipeline_id, ground_tex_id);
 	m_skybox = create_render_object(m_renderer, "skybox", skybox_mesh_id, skybox_pipeline_id, skybox_tex_id);
-	m_text = create_render_object(m_renderer, "text", text_mesh.GetAssetId(), text_pipeline_id);
+	m_text = create_render_object(m_renderer, "text", m_fps_label->GetAssetId(), text_pipeline_id);
 
 	//m_text->SetColor({ 1.0, 0.0, 0.0 });
 
@@ -831,9 +830,6 @@ void Scene::Init()
 
 void Scene::OnViewportResized(int width, int height)
 {
-	m_viewport_width = width;
-	m_viewport_height = height;
-
 	m_camera.OnViewportResized(width, height);
 	m_fps_label->OnViewportResized(width, height);
 }

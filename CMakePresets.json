@@ -1,26 +1,3 @@
-{
-  "version": 8,
-  "configurePresets": [
-    {
-      "name": "x64-windows-static",
-      "description": "Static Windows build using vcpkg",
-      "generator": "Visual Studio 17 2022",
-	  "architecture": "x64",
-      "cacheVariables": {
-        "CMAKE_TOOLCHAIN_FILE": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake",
-        "VCPKG_ROOT": "C:/vcpkg",
-        "VCPKG_TARGET_TRIPLET": "x64-windows-static"
-      }
-    },
-    {
-      "name": "x64-linux",
-      "description": "Linux build using vcpkg",
-      "generator": "Ninja",
-      "cacheVariables": {
-        "CMAKE_TOOLCHAIN_FILE": "/opt/vcpkg/scripts/buildsystems/vcpkg.cmake",
-        "VCPKG_ROOT": "/opt/vcpkg",
-        "VCPKG_TARGET_TRIPLET": "x64-linux"
-      }
-    }
-  ]
-}
+version https://git-lfs.github.com/spec/v1
+oid sha256:24db78e593453f753f8f0ac6487fd84470f2ee07871070a2a816f3bafcce55c2
+size 730

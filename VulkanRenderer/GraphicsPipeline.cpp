@@ -170,7 +170,7 @@ namespace
 		bool has_texture)
 	{
 		std::vector<VkDescriptorSetLayoutBinding> layout_bindings;
-		layout_bindings.reserve(vs_descriptor_set_count + fs_descriptor_set_count);
+		layout_bindings.reserve(vs_descriptor_set_count + fs_descriptor_set_count + (has_texture ? 1 : 0));
 
 		for (std::uint32_t i = 0; i < vs_descriptor_set_count; ++i)
 		{
@@ -224,12 +224,16 @@ namespace
 	VkDescriptorPool create_descriptor_pool(VkDevice device,
 		std::uint32_t uniform_count, std::uint32_t descriptor_set_count, bool has_texture)
 	{
-		std::vector<VkDescriptorPoolSize> pool_sizes{
-			VkDescriptorPoolSize{
-				.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-				.descriptorCount = uniform_count * descriptor_set_count
-			}
-		};
+		std::vector<VkDescriptorPoolSize> pool_sizes;
+		
+		if (uniform_count > 0)
+		{
+			pool_sizes.emplace_back(
+				VkDescriptorPoolSize{
+					.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+					.descriptorCount = uniform_count * descriptor_set_count
+				});
+		}
 
 		if (has_texture)
 		{
