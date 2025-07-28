@@ -2,42 +2,26 @@
 
 module;
 
+#include <filesystem>
 #include <memory>
-#include <vector>
-
-#include <glm/vec3.hpp>
 
 export module Scene;
 
 import Camera;
+import ColorPipeline;
 import FontAtlas;
 import GraphicsApi;
 import Input;
+import LightsManager;
+import LightSourcePipeline;
+import ReflectionPipeline;
 import Renderer;
 import RenderObject;
+import SkyboxPipeline;
 import TextMesh;
+import TextPipeline;
 import Texture;
-
-struct AmbientLight
-{
-	alignas(16) glm::vec3 m_color{ 1.0, 1.0, 1.0 };
-};
-
-struct PointLight
-{
-	alignas(16) glm::vec3 m_pos{ 0.0, 0.0, 0.0 };
-	alignas(16) glm::vec3 m_color{ 1.0, 1.0, 1.0 };
-	alignas(4) float m_radius = 0.0f;
-};
-
-struct SpotLight
-{
-	alignas(16) glm::vec3 m_pos{ 0.0, 0.0, 0.0 };
-	alignas(16) glm::vec3 m_dir{ 0.0, 0.0, -1.0 };
-	alignas(16) glm::vec3 m_color{ 1.0, 1.0, 1.0 };
-	alignas(4) float m_inner_radius = 0.0;
-	alignas(4) float m_outer_radius = 0.0;
-};
+import TexturePipeline;
 
 export class Scene
 {
@@ -55,24 +39,23 @@ public:
 	void Update(double delta_time, Input const & input);
 	void Render() const;
 
-	GraphicsApi const & GetGraphicsApi() const { return m_graphics_api; }
-	Renderer const & GetRenderer() const { return m_renderer; }
-	Camera const & GetCamera() const { return m_camera; }
-
-	AmbientLight const & GetAmbientLight() const { return m_ambient_light; }
-	PointLight const & GetPointLight1() const { return m_pointlight_1; }
-	PointLight const & GetPointLight2() const { return m_pointlight_2; }
-	PointLight const & GetPointLight3() const { return m_pointlight_3; }
-	SpotLight const & GetSpotLight() const { return m_spotlight; }
-
-	Texture const & GetTexture(int id) const;
+private:
+	ColorPipeline create_color_pipeline();
+	TexturePipeline create_texture_pipeline(Texture const & texture);
+	SkyboxPipeline create_skybox_pipeline(Texture const & texture);
+	LightSourcePipeline create_light_source_pipeline();
+	ReflectionPipeline create_reflection_pipeline(Texture const & texture);
+	TextPipeline create_text_pipeline(FontAtlas const & font_atlas);
 
 private:
 	GraphicsApi const & m_graphics_api;
+	std::filesystem::path m_resources_path;
+
 	Renderer m_renderer;
 	Camera m_camera;
 
-	std::vector<std::unique_ptr<Texture>> m_textures;
+	std::unique_ptr<Texture> m_ground_tex;
+	std::unique_ptr<Texture> m_skybox_tex;
 	std::unique_ptr<FontAtlas> m_arial_font;
 
 	std::shared_ptr<RenderObject> m_sword0;
@@ -84,11 +67,7 @@ private:
 	std::shared_ptr<RenderObject> m_skybox;
 	std::shared_ptr<RenderObject> m_text;
 
-	AmbientLight m_ambient_light;
-	PointLight m_pointlight_1;
-	PointLight m_pointlight_2;
-	PointLight m_pointlight_3;
-	SpotLight m_spotlight;
+	LightsManager m_lights;
 
 	std::unique_ptr<TextMesh> m_fps_label;
 

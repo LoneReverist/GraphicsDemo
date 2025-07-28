@@ -12,6 +12,17 @@ export module Camera;
 
 import Input;
 
+export struct ViewProjUniform
+{
+	alignas(16) glm::mat4 m_view;
+	alignas(16) glm::mat4 m_proj;
+};
+
+export struct CameraPosUniform
+{
+	alignas(16) glm::vec3 m_pos;
+};
+
 export class Camera
 {
 public:
@@ -22,16 +33,14 @@ public:
 
 	void Update(double delta_time, Input const & input);
 
-	glm::vec3 const & GetPos() const { return m_pos; }
+	CameraPosUniform const & GetPosUniform() const { return m_pos_uniform; }
 	glm::vec3 const & GetDir() const { return m_dir; }
-	glm::mat4 const & GetViewTransform() const { return m_view_transform; }
-	glm::mat4 const & GetProjTransform() const { return m_proj_transform; }
+	ViewProjUniform const & GetViewProjUniform() const { return m_view_proj_uniform; }
 
 private:
-	glm::vec3 m_pos{ 0.0f, 0.0f, 0.0f };
+	CameraPosUniform m_pos_uniform{ { 0.0f, 0.0f, 0.0f } };
 	glm::vec3 m_dir{ 0.0f, 0.0f, -1.0f };
-	glm::mat4 m_view_transform = 1.0f;
-	glm::mat4 m_proj_transform = 1.0f;
+	ViewProjUniform m_view_proj_uniform;
 
 	bool m_flip_proj_y = false; // whether to flip the y-axis in the projection matrix
 
@@ -43,9 +52,9 @@ private:
 
 void Camera::Init(glm::vec3 const & pos, glm::vec3 const & dir)
 {
-	m_pos = pos;
+	m_pos_uniform.m_pos = pos;
 	m_dir = dir;
-	m_view_transform = glm::lookAt(m_pos, m_pos + m_dir, m_up_dir);
+	m_view_proj_uniform.m_view = glm::lookAt(m_pos_uniform.m_pos, m_pos_uniform.m_pos + m_dir, m_up_dir);
 }
 
 void Camera::OnViewportResized(int width, int height)
@@ -54,10 +63,10 @@ void Camera::OnViewportResized(int width, int height)
 		return;
 
 	const float aspect_ratio = static_cast<float>(width) / static_cast<float>(height);
-	m_proj_transform = glm::perspective(m_fov, aspect_ratio, m_near_plane, m_far_plane);
+	m_view_proj_uniform.m_proj = glm::perspective(m_fov, aspect_ratio, m_near_plane, m_far_plane);
 
 	if (m_flip_proj_y)
-		m_proj_transform[1][1] *= -1; // account for vulkan having flipped y-axis compared to opengl
+		m_view_proj_uniform.m_proj[1][1] *= -1; // account for vulkan having flipped y-axis compared to opengl
 }
 
 void Camera::Update(double delta_time, Input const & input)
@@ -100,9 +109,9 @@ void Camera::Update(double delta_time, Input const & input)
 	if (move)
 	{
 		const float speed = 10.0f;
-		m_pos += glm::normalize(velocity) * (speed * dt);
+		m_pos_uniform.m_pos += glm::normalize(velocity) * (speed * dt);
 	}
 
 	if (move || rotate)
-		m_view_transform = glm::lookAt(m_pos, m_pos + m_dir, glm::vec3(0.0, 0.0, 1.0));
+		m_view_proj_uniform.m_view = glm::lookAt(m_pos_uniform.m_pos, m_pos_uniform.m_pos + m_dir, glm::vec3(0.0, 0.0, 1.0));
 }

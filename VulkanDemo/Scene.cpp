@@ -14,799 +14,401 @@ module;
 module Scene;
 
 import AssetId;
-import GraphicsApi;
 import GraphicsPipeline;
 import Mesh;
 import ObjLoader;
-import PipelineBuilder;
 import PlatformUtils;
 import StbImage;
-import TextPipeline;
 import Vertex;
 
-namespace
+std::unique_ptr<Texture> create_texture(
+	GraphicsApi const & graphics_api,
+	std::filesystem::path const & filepath)
 {
-	std::unique_ptr<Texture> create_texture(
-		GraphicsApi const & graphics_api,
-		std::filesystem::path const & filepath)
-	{
-		PixelFormat format = PixelFormat::RGBA_SRGB;
+	PixelFormat format = PixelFormat::RGBA_SRGB;
 
-		StbImage image(filepath, GetPixelSize(format) /*STBI_rgb_alpha*/);
-		if (!image.IsValid())
+	StbImage image(filepath, GetPixelSize(format) /*STBI_rgb_alpha*/);
+	if (!image.IsValid())
+	{
+		std::cout << "Failed to load image: " << filepath << std::endl;
+		return nullptr;
+	}
+
+	return std::make_unique<Texture>(
+		graphics_api,
+		Texture::ImageData{
+			.m_data = image.GetData(),
+			.m_format = format,
+			.m_width = static_cast<std::uint32_t>(image.GetWidth()),
+			.m_height = static_cast<std::uint32_t>(image.GetHeight())
+		});
+}
+
+std::unique_ptr<Texture> create_cubemap_texture(
+	GraphicsApi const & graphics_api,
+	std::array<std::filesystem::path, 6> const & filepaths)
+{
+	PixelFormat format = PixelFormat::RGBA_SRGB;
+
+	int width = 0, height = 0;
+	std::array<StbImage, 6> images;
+	for (size_t i = 0; i < filepaths.size(); ++i)
+	{
+		images[i].LoadImage(filepaths[i], GetPixelSize(format) /*STBI_rgb_alpha*/);
+		if (!images[i].IsValid())
 		{
-			std::cout << "Failed to load image: " << filepath << std::endl;
+			std::cout << "Failed to load cubemap image: " << filepaths[i] << std::endl;
 			return nullptr;
 		}
 
-		return std::make_unique<Texture>(
-			graphics_api,
-			Texture::ImageData{
-				.m_data = image.GetData(),
-				.m_format = format,
-				.m_width = static_cast<std::uint32_t>(image.GetWidth()),
-				.m_height = static_cast<std::uint32_t>(image.GetHeight())
-			});
+		if (i == 0)
+		{
+			width = images[i].GetWidth();
+			height = images[i].GetHeight();
+		}
+		else if (images[i].GetWidth() != width || images[i].GetHeight() != height)
+		{
+			std::cout << "Cubemap images must have the same dimensions." << std::endl;
+			return nullptr;
+		}
 	}
 
-	std::unique_ptr<Texture> create_cubemap_texture(
+	std::array<std::uint8_t const *, 6> data;
+	std::ranges::transform(images, data.begin(),
+		[](StbImage const & img) { return img.GetData(); });
+
+	return std::make_unique<Texture>(
+		graphics_api,
+		Texture::CubeImageData{
+			.m_data = data,
+			.m_format = format,
+			.m_width = static_cast<std::uint32_t>(width),
+			.m_height = static_cast<std::uint32_t>(height)
+		});
+}
+
+class GroundMesh
+{
+public:
+	using VertexT = TextureVertex;
+
+	static AssetId<VertexT> Create(
 		GraphicsApi const & graphics_api,
-		std::array<std::filesystem::path, 6> const & filepaths)
+		Renderer & renderer);
+
+private:
+	static Mesh create_ground_mesh(GraphicsApi const & graphics_api);
+};
+
+auto GroundMesh::Create(
+	GraphicsApi const & graphics_api,
+	Renderer & renderer)
+	-> AssetId<VertexT>
+{
+	AssetId<VertexT> id;
+
+	Mesh ground_mesh = create_ground_mesh(graphics_api);
+	if (!ground_mesh.IsInitialized())
 	{
-		PixelFormat format = PixelFormat::RGBA_SRGB;
-
-		int width = 0, height = 0;
-		std::array<StbImage, 6> images;
-		for (size_t i = 0; i < filepaths.size(); ++i)
-		{
-			images[i].LoadImage(filepaths[i], GetPixelSize(format) /*STBI_rgb_alpha*/);
-			if (!images[i].IsValid())
-			{
-				std::cout << "Failed to load cubemap image: " << filepaths[i] << std::endl;
-				return nullptr;
-			}
-
-			if (i == 0)
-			{
-				width = images[i].GetWidth();
-				height = images[i].GetHeight();
-			}
-			else if (images[i].GetWidth() != width || images[i].GetHeight() != height)
-			{
-				std::cout << "Cubemap images must have the same dimensions." << std::endl;
-				return nullptr;
-			}
-		}
-
-		std::array<std::uint8_t const *, 6> data;
-		std::ranges::transform(images, data.begin(),
-			[](StbImage const & img) { return img.GetData(); });
-
-		return std::make_unique<Texture>(
-			graphics_api,
-			Texture::CubeImageData{
-				.m_data = data,
-				.m_format = format,
-				.m_width = static_cast<std::uint32_t>(width),
-				.m_height = static_cast<std::uint32_t>(height)
-			});
-	}
-
-	class GroundMesh
-	{
-	public:
-		using VertexT = TextureVertex;
-
-		static AssetId<VertexT> Create(
-			GraphicsApi const & graphics_api,
-			Renderer & renderer);
-
-	private:
-		static Mesh create_ground_mesh(GraphicsApi const & graphics_api);
-	};
-
-	auto GroundMesh::Create(
-		GraphicsApi const & graphics_api,
-		Renderer & renderer)
-		-> AssetId<VertexT>
-	{
-		AssetId<VertexT> id;
-
-		Mesh ground_mesh = create_ground_mesh(graphics_api);
-		if (!ground_mesh.IsInitialized())
-		{
-			std::cout << "Failed to create GroundMesh" << std::endl;
-			return id;
-		}
-
-		id.m_index = renderer.AddMesh(std::move(ground_mesh));
+		std::cout << "Failed to create GroundMesh" << std::endl;
 		return id;
 	}
 
-	Mesh GroundMesh::create_ground_mesh(GraphicsApi const & graphics_api)
-	{
-		float scale = 30.0f;
+	id.m_index = renderer.AddMesh(std::move(ground_mesh));
+	return id;
+}
 
-		static_assert(std::same_as<VertexT, TextureVertex>);
-		std::vector<TextureVertex> verts {
-			{ { -scale,  scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.0, 1.0 } },
-			{ {  scale,  scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 1.0, 1.0 } },
-			{ { -scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.0, 0.0 } },
-			{ {  scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 1.0, 0.0 } } };
+Mesh GroundMesh::create_ground_mesh(GraphicsApi const & graphics_api)
+{
+	float scale = 30.0f;
 
-		//static_assert(std::same_as<VertexT, ColorVertex>);
-		//std::vector<ColorVertex> verts{
-		//	{ { -scale,  scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 1.0, 0.0, 0.0 } },
-		//	{ {  scale,  scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.0, 1.0, 0.0 } },
-		//	{ { -scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.0, 0.0, 1.0 } },
-		//	{ {  scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.5, 0.5, 0.5 } } };
+	static_assert(std::same_as<VertexT, TextureVertex>);
+	std::vector<TextureVertex> verts {
+		{ { -scale,  scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.0, 1.0 } },
+		{ {  scale,  scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 1.0, 1.0 } },
+		{ { -scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.0, 0.0 } },
+		{ {  scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 1.0, 0.0 } } };
 
-		std::vector<Mesh::IndexT> indices{
-			1, 0, 2,
-			1, 2, 3 };
+	//static_assert(std::same_as<VertexT, ColorVertex>);
+	//std::vector<ColorVertex> verts{
+	//	{ { -scale,  scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 1.0, 0.0, 0.0 } },
+	//	{ {  scale,  scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.0, 1.0, 0.0 } },
+	//	{ { -scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.0, 0.0, 1.0 } },
+	//	{ {  scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.5, 0.5, 0.5 } } };
 
-		return Mesh{ graphics_api, verts, indices };
-	}
+	std::vector<Mesh::IndexT> indices{
+		1, 0, 2,
+		1, 2, 3 };
 
-	class SkyboxMesh
-	{
-	public:
-		using VertexT = PositionVertex;
+	return Mesh{ graphics_api, verts, indices };
+}
 
-		static AssetId<VertexT> Create(
-			GraphicsApi const & graphics_api,
-			Renderer & renderer);
+class SkyboxMesh
+{
+public:
+	using VertexT = PositionVertex;
 
-	private:
-		static Mesh create_skybox_mesh(GraphicsApi const & graphics_api);
-	};
-
-	auto SkyboxMesh::Create(
+	static AssetId<VertexT> Create(
 		GraphicsApi const & graphics_api,
-		Renderer & renderer)
-		-> AssetId<VertexT>
+		Renderer & renderer);
+
+private:
+	static Mesh create_skybox_mesh(GraphicsApi const & graphics_api);
+};
+
+auto SkyboxMesh::Create(
+	GraphicsApi const & graphics_api,
+	Renderer & renderer)
+	-> AssetId<VertexT>
+{
+	AssetId<VertexT> id;
+
+	Mesh skybox_mesh = create_skybox_mesh(graphics_api);
+	if (!skybox_mesh.IsInitialized())
 	{
-		AssetId<VertexT> id;
-
-		Mesh skybox_mesh = create_skybox_mesh(graphics_api);
-		if (!skybox_mesh.IsInitialized())
-		{
-			std::cout << "Failed to create SkyboxMesh" << std::endl;
-			return id;
-		}
-
-		id.m_index = renderer.AddMesh(std::move(skybox_mesh));
+		std::cout << "Failed to create SkyboxMesh" << std::endl;
 		return id;
 	}
 
-	Mesh SkyboxMesh::create_skybox_mesh(GraphicsApi const & graphics_api)
-	{
-		static_assert(std::same_as<VertexT, PositionVertex>);
-		std::vector<PositionVertex> verts {
-			{ { -1.0f,  1.0f, -1.0f } },
-			{ { -1.0f, -1.0f, -1.0f } },
-			{ {  1.0f, -1.0f, -1.0f } },
-			{ {  1.0f,  1.0f, -1.0f } },
-			{ { -1.0f,  1.0f,  1.0f } },
-			{ { -1.0f, -1.0f,  1.0f } },
-			{ {  1.0f, -1.0f,  1.0f } },
-			{ {  1.0f,  1.0f,  1.0f } } };
+	id.m_index = renderer.AddMesh(std::move(skybox_mesh));
+	return id;
+}
 
-		std::vector<Mesh::IndexT> indices{
-			0, 1, 2,
-			2, 3, 0,
-			5, 1, 0,
-			0, 4, 5,
-			2, 6, 7,
-			7, 3, 2,
-			5, 4, 7,
-			7, 6, 5,
-			0, 3, 7,
-			7, 4, 0,
-			1, 5, 2,
-			2, 5, 6 };
+Mesh SkyboxMesh::create_skybox_mesh(GraphicsApi const & graphics_api)
+{
+	static_assert(std::same_as<VertexT, PositionVertex>);
+	std::vector<PositionVertex> verts {
+		{ { -1.0f,  1.0f, -1.0f } },
+		{ { -1.0f, -1.0f, -1.0f } },
+		{ {  1.0f, -1.0f, -1.0f } },
+		{ {  1.0f,  1.0f, -1.0f } },
+		{ { -1.0f,  1.0f,  1.0f } },
+		{ { -1.0f, -1.0f,  1.0f } },
+		{ {  1.0f, -1.0f,  1.0f } },
+		{ {  1.0f,  1.0f,  1.0f } } };
 
-		return Mesh{ graphics_api, verts, indices };
-	}
+	std::vector<Mesh::IndexT> indices{
+		0, 1, 2,
+		2, 3, 0,
+		5, 1, 0,
+		0, 4, 5,
+		2, 6, 7,
+		7, 3, 2,
+		5, 4, 7,
+		7, 6, 5,
+		0, 3, 7,
+		7, 4, 0,
+		1, 5, 2,
+		2, 5, 6 };
 
-	class FileMesh
-	{
-	public:
-		using VertexT = NormalVertex;
+	return Mesh{ graphics_api, verts, indices };
+}
 
-		static AssetId<VertexT> Create(
-			GraphicsApi const & graphics_api,
-			Renderer & renderer,
-			std::filesystem::path const & file_path);
+class FileMesh
+{
+public:
+	using VertexT = NormalVertex;
 
-	private:
-		static std::optional<Mesh> create_mesh_from_file(
-			GraphicsApi const & graphics_api,
-			std::filesystem::path const & file_path);
-	};
-
-	auto FileMesh::Create(
+	static AssetId<VertexT> Create(
 		GraphicsApi const & graphics_api,
 		Renderer & renderer,
-		std::filesystem::path const & file_path)
-		-> AssetId<VertexT>
-	{
-		AssetId<VertexT> id;
+		std::filesystem::path const & file_path);
 
-		std::optional<Mesh> file_mesh = create_mesh_from_file(graphics_api, file_path);
-		if (!file_mesh.has_value())
-			return id;
-
-		id.m_index = renderer.AddMesh(std::move(file_mesh.value()));
-		return id;
-	}
-
-	std::optional<Mesh> FileMesh::create_mesh_from_file(
+private:
+	static std::optional<Mesh> create_mesh_from_file(
 		GraphicsApi const & graphics_api,
-		std::filesystem::path const & file_path)
-	{
-		if (!std::filesystem::exists(file_path))
-		{
-			std::cout << "FileMesh::create_mesh_from_file() file does not exist:" << file_path << std::endl;
-			return std::nullopt;
-		}
+		std::filesystem::path const & file_path);
+};
 
-		std::vector<NormalVertex> verts;
-		std::vector<Mesh::IndexT> indices;
-		if (!ObjLoader::LoadObjFile(file_path, verts, indices))
-		{
-			std::cout << "create_mesh_from_file() error loading file:" << file_path << std::endl;
-			return std::nullopt;
-		}
+auto FileMesh::Create(
+	GraphicsApi const & graphics_api,
+	Renderer & renderer,
+	std::filesystem::path const & file_path)
+	-> AssetId<VertexT>
+{
+	AssetId<VertexT> id;
 
-		return Mesh{ graphics_api, verts, indices };
-	}
-
-	class TexturePipeline
-	{
-	public:
-		using VertexT = TextureVertex;
-
-		static AssetId<VertexT> Create(
-			Renderer & renderer,
-			Scene const & scene,
-			std::filesystem::path const & shaders_path,
-			Texture const & texture);
-
-	private:
-		static std::optional<GraphicsPipeline> create_texture_pipeline(
-			Scene const & scene,
-			std::filesystem::path const & shaders_path,
-			Texture const & texture);
-	};
-
-	auto TexturePipeline::Create(
-		Renderer & renderer,
-		Scene const & scene,
-		std::filesystem::path const & shaders_path,
-		Texture const & texture)
-		-> AssetId<VertexT>
-	{
-		AssetId<VertexT> id;
-
-		std::optional<GraphicsPipeline> pipeline = create_texture_pipeline(scene, shaders_path, texture);
-		if (!pipeline.has_value())
-		{
-			std::cout << "Failed to create TexturePipeline" << std::endl;
-			return id;
-		}
-
-		id.m_index = renderer.AddPipeline(std::move(pipeline.value()));
+	std::optional<Mesh> file_mesh = create_mesh_from_file(graphics_api, file_path);
+	if (!file_mesh.has_value())
 		return id;
+
+	id.m_index = renderer.AddMesh(std::move(file_mesh.value()));
+	return id;
+}
+
+std::optional<Mesh> FileMesh::create_mesh_from_file(
+	GraphicsApi const & graphics_api,
+	std::filesystem::path const & file_path)
+{
+	if (!std::filesystem::exists(file_path))
+	{
+		std::cout << "FileMesh::create_mesh_from_file() file does not exist:" << file_path << std::endl;
+		return std::nullopt;
 	}
 
-	std::optional<GraphicsPipeline> TexturePipeline::create_texture_pipeline(
-		Scene const & scene,
-		std::filesystem::path const & shaders_path,
-		Texture const & texture)
+	std::vector<NormalVertex> verts;
+	std::vector<Mesh::IndexT> indices;
+	if (!ObjLoader::LoadObjFile(file_path, verts, indices))
 	{
-		struct VSPushConstant
-		{
-			alignas(16) glm::mat4 model;
-		};
-		struct ViewProjUniform
-		{
-			alignas(16) glm::mat4 view;
-			alignas(16) glm::mat4 proj;
-		};
-		struct LightsUniform
-		{
-			alignas(16) glm::vec3 m_ambient_light_color;
-			alignas(16) PointLight m_pointlight_1;
-			alignas(16) PointLight m_pointlight_2;
-			alignas(16) PointLight m_pointlight_3;
-			alignas(16) SpotLight m_spotlight;
-		};
-
-		PipelineBuilder builder{ scene.GetGraphicsApi() };
-		builder.LoadShaders(
-			shaders_path / "texture.vert.spv",
-			shaders_path / "texture.frag.spv");
-		builder.SetVertexType<VertexT>();
-		builder.SetPushConstantTypes<VSPushConstant, std::nullopt_t>();
-		builder.SetVSUniformTypes<ViewProjUniform>();
-		builder.SetFSUniformTypes<LightsUniform>();
-		builder.SetTexture(texture);
-
-		builder.SetPerFrameConstantsCallback(
-			[&scene](GraphicsPipeline const & pipeline)
-			{
-				pipeline.SetUniform(0 /*binding*/,
-					ViewProjUniform{
-						.view = scene.GetCamera().GetViewTransform(),
-						.proj = scene.GetCamera().GetProjTransform()
-					});
-				pipeline.SetUniform(1 /*binding*/,
-					LightsUniform{
-						.m_ambient_light_color = scene.GetAmbientLight().m_color,
-						.m_pointlight_1 = scene.GetPointLight1(),
-						.m_pointlight_2 = scene.GetPointLight2(),
-						.m_pointlight_3 = scene.GetPointLight3(),
-						.m_spotlight = scene.GetSpotLight()
-					});
-			});
-		builder.SetPerObjectConstantsCallback(
-			[](GraphicsPipeline const & pipeline, RenderObject const & obj)
-			{
-				pipeline.SetPushConstants(
-					VSPushConstant{
-						.model = obj.GetModelTransform()
-					},
-					std::nullopt);
-			});
-
-		return builder.CreatePipeline();
+		std::cout << "create_mesh_from_file() error loading file:" << file_path << std::endl;
+		return std::nullopt;
 	}
 
-	class ReflectionPipeline
+	return Mesh{ graphics_api, verts, indices };
+}
+
+ColorPipeline Scene::create_color_pipeline()
+{
+	std::filesystem::path shaders_path = m_resources_path / "shaders";
+	std::optional<GraphicsPipeline> pipeline = ColorPipeline::CreateGraphicsPipeline(
+		m_graphics_api, shaders_path, m_camera, m_lights);
+	if (!pipeline.has_value())
 	{
-	public:
-		using VertexT = NormalVertex;
+		std::cout << "Failed to create ColorPipeline" << std::endl;
+		return ColorPipeline{};
+	}
+	AssetId<ColorPipeline::VertexT> asset_id{ m_renderer.AddPipeline(std::move(pipeline.value())) };
+	return ColorPipeline{ asset_id };
+}
 
-		static AssetId<VertexT> Create(
-			Renderer & renderer,
-			Scene const & scene,
-			std::filesystem::path const & shaders_path,
-			Texture const & texture);
-
-	private:
-		static std::optional<GraphicsPipeline> create_reflection_pipeline(
-			Scene const & scene,
-			std::filesystem::path const & shaders_path,
-			Texture const & texture);
-	};
-
-	auto ReflectionPipeline::Create(
-		Renderer & renderer,
-		Scene const & scene,
-		std::filesystem::path const & shaders_path,
-		Texture const & texture)
-		-> AssetId<VertexT>
+TexturePipeline Scene::create_texture_pipeline(Texture const & texture)
+{
+	std::filesystem::path shaders_path = m_resources_path / "shaders";
+	std::optional<GraphicsPipeline> pipeline = TexturePipeline::CreateGraphicsPipeline(
+		m_graphics_api, shaders_path, m_camera, m_lights, texture);
+	if (!pipeline.has_value())
 	{
-		AssetId<VertexT> id;
+		std::cout << "Failed to create TexturePipeline" << std::endl;
+		return TexturePipeline{};
+	}
+	AssetId<TexturePipeline::VertexT> asset_id{ m_renderer.AddPipeline(std::move(pipeline.value())) };
+	return TexturePipeline{ asset_id };
+}
 
-		std::optional<GraphicsPipeline> pipeline = create_reflection_pipeline(scene, shaders_path, texture);
-		if (!pipeline.has_value())
-		{
-			std::cout << "Failed to create ReflectionPipeline" << std::endl;
-			return id;
-		}
+SkyboxPipeline Scene::create_skybox_pipeline(Texture const & texture)
+{
+	std::filesystem::path shaders_path = m_resources_path / "shaders";
+	std::optional<GraphicsPipeline> pipeline = SkyboxPipeline::CreateGraphicsPipeline(
+		m_graphics_api, shaders_path, m_camera, texture);
+	if (!pipeline.has_value())
+	{
+		std::cout << "Failed to create SkyboxPipeline" << std::endl;
+		return SkyboxPipeline{};
+	}
+	AssetId<SkyboxPipeline::VertexT> asset_id{ m_renderer.AddPipeline(std::move(pipeline.value())) };
+	return SkyboxPipeline{ asset_id };
+}
 
-		id.m_index = renderer.AddPipeline(std::move(pipeline.value()));
-		return id;
+LightSourcePipeline Scene::create_light_source_pipeline()
+{
+	std::filesystem::path shaders_path = m_resources_path / "shaders";
+	std::optional<GraphicsPipeline> pipeline = LightSourcePipeline::CreateGraphicsPipeline(
+		m_graphics_api, shaders_path, m_camera);
+	if (!pipeline.has_value())
+	{
+		std::cout << "Failed to create LightSourcePipeline" << std::endl;
+		return LightSourcePipeline{};
+	}
+	AssetId<LightSourcePipeline::VertexT> asset_id{ m_renderer.AddPipeline(std::move(pipeline.value())) };
+	return LightSourcePipeline{ asset_id };
+}
+
+ReflectionPipeline Scene::create_reflection_pipeline(Texture const & texture)
+{
+	std::filesystem::path shaders_path = m_resources_path / "shaders";
+	std::optional<GraphicsPipeline> pipeline = ReflectionPipeline::CreateGraphicsPipeline(
+		m_graphics_api, shaders_path, m_camera, m_lights, texture);
+	if (!pipeline.has_value())
+	{
+		std::cout << "Failed to create ReflectionPipeline" << std::endl;
+		return ReflectionPipeline{};
+	}
+	AssetId<ReflectionPipeline::VertexT> asset_id{ m_renderer.AddPipeline(std::move(pipeline.value())) };
+	return ReflectionPipeline{ asset_id };
+}
+
+TextPipeline Scene::create_text_pipeline(FontAtlas const & font_atlas)
+{
+	std::filesystem::path shaders_path = m_resources_path / "shaders";
+	std::optional<GraphicsPipeline> pipeline = TextPipeline::CreateGraphicsPipeline(
+		m_graphics_api, shaders_path, font_atlas);
+	if (!pipeline.has_value())
+	{
+		std::cout << "Failed to create TextPipeline" << std::endl;
+		return TextPipeline{};
+	}
+	AssetId<TextPipeline::VertexT> asset_id{ m_renderer.AddPipeline(std::move(pipeline.value())) };
+	return TextPipeline{ asset_id };
+}
+
+template <typename MeshAssetId, typename PipelineAssetId>
+	requires AssetsAreCompatible<MeshAssetId, PipelineAssetId>
+std::shared_ptr<RenderObject> create_render_object(
+	Renderer & renderer,
+	std::string const & name,
+	MeshAssetId mesh_id,
+	PipelineAssetId pipeline_id)
+{
+	return renderer.CreateRenderObject(name, mesh_id.m_index, pipeline_id.m_index);
+}
+
+void init_sword_transform(int index, glm::mat4 & transform)
+{
+	float x_rot = static_cast<float>(std::numbers::pi / 2.0);
+	float y_rot = static_cast<float>(std::numbers::pi / 4.0);
+	glm::vec3 pos(0.0f, 0.5f, 3.5f);
+	if (index == 1)
+	{
+		y_rot = -y_rot;
+		pos.y = -pos.y;
 	}
 
-	std::optional<GraphicsPipeline> ReflectionPipeline::create_reflection_pipeline(
-		Scene const & scene,
-		std::filesystem::path const & shaders_path,
-		Texture const & texture)
-	{
-		struct VSPushConstant
-		{
-			alignas(16) glm::mat4 model;
-		};
-		struct ViewProjUniform
-		{
-			alignas(16) glm::mat4 view;
-			alignas(16) glm::mat4 proj;
-		};
-		struct LightsUniform
-		{
-			alignas(16) glm::vec3 m_ambient_light_color;
-			alignas(16) PointLight m_pointlight_1;
-			alignas(16) PointLight m_pointlight_2;
-			alignas(16) PointLight m_pointlight_3;
-			alignas(16) SpotLight m_spotlight;
-		};
-		struct CameraUniform
-		{
-			alignas(16) glm::vec3 pos_world;
-		};
+	// the sword mesh was designed for the Y axis being the up direction, but we're using the Z axis, this can be corrected by rotating on the X axis
+	transform = glm::rotate(glm::mat4(1.0), x_rot, glm::vec3(1.0, 0.0, 0.0)) * transform;
+	transform = glm::rotate(glm::mat4(1.0), y_rot, glm::vec3(0.0, 1.0, 0.0)) * transform;
+	transform = glm::translate(glm::mat4(1.0), pos) * transform;
+}
 
-		PipelineBuilder builder{ scene.GetGraphicsApi() };
-		builder.LoadShaders(
-			shaders_path / "reflection.vert.spv",
-			shaders_path / "reflection.frag.spv");
-		builder.SetVertexType<VertexT>();
-		builder.SetPushConstantTypes<VSPushConstant, std::nullopt_t>();
-		builder.SetVSUniformTypes<ViewProjUniform>();
-		builder.SetFSUniformTypes<LightsUniform, CameraUniform>();
-		builder.SetTexture(texture);
+void update_sword_transform(int index, glm::mat4 & transform, float time, float delta_time)
+{
+	float sword_pos_z;
+	if (index == 0)
+		sword_pos_z = std::cos(time * 0.5f) * 0.5f + 3.5f;
+	else
+		sword_pos_z = std::sin(time * 0.5f) * 0.5f + 3.5f;
+	transform[3][2] = sword_pos_z;
 
-		builder.SetPerFrameConstantsCallback(
-			[&scene](GraphicsPipeline const & pipeline)
-			{
-				pipeline.SetUniform(0 /*binding*/,
-					ViewProjUniform{
-						.view = scene.GetCamera().GetViewTransform(),
-						.proj = scene.GetCamera().GetProjTransform()
-					});
-				pipeline.SetUniform(1 /*binding*/,
-					LightsUniform{
-						.m_ambient_light_color = scene.GetAmbientLight().m_color,
-						.m_pointlight_1 = scene.GetPointLight1(),
-						.m_pointlight_2 = scene.GetPointLight2(),
-						.m_pointlight_3 = scene.GetPointLight3(),
-						.m_spotlight = scene.GetSpotLight()
-					});
-				pipeline.SetUniform(2 /*binding*/,
-					CameraUniform{
-						.pos_world = scene.GetCamera().GetPos()
-					});
-			});
-		builder.SetPerObjectConstantsCallback(
-			[](GraphicsPipeline const & pipeline, RenderObject const & obj)
-			{
-				pipeline.SetPushConstants(
-					VSPushConstant{
-						.model = obj.GetModelTransform()
-					},
-					std::nullopt);
-			});
+	glm::vec3 sword_pos(transform[3][0], transform[3][1], transform[3][2]);
+	glm::vec3 sword_y_axis(transform[1][0], transform[1][1], transform[1][2]);
 
-		return builder.CreatePipeline();
-	}
+	transform = glm::translate(glm::mat4(1.0), -sword_pos) * transform;
+	transform = glm::rotate(glm::mat4(1.0), delta_time * 0.5f, sword_y_axis) * transform;
+	transform = glm::translate(glm::mat4(1.0), sword_pos) * transform;
+}
 
-	class SkyboxPipeline
-	{
-	public:
-		using VertexT = PositionVertex;
+void init_gem_transform(int index, glm::mat4 & transform)
+{
+	float x_rot = static_cast<float>(std::numbers::pi / 2.0);
+	float z_rot = static_cast<float>(index * std::numbers::pi * 2.0 / 3.0);
+	glm::vec3 pos(0.0f, 4.0f, 2.0f);
 
-		static AssetId<VertexT> Create(
-			Renderer & renderer,
-			Scene const & scene,
-			std::filesystem::path const & shaders_path,
-			Texture const & skybox);
+	// the gem meshes were designed for the Y axis being the up direction, but we're using the Z axis, this can be corrected by rotating on the X axis
+	transform = glm::rotate(glm::mat4(1.0), x_rot, glm::vec3(1.0, 0.0, 0.0)) * transform;
+	transform = glm::translate(glm::mat4(1.0), pos) * transform;
+	transform = glm::rotate(glm::mat4(1.0), z_rot, glm::vec3(0.0, 0.0, 1.0)) * transform;
+}
 
-	private:
-		static std::optional<GraphicsPipeline> create_skybox_pipeline(
-			Scene const & scene,
-			std::filesystem::path const & shaders_path,
-			Texture const & skybox);
-	};
-
-	auto SkyboxPipeline::Create(
-		Renderer & renderer,
-		Scene const & scene,
-		std::filesystem::path const & shaders_path,
-		Texture const & skybox)
-		-> AssetId<VertexT>
-	{
-		AssetId<VertexT> id;
-
-		std::optional<GraphicsPipeline> pipeline = create_skybox_pipeline(scene, shaders_path, skybox);
-		if (!pipeline.has_value())
-		{
-			std::cout << "Failed to create SkyboxPipeline" << std::endl;
-			return id;
-		}
-
-		id.m_index = renderer.AddPipeline(std::move(pipeline.value()));
-		return id;
-	}
-
-	std::optional<GraphicsPipeline> SkyboxPipeline::create_skybox_pipeline(
-		Scene const & scene,
-		std::filesystem::path const & shaders_path,
-		Texture const & skybox)
-	{
-		struct ViewProjUniform
-		{
-			alignas(16) glm::mat4 view;
-			alignas(16) glm::mat4 proj;
-		};
-
-		PipelineBuilder builder{ scene.GetGraphicsApi() };
-		builder.LoadShaders(
-			shaders_path / "skybox.vert.spv",
-			shaders_path / "skybox.frag.spv");
-		builder.SetVertexType<VertexT>();
-		builder.SetVSUniformTypes<ViewProjUniform>();
-		builder.SetTexture(skybox);
-		builder.SetDepthTestOptions(DepthTestOptions{
-			.m_enable_depth_test = true,
-			.m_enable_depth_write = false,
-			.m_depth_compare_op = DepthCompareOp::EQUAL
-			});
-
-		builder.SetPerFrameConstantsCallback(
-			[&scene](GraphicsPipeline const & pipeline)
-			{
-				pipeline.SetUniform(0 /*binding*/,
-					ViewProjUniform{
-						.view = scene.GetCamera().GetViewTransform(),
-						.proj = scene.GetCamera().GetProjTransform()
-					});
-			});
-
-		return builder.CreatePipeline();
-	}
-
-	class ColorPipeline
-	{
-	public:
-		using VertexT = ColorVertex;
-
-		static AssetId<VertexT> Create(
-			Renderer & renderer,
-			Scene const & scene,
-			std::filesystem::path const & shaders_path);
-
-	private:
-		static std::optional<GraphicsPipeline> create_color_pipeline(
-			Scene const & scene,
-			std::filesystem::path const & shaders_path);
-	};
-
-	auto ColorPipeline::Create(
-		Renderer & renderer,
-		Scene const & scene,
-		std::filesystem::path const & shaders_path)
-		-> AssetId<VertexT>
-	{
-		AssetId<VertexT> id;
-
-		std::optional<GraphicsPipeline> pipeline = create_color_pipeline(scene, shaders_path);
-		if (!pipeline.has_value())
-		{
-			std::cout << "Failed to create ColorPipeline" << std::endl;
-			return id;
-		}
-
-		id.m_index = renderer.AddPipeline(std::move(pipeline.value()));
-		return id;
-	}
-
-	std::optional<GraphicsPipeline> ColorPipeline::create_color_pipeline(
-		Scene const & scene,
-		std::filesystem::path const & shaders_path)
-	{
-		struct VSPushConstant
-		{
-			alignas(16) glm::mat4 model;
-		};
-		struct ViewProjUniform
-		{
-			alignas(16) glm::mat4 view;
-			alignas(16) glm::mat4 proj;
-		};
-		struct LightsUniform
-		{
-			alignas(16) glm::vec3 m_ambient_light_color;
-			alignas(16) PointLight m_pointlight_1;
-			alignas(16) PointLight m_pointlight_2;
-			alignas(16) PointLight m_pointlight_3;
-			alignas(16) SpotLight m_spotlight;
-		};
-
-		PipelineBuilder builder{ scene.GetGraphicsApi() };
-		builder.LoadShaders(
-			shaders_path / "color.vert.spv",
-			shaders_path / "color.frag.spv");
-		builder.SetVertexType<VertexT>();
-		builder.SetPushConstantTypes<VSPushConstant, std::nullopt_t>();
-		builder.SetVSUniformTypes<ViewProjUniform>();
-		builder.SetFSUniformTypes<LightsUniform>();
-
-		builder.SetPerFrameConstantsCallback(
-			[&scene](GraphicsPipeline const & pipeline)
-			{
-				pipeline.SetUniform(0 /*binding*/,
-					ViewProjUniform{
-						.view = scene.GetCamera().GetViewTransform(),
-						.proj = scene.GetCamera().GetProjTransform()
-					});
-				pipeline.SetUniform(1 /*binding*/,
-					LightsUniform{
-						.m_ambient_light_color = scene.GetAmbientLight().m_color,
-						.m_pointlight_1 = scene.GetPointLight1(),
-						.m_pointlight_2 = scene.GetPointLight2(),
-						.m_pointlight_3 = scene.GetPointLight3(),
-						.m_spotlight = scene.GetSpotLight()
-					});
-			});
-		builder.SetPerObjectConstantsCallback(
-			[](GraphicsPipeline const & pipeline, RenderObject const & obj)
-			{
-				pipeline.SetPushConstants(
-					VSPushConstant{
-						.model = obj.GetModelTransform()
-					},
-					std::nullopt);
-			});
-
-		return builder.CreatePipeline();
-	}
-
-	class LightSourcePipeline
-	{
-	public:
-		using VertexT = NormalVertex;
-
-		static AssetId<VertexT> Create(
-			Renderer & renderer,
-			Scene const & scene,
-			std::filesystem::path const & shaders_path);
-
-	private:
-		static std::optional<GraphicsPipeline> create_light_source_pipeline(
-			Scene const & scene,
-			std::filesystem::path const & shaders_path);
-	};
-
-	auto LightSourcePipeline::Create(
-		Renderer & renderer,
-		Scene const & scene,
-		std::filesystem::path const & shaders_path)
-		-> AssetId<VertexT>
-	{
-		AssetId<VertexT> id;
-
-		std::optional<GraphicsPipeline> pipeline = create_light_source_pipeline(scene, shaders_path);
-		if (!pipeline.has_value())
-		{
-			std::cout << "Failed to create LightSourcePipeline" << std::endl;
-			return id;
-		}
-
-		id.m_index = renderer.AddPipeline(std::move(pipeline.value()));
-		return id;
-	}
-
-	std::optional<GraphicsPipeline> LightSourcePipeline::create_light_source_pipeline(
-		Scene const & scene,
-		std::filesystem::path const & shaders_path)
-	{
-		struct VSPushConstant
-		{
-			alignas(16) glm::mat4 model;
-		};
-		struct FSPushConstant
-		{
-			alignas(16) glm::vec3 color;
-		};
-		struct ViewProjUniform
-		{
-			alignas(16) glm::mat4 view;
-			alignas(16) glm::mat4 proj;
-		};
-		struct CameraPosUniform
-		{
-			alignas(16) glm::vec3 pos_world;
-		};
-
-		PipelineBuilder builder{ scene.GetGraphicsApi() };
-		builder.LoadShaders(
-			shaders_path / "light_source.vert.spv",
-			shaders_path / "light_source.frag.spv");
-		builder.SetVertexType<VertexT>();
-		builder.SetPushConstantTypes<VSPushConstant, FSPushConstant>();
-		builder.SetVSUniformTypes<ViewProjUniform>();
-		builder.SetFSUniformTypes<CameraPosUniform>();
-
-		builder.SetPerFrameConstantsCallback(
-			[&scene](GraphicsPipeline const & pipeline)
-			{
-				pipeline.SetUniform(0 /*binding*/,
-					ViewProjUniform{
-						.view = scene.GetCamera().GetViewTransform(),
-						.proj = scene.GetCamera().GetProjTransform()
-					});
-				pipeline.SetUniform(1 /*binding*/,
-					CameraPosUniform{
-						.pos_world = scene.GetCamera().GetPos()
-					});
-			});
-		builder.SetPerObjectConstantsCallback(
-			[](GraphicsPipeline const & pipeline, RenderObject const & obj)
-			{
-				pipeline.SetPushConstants(
-					VSPushConstant{
-						.model = obj.GetModelTransform()
-					},
-					FSPushConstant{
-						.color = obj.GetColor(),
-					});
-			});
-
-		return builder.CreatePipeline();
-	}
-
-	template <typename MeshAssetId, typename PipelineAssetId>
-		requires AssetsAreCompatible<MeshAssetId, PipelineAssetId>
-	std::shared_ptr<RenderObject> create_render_object(
-		Renderer & renderer,
-		std::string const & name,
-		MeshAssetId mesh_id,
-		PipelineAssetId pipeline_id)
-	{
-		return renderer.CreateRenderObject(name, mesh_id.m_index, pipeline_id.m_index);
-	}
-
-	void init_sword_transform(int index, glm::mat4 & transform)
-	{
-		float x_rot = static_cast<float>(std::numbers::pi / 2.0);
-		float y_rot = static_cast<float>(std::numbers::pi / 4.0);
-		glm::vec3 pos(0.0f, 0.5f, 3.5f);
-		if (index == 1)
-		{
-			y_rot = -y_rot;
-			pos.y = -pos.y;
-		}
-
-		// the sword mesh was designed for the Y axis being the up direction, but we're using the Z axis, this can be corrected by rotating on the X axis
-		transform = glm::rotate(glm::mat4(1.0), x_rot, glm::vec3(1.0, 0.0, 0.0)) * transform;
-		transform = glm::rotate(glm::mat4(1.0), y_rot, glm::vec3(0.0, 1.0, 0.0)) * transform;
-		transform = glm::translate(glm::mat4(1.0), pos) * transform;
-	}
-
-	void update_sword_transform(int index, glm::mat4 & transform, float time, float delta_time)
-	{
-		float sword_pos_z;
-		if (index == 0)
-			sword_pos_z = std::cos(time * 0.5f) * 0.5f + 3.5f;
-		else
-			sword_pos_z = std::sin(time * 0.5f) * 0.5f + 3.5f;
-		transform[3][2] = sword_pos_z;
-
-		glm::vec3 sword_pos(transform[3][0], transform[3][1], transform[3][2]);
-		glm::vec3 sword_y_axis(transform[1][0], transform[1][1], transform[1][2]);
-
-		transform = glm::translate(glm::mat4(1.0), -sword_pos) * transform;
-		transform = glm::rotate(glm::mat4(1.0), delta_time * 0.5f, sword_y_axis) * transform;
-		transform = glm::translate(glm::mat4(1.0), sword_pos) * transform;
-	}
-
-	void init_gem_transform(int index, glm::mat4 & transform)
-	{
-		float x_rot = static_cast<float>(std::numbers::pi / 2.0);
-		float z_rot = static_cast<float>(index * std::numbers::pi * 2.0 / 3.0);
-		glm::vec3 pos(0.0f, 4.0f, 2.0f);
-
-		// the gem meshes were designed for the Y axis being the up direction, but we're using the Z axis, this can be corrected by rotating on the X axis
-		transform = glm::rotate(glm::mat4(1.0), x_rot, glm::vec3(1.0, 0.0, 0.0)) * transform;
-		transform = glm::translate(glm::mat4(1.0), pos) * transform;
-		transform = glm::rotate(glm::mat4(1.0), z_rot, glm::vec3(0.0, 0.0, 1.0)) * transform;
-	}
-
-	void update_gem_transform(glm::mat4 & transform, float delta_time)
-	{
-		transform = glm::rotate(glm::mat4(1.0), delta_time * 0.5f, glm::vec3(0.0, 0.0, 1.0)) * transform;
-	}
+void update_gem_transform(glm::mat4 & transform, float delta_time)
+{
+	transform = glm::rotate(glm::mat4(1.0), delta_time * 0.5f, glm::vec3(0.0, 0.0, 1.0)) * transform;
 }
 
 void Scene::Init()
 {
-	const std::filesystem::path resources_path = PlatformUtils::GetExecutableDir() / "resources";
-	const std::filesystem::path shaders_path = resources_path / "shaders";
-	const std::filesystem::path textures_path = resources_path / "textures";
-	const std::filesystem::path objects_path = resources_path / "objects";
-	const std::filesystem::path fonts_path = resources_path / "fonts";
+	m_resources_path = PlatformUtils::GetExecutableDir() / "resources";
+	const std::filesystem::path textures_path = m_resources_path / "textures";
+	const std::filesystem::path objects_path = m_resources_path / "objects";
+	const std::filesystem::path fonts_path = m_resources_path / "fonts";
 
 	m_ground_tex = create_texture(m_graphics_api,
 		textures_path / "skybox" / "top.jpg");
@@ -821,12 +423,12 @@ void Scene::Init()
 
 	m_arial_font = std::make_unique<FontAtlas>(m_graphics_api, fonts_path / "ArialAtlas.png", fonts_path / "ArialAtlas.json");
 
-	AssetId<TexturePipeline::VertexT> texture_pipeline_id = TexturePipeline::Create(m_renderer, *this, shaders_path, *m_ground_tex);
-	AssetId<LightSourcePipeline::VertexT> light_source_pipeline_id = LightSourcePipeline::Create(m_renderer, *this, shaders_path);
-	AssetId<ReflectionPipeline::VertexT> reflection_pipeline_id = ReflectionPipeline::Create(m_renderer, *this, shaders_path, *m_skybox_tex);
-	AssetId<SkyboxPipeline::VertexT> skybox_pipeline_id = SkyboxPipeline::Create(m_renderer, *this, shaders_path, *m_skybox_tex);
-	//AssetId<ColorPipeline::VertexT> color_pipeline_id = ColorPipeline::Create(m_renderer, *this, shaders_path);
-	AssetId<TextPipeline::VertexT> text_pipeline_id = TextPipeline::Create(m_graphics_api, m_renderer, *m_arial_font, shaders_path);
+	//ColorPipeline color_pipeline = create_color_pipeline(shaders_path);
+	TexturePipeline ground_pipeline = create_texture_pipeline(*m_ground_tex);
+	SkyboxPipeline skybox_pipeline = create_skybox_pipeline(*m_skybox_tex);
+	LightSourcePipeline light_source_pipeline = create_light_source_pipeline();
+	ReflectionPipeline reflection_pipeline = create_reflection_pipeline(*m_skybox_tex);
+	TextPipeline text_pipeline = create_text_pipeline(*m_arial_font);
 
 	AssetId<FileMesh::VertexT> sword_mesh_id = FileMesh::Create(m_graphics_api, m_renderer,
 		objects_path / "skullsword.obj");
@@ -843,14 +445,14 @@ void Scene::Init()
 		"", *m_arial_font, 36.0 /*font_size*/, glm::vec2{ -0.9, -0.9 } /*origin*/,
 		0 /*viewport_width*/, 0/*viewport_height*/, true /*flip_y*/));
 
-	m_sword0 = create_render_object(m_renderer, "sword0", sword_mesh_id, reflection_pipeline_id);
-	m_sword1 = create_render_object(m_renderer, "sword1", sword_mesh_id, reflection_pipeline_id);
-	m_red_gem = create_render_object(m_renderer, "red gem", red_gem_mesh_id, light_source_pipeline_id);
-	m_green_gem = create_render_object(m_renderer, "green gem", green_gem_mesh_id, light_source_pipeline_id);
-	m_blue_gem = create_render_object(m_renderer, "blue gem", blue_gem_mesh_id, light_source_pipeline_id);
-	m_ground = create_render_object(m_renderer, "ground", ground_mesh_id, texture_pipeline_id);
-	m_skybox = create_render_object(m_renderer, "skybox", skybox_mesh_id, skybox_pipeline_id);
-	m_text = create_render_object(m_renderer, "text", m_fps_label->GetAssetId(), text_pipeline_id);
+	m_sword0 = create_render_object(m_renderer, "sword0", sword_mesh_id, reflection_pipeline.GetAssetId());
+	m_sword1 = create_render_object(m_renderer, "sword1", sword_mesh_id, reflection_pipeline.GetAssetId());
+	m_red_gem = create_render_object(m_renderer, "red gem", red_gem_mesh_id, light_source_pipeline.GetAssetId());
+	m_green_gem = create_render_object(m_renderer, "green gem", green_gem_mesh_id, light_source_pipeline.GetAssetId());
+	m_blue_gem = create_render_object(m_renderer, "blue gem", blue_gem_mesh_id, light_source_pipeline.GetAssetId());
+	m_ground = create_render_object(m_renderer, "ground", ground_mesh_id, ground_pipeline.GetAssetId());
+	m_skybox = create_render_object(m_renderer, "skybox", skybox_mesh_id, skybox_pipeline.GetAssetId());
+	m_text = create_render_object(m_renderer, "text", m_fps_label->GetAssetId(), text_pipeline.GetAssetId());
 	m_text->SetColor({ 1.0f, 1.0f, 0.0f });
 
 	m_red_gem->SetColor({ 1.0, 0.0, 0.0 });
@@ -863,15 +465,15 @@ void Scene::Init()
 	init_gem_transform(1, m_green_gem->ModifyModelTransform());
 	init_gem_transform(2, m_blue_gem->ModifyModelTransform());
 
-	m_ambient_light = AmbientLight{ glm::vec3{ 0.5, 0.5, 0.5 } };
+	m_lights.SetAmbientLight(AmbientLight{ glm::vec3{ 0.5, 0.5, 0.5 } });
 
-	m_spotlight = SpotLight{
+	m_lights.SetSpotLight(SpotLight{
 		.m_pos{ 0.0f, 0.0f, 25.0f },
 		.m_dir{ 0.0f, 0.0f, -1.0f },
 		.m_color{ 1.0f, 1.0f, 1.0f },
 		.m_inner_radius = 0.988f,
 		.m_outer_radius = 0.986f
-	};
+		});
 
 	glm::vec3 camera_pos{ 0.0f, -10.0f, 5.0f };
 	glm::vec3 camera_dir = glm::normalize(glm::vec3{ 0.0f, 0.0f, 2.5f } - camera_pos);
@@ -914,25 +516,25 @@ void Scene::Update(double delta_time, Input const & input)
 	update_gem_transform(m_blue_gem->ModifyModelTransform(), dt);
 
 	glm::mat4 const & red_gem_transform = m_red_gem->GetModelTransform();
-	m_pointlight_1 = PointLight{
+	m_lights.SetPointLight1(PointLight{
 		.m_pos{ red_gem_transform[3][0], red_gem_transform[3][1], red_gem_transform[3][2] },
 		.m_color{ 1.0, 0.0, 0.0 },
 		.m_radius = 20.0f
-	};
+		});
 
 	glm::mat4 const & green_gem_transform = m_green_gem->GetModelTransform();
-	m_pointlight_2 = PointLight{
+	m_lights.SetPointLight2(PointLight{
 		.m_pos{ green_gem_transform[3][0], green_gem_transform[3][1], green_gem_transform[3][2] },
 		.m_color{ 0.0, 1.0, 0.0 },
 		.m_radius = 20.0f
-	};
+		});
 
 	glm::mat4 const & blue_gem_transform = m_blue_gem->GetModelTransform();
-	m_pointlight_3 = PointLight{
+	m_lights.SetPointLight3(PointLight{
 		.m_pos{ blue_gem_transform[3][0], blue_gem_transform[3][1], blue_gem_transform[3][2] },
 		.m_color{ 0.0, 0.0, 1.0 },
 		.m_radius = 20.0f
-	};
+		});
 }
 
 void Scene::Render() const

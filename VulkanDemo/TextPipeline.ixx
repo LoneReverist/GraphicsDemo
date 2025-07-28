@@ -6,7 +6,7 @@ module;
 #include <iostream>
 #include <optional>
 
-#include <glm/glm.hpp>
+#include <glm/vec4.hpp>
 
 export module TextPipeline;
 
@@ -15,73 +15,66 @@ import FontAtlas;
 import GraphicsApi;
 import GraphicsPipeline;
 import PipelineBuilder;
-import Renderer;
 import Vertex;
 
-namespace TextPipeline
+export class TextPipeline
 {
-	export using VertexT = Texture2dVertex;
+public:
+	using VertexT = Texture2dVertex;
 
-	std::optional<GraphicsPipeline> create_text_pipeline(
+	static std::optional<GraphicsPipeline> CreateGraphicsPipeline(
 		GraphicsApi const & graphics_api,
-		FontAtlas const & font_atlas,
-		std::filesystem::path const & shaders_path)
+		std::filesystem::path const & shaders_path,
+		FontAtlas const & font_atlas);
+
+	TextPipeline() = default;
+	TextPipeline(AssetId<VertexT> asset_id) : m_asset_id(asset_id) {}
+
+	AssetId<VertexT> GetAssetId() const { return m_asset_id; }
+
+private:
+	AssetId<VertexT> m_asset_id;
+};
+
+std::optional<GraphicsPipeline> TextPipeline::CreateGraphicsPipeline(
+	GraphicsApi const & graphics_api,
+	std::filesystem::path const & shaders_path,
+	FontAtlas const & font_atlas)
+{
+	struct FSPushConstant
 	{
-		struct FSPushConstant
+		alignas(4) float screen_px_range;
+		alignas(16) glm::vec4 bg_color;
+		alignas(16) glm::vec4 text_color;
+	};
+
+	PipelineBuilder builder{ graphics_api };
+	builder.LoadShaders(
+		shaders_path / "msdf_text.vert.spv",
+		shaders_path / "msdf_text.frag.spv");
+	builder.SetVertexType<VertexT>();
+	builder.SetPushConstantTypes<std::nullopt_t, FSPushConstant>();
+	builder.SetTexture(font_atlas.GetTexture());
+	builder.SetDepthTestOptions(DepthTestOptions{
+		.m_enable_depth_test = false,
+		.m_enable_depth_write = false,
+		.m_depth_compare_op = DepthCompareOp::ALWAYS
+		});
+
+	builder.SetPerObjectConstantsCallback(
+		[&font_atlas](GraphicsPipeline const & pipeline, RenderObject const & obj)
 		{
-			alignas(4) float screen_px_range;
-			alignas(16) glm::vec4 bg_color;
-			alignas(16) glm::vec4 text_color;
-		};
+			float scale = 4.0f; // TODO: font size * dpi scaling?
+			float screen_px_range = scale * font_atlas.GetPxRange();
 
-		PipelineBuilder builder{ graphics_api };
-		builder.LoadShaders(
-			shaders_path / "msdf_text.vert.spv",
-			shaders_path / "msdf_text.frag.spv");
-		builder.SetVertexType<VertexT>();
-		builder.SetPushConstantTypes<std::nullopt_t, FSPushConstant>();
-		builder.SetTexture(font_atlas.GetTexture());
-		builder.SetDepthTestOptions(DepthTestOptions{
-			.m_enable_depth_test = false,
-			.m_enable_depth_write = false,
-			.m_depth_compare_op = DepthCompareOp::ALWAYS
-			});
+			pipeline.SetPushConstants(
+				std::nullopt,
+				FSPushConstant{
+					.screen_px_range = screen_px_range,
+					.bg_color = glm::vec4(0.0, 0.0, 0.0, 0.0),
+					.text_color = glm::vec4(obj.GetColor(), 1.0)
+				});
+		});
 
-		builder.SetPerObjectConstantsCallback(
-			[&font_atlas](GraphicsPipeline const & pipeline, RenderObject const & obj)
-			{
-				float scale = 4.0f; // TODO: font size * dpi scaling?
-				float screen_px_range = scale * font_atlas.GetPxRange();
-
-				pipeline.SetPushConstants(
-					std::nullopt,
-					FSPushConstant{
-						.screen_px_range = screen_px_range,
-						.bg_color = glm::vec4(0.0, 0.0, 0.0, 0.0),
-						.text_color = glm::vec4(obj.GetColor(), 1.0)
-					});
-			});
-
-		return builder.CreatePipeline();
-	}
-
-	export auto Create(
-		GraphicsApi const & graphics_api,
-		Renderer & renderer,
-		FontAtlas const & font_atlas,
-		std::filesystem::path const & shaders_path)
-		-> AssetId<VertexT>
-	{
-		AssetId<VertexT> id;
-
-		std::optional<GraphicsPipeline> pipeline = create_text_pipeline(graphics_api, font_atlas, shaders_path);
-		if (!pipeline.has_value())
-		{
-			std::cout << "Failed to create TextPipeline" << std::endl;
-			return id;
-		}
-
-		id.m_index = renderer.AddPipeline(std::move(pipeline.value()));
-		return id;
-	}
+	return builder.CreatePipeline();
 }
