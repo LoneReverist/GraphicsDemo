@@ -33,7 +33,7 @@ public:
 
 	bool IsInitialized() const;
 
-	void Render(bool wireframe) const;
+	void Render() const;
 
 private:
 	void destroy_buffers();
@@ -137,17 +137,14 @@ bool Mesh::IsInitialized() const
 		&& m_index_count > 0;
 }
 
-void Mesh::Render(bool wireframe) const
+void Mesh::Render() const
 {
 	if (!IsInitialized())
 		return;
 
 	glBindVertexArray(m_vao_id);
 
-	if (wireframe)
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	else
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 	static_assert(std::is_same_v<IndexT, std::uint16_t>,
 		"Mesh::Render only supports 16-bit indices");

@@ -24,13 +24,11 @@ public:
 	void SetPipelineId(int pipeline_id) { m_pipeline_id = pipeline_id; }
 	void SetTextureId(int tex_id) { m_tex_id = tex_id; }
 	void SetColor(glm::vec3 const & color) { m_color = color; }
-	void SetDrawWireframe(bool wireframe = true) { m_draw_wireframe = wireframe; }
 
 	int GetMeshId() const { return m_mesh_id; }
 	int GetPipelineId() const { return m_pipeline_id; }
 	int GetTextureId() const { return m_tex_id; }
 	glm::vec3 const & GetColor() const { return m_color; }
-	bool GetDrawWireframe() const { return m_draw_wireframe; }
 
 	glm::mat4 & ModifyModelTransform() { return m_model_transform; }
 	glm::mat4 const & GetModelTransform() const { return m_model_transform; }
@@ -43,8 +41,6 @@ private:
 	int m_tex_id = -1;
 
 	glm::vec3 m_color;
-
-	bool m_draw_wireframe = false;
 
 	glm::mat4 m_model_transform{ 1.0 };
 };

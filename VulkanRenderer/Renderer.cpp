@@ -82,7 +82,7 @@ void Renderer::Render() const
 			pipeline.UpdatePerObjectConstants(*obj);
 
 			Mesh const & mesh = m_meshes[mesh_id];
-			mesh.Render(obj->GetDrawWireframe());
+			mesh.Render();
 		}
 	}
 

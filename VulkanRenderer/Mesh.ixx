@@ -34,7 +34,7 @@ public:
 
 	bool IsInitialized() const;
 
-	void Render(bool wireframe) const;
+	void Render() const;
 
 private:
 	void destroy_buffers();
@@ -203,7 +203,7 @@ bool Mesh::IsInitialized() const
 		&& m_index_count > 0;
 }
 
-void Mesh::Render(bool /*wireframe*/) const
+void Mesh::Render() const
 {
 	if (!IsInitialized())
 		return;
