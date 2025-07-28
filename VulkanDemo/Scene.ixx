@@ -57,20 +57,23 @@ private:
 	std::unique_ptr<Texture> m_skybox_tex;
 	std::unique_ptr<FontAtlas> m_arial_font;
 
-	std::shared_ptr<RenderObject> m_sword0;
-	std::shared_ptr<RenderObject> m_sword1;
-	std::shared_ptr<RenderObject> m_red_gem;
-	std::shared_ptr<RenderObject> m_green_gem;
-	std::shared_ptr<RenderObject> m_blue_gem;
-	std::shared_ptr<RenderObject> m_ground;
-	std::shared_ptr<RenderObject> m_skybox;
-	std::shared_ptr<RenderObject> m_text;
+	std::unique_ptr<TextMesh> m_fps_mesh;
+
+	std::vector<std::shared_ptr<RenderObject>> m_render_objs;
+
+	ReflectionPipeline::ObjectData m_sword0;
+	ReflectionPipeline::ObjectData m_sword1;
+	LightSourcePipeline::ObjectData m_red_gem;
+	LightSourcePipeline::ObjectData m_green_gem;
+	LightSourcePipeline::ObjectData m_blue_gem;
+	TexturePipeline::ObjectData m_ground;
+	TextPipeline::ObjectData m_fps_label;
 
 	LightsManager m_lights;
 
-	std::unique_ptr<TextMesh> m_fps_label;
-
-	float m_timer = 0.0;
-	float m_frame_timer = 0.0;
+	float m_timer = 0.0f;
+	float m_frame_timer = 0.0f;
 	int m_frame_count = 0;
+
+	float m_dpi_scale = 1.0f;
 };

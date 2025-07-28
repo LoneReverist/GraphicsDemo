@@ -65,6 +65,8 @@ public:
 
 	AssetId<VertexT> GetAssetId() const { return m_asset_id; }
 
+	float GetScreenPxRange() const { return m_screen_px_range; }
+
 private:
 	TextMesh(
 		GraphicsApi const & graphics_api,
@@ -81,6 +83,7 @@ private:
 		, m_text(text)
 		, m_font_atlas(font_atlas)
 		, m_font_size(font_size)
+		, m_screen_px_range(font_size * font_atlas.GetPxRange())
 		, m_origin(origin)
 		, m_viewport_width(viewport_width)
 		, m_viewport_height(viewport_height)
@@ -163,7 +166,8 @@ private:
 
 	std::string m_text;
 	FontAtlas const & m_font_atlas;
-	float m_font_size;
+	float m_font_size = 0.0f;
+	float m_screen_px_range = 0.0f;
 	glm::vec2 m_origin;
 
 	int m_viewport_width = 0;

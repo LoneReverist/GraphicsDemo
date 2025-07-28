@@ -24,6 +24,11 @@ export class ReflectionPipeline
 public:
 	using VertexT = NormalVertex;
 
+	struct ObjectData
+	{
+		glm::mat4 m_model{ 1.0 };
+	};
+
 	static std::optional<GraphicsPipeline> CreateGraphicsPipeline(
 		GraphicsApi const & graphics_api,
 		std::filesystem::path const & shaders_path,
@@ -72,9 +77,16 @@ std::optional<GraphicsPipeline> ReflectionPipeline::CreateGraphicsPipeline(
 	builder.SetPerObjectConstantsCallback(
 		[](GraphicsPipeline const & pipeline, RenderObject const & obj)
 		{
+			auto const * data = static_cast<ObjectData const *>(obj.GetPipelineData());
+			if (!data)
+			{
+				std::cout << "ObjectData is null for ReflectionPipeline" << std::endl;
+				return;
+			}
+
 			pipeline.SetPushConstants(
 				VSPushConstant{
-					.m_model = obj.GetModelTransform()
+					.m_model = data->m_model
 				},
 				std::nullopt);
 		});

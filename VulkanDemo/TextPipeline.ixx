@@ -22,6 +22,13 @@ export class TextPipeline
 public:
 	using VertexT = Texture2dVertex;
 
+	struct ObjectData
+	{
+		float screen_px_range = 1.0f;
+		glm::vec4 bg_color = glm::vec4(0.0f);
+		glm::vec4 text_color = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f);
+	};
+
 	static std::optional<GraphicsPipeline> CreateGraphicsPipeline(
 		GraphicsApi const & graphics_api,
 		std::filesystem::path const & shaders_path,
@@ -61,20 +68,24 @@ std::optional<GraphicsPipeline> TextPipeline::CreateGraphicsPipeline(
 		.m_depth_compare_op = DepthCompareOp::ALWAYS
 		});
 
-	builder.SetPerObjectConstantsCallback(
-		[&font_atlas](GraphicsPipeline const & pipeline, RenderObject const & obj)
-		{
-			float scale = 4.0f; // TODO: font size * dpi scaling?
-			float screen_px_range = scale * font_atlas.GetPxRange();
+		builder.SetPerObjectConstantsCallback(
+			[&font_atlas](GraphicsPipeline const & pipeline, RenderObject const & obj)
+			{
+				auto const * data = static_cast<ObjectData const *>(obj.GetPipelineData());
+				if (!data)
+				{
+					std::cout << "TextObjectData is null for TextPipeline" << std::endl;
+					return;
+				}
 
-			pipeline.SetPushConstants(
-				std::nullopt,
-				FSPushConstant{
-					.screen_px_range = screen_px_range,
-					.bg_color = glm::vec4(0.0, 0.0, 0.0, 0.0),
-					.text_color = glm::vec4(obj.GetColor(), 1.0)
-				});
-		});
+				pipeline.SetPushConstants(
+					std::nullopt,
+					FSPushConstant{
+						.screen_px_range = data->screen_px_range,
+						.bg_color = data->bg_color,
+						.text_color = data->text_color
+					});
+			});
 
 	return builder.CreatePipeline();
 }
