@@ -348,10 +348,9 @@ std::shared_ptr<RenderObject> create_render_object(
 	Renderer & renderer,
 	std::string const & name,
 	MeshAssetId mesh_id,
-	PipelineAssetId pipeline_id,
-	int tex_id = -1)
+	PipelineAssetId pipeline_id)
 {
-	return renderer.CreateRenderObject(name, mesh_id.m_index, pipeline_id.m_index, tex_id);
+	return renderer.CreateRenderObject(name, mesh_id.m_index, pipeline_id.m_index);
 }
 
 void init_sword_transform(int index, glm::mat4 & transform)

@@ -12,22 +12,19 @@ export module RenderObject;
 export class RenderObject
 {
 public:
-	RenderObject(std::string name, int mesh_id, int pipeline_id, int texture_id = -1)
+	RenderObject(std::string name, int mesh_id, int pipeline_id)
 		: m_name(name)
 		, m_mesh_id(mesh_id)
 		, m_pipeline_id(pipeline_id)
-		, m_texture_id(texture_id)
 		, m_color({ 1.0, 1.0, 1.0 })
 	{}
 
 	void SetMeshId(int mesh_id) { m_mesh_id = mesh_id; }
 	void SetPipelineId(int pipeline_id) { m_pipeline_id = pipeline_id; }
-	void SetTextureId(int texture_id) { m_texture_id = texture_id; }
 	void SetColor(glm::vec3 const & color) { m_color = color; }
 
 	int GetMeshId() const { return m_mesh_id; }
 	int GetPipelineId() const { return m_pipeline_id; }
-	int GetTextureId() const { return m_texture_id; }
 	glm::vec3 const & GetColor() const { return m_color; }
 
 	glm::mat4 & ModifyModelTransform() { return m_model_transform; }
@@ -38,7 +35,6 @@ private:
 
 	int m_mesh_id = -1;
 	int m_pipeline_id = -1;
-	int m_texture_id = -1;
 
 	glm::vec3 m_color;
 

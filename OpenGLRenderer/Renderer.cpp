@@ -75,7 +75,7 @@ void Renderer::UpdateMesh(int index, Mesh && mesh)
 	m_meshes[index] = std::move(mesh);
 }
 
-std::shared_ptr<RenderObject> Renderer::CreateRenderObject(std::string const & name, int mesh_id, int pipeline_id, int tex_id /*= -1*/)
+std::shared_ptr<RenderObject> Renderer::CreateRenderObject(std::string const & name, int mesh_id, int pipeline_id)
 {
 	if (mesh_id < 0 || mesh_id >= static_cast<int>(m_meshes.size()))
 	{
@@ -88,7 +88,7 @@ std::shared_ptr<RenderObject> Renderer::CreateRenderObject(std::string const & n
 		return nullptr;
 	}
 
-	std::shared_ptr<RenderObject> obj = std::make_shared<RenderObject>(name, mesh_id, pipeline_id, tex_id);
+	std::shared_ptr<RenderObject> obj = std::make_shared<RenderObject>(name, mesh_id, pipeline_id);
 	m_pipeline_containers[pipeline_id].m_render_objects.push_back(obj);
 	return obj;
 }
