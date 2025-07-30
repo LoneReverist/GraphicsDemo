@@ -341,20 +341,31 @@ TextPipeline Scene::create_text_pipeline(FontAtlas const & font_atlas)
 	return TextPipeline{ asset_id };
 }
 
-	// TODO: Type check to ensure pipeline_data is compatible with the pipeline
-	template <typename MeshAssetId, typename PipelineAssetId>
-		requires AssetsAreCompatible<MeshAssetId, PipelineAssetId>
-	std::shared_ptr<RenderObject> create_render_object(
-		Renderer & renderer,
-		std::string const & name,
-		MeshAssetId mesh_id,
-		PipelineAssetId pipeline_id,
-		void const * pipeline_data = nullptr)
-	{
-		std::shared_ptr<RenderObject> obj = renderer.CreateRenderObject(name, mesh_id.m_index, pipeline_id.m_index);
-		obj->SetPipelineData(pipeline_data);
-		return obj;
-	}
+template <typename MeshAssetId, typename Pipeline, typename PipelineObjData>
+	requires AssetsAreCompatible<MeshAssetId, AssetId<typename Pipeline::VertexT>>
+	&& std::same_as<PipelineObjData, typename Pipeline::ObjectData>
+std::shared_ptr<RenderObject> create_render_object(
+	Renderer & renderer,
+	std::string const & name,
+	MeshAssetId mesh_id,
+	Pipeline const & pipeline,
+	PipelineObjData const * object_data)
+{
+	std::shared_ptr<RenderObject> obj = renderer.CreateRenderObject(name, mesh_id.m_index, pipeline.GetAssetId().m_index);
+	obj->SetPipelineData(object_data);
+	return obj;
+}
+
+template <typename MeshAssetId, typename Pipeline>
+	requires AssetsAreCompatible<MeshAssetId, Pipeline>
+std::shared_ptr<RenderObject> create_render_object(
+	Renderer & renderer,
+	std::string const & name,
+	MeshAssetId mesh_id,
+	Pipeline pipeline)
+{
+	return renderer.CreateRenderObject(name, mesh_id.m_index, pipeline.GetAssetId().m_index);
+}
 
 void init_sword_transform(int index, glm::mat4 & transform)
 {
@@ -483,14 +494,14 @@ void Scene::Init()
 	m_camera.Init(camera_pos, camera_dir);
 
 	m_render_objs = {
-		create_render_object(m_renderer, "sword0", sword_mesh_id, reflection_pipeline.GetAssetId(), &m_sword0),
-		create_render_object(m_renderer, "sword1", sword_mesh_id, reflection_pipeline.GetAssetId(), &m_sword1),
-		create_render_object(m_renderer, "red gem", red_gem_mesh_id, light_source_pipeline.GetAssetId(), &m_red_gem),
-		create_render_object(m_renderer, "green gem", green_gem_mesh_id, light_source_pipeline.GetAssetId(), &m_green_gem),
-		create_render_object(m_renderer, "blue gem", blue_gem_mesh_id, light_source_pipeline.GetAssetId(), &m_blue_gem),
-		create_render_object(m_renderer, "ground", ground_mesh_id, ground_pipeline.GetAssetId(), &m_ground),
-		create_render_object(m_renderer, "skybox", skybox_mesh_id, skybox_pipeline.GetAssetId()),
-		create_render_object(m_renderer, "text", m_fps_mesh->GetAssetId(), text_pipeline.GetAssetId(), &m_fps_label)
+		create_render_object(m_renderer, "sword0", sword_mesh_id, reflection_pipeline, &m_sword0),
+		create_render_object(m_renderer, "sword1", sword_mesh_id, reflection_pipeline, &m_sword1),
+		create_render_object(m_renderer, "red gem", red_gem_mesh_id, light_source_pipeline, &m_red_gem),
+		create_render_object(m_renderer, "green gem", green_gem_mesh_id, light_source_pipeline, &m_green_gem),
+		create_render_object(m_renderer, "blue gem", blue_gem_mesh_id, light_source_pipeline, &m_blue_gem),
+		create_render_object(m_renderer, "ground", ground_mesh_id, ground_pipeline, &m_ground),
+		create_render_object(m_renderer, "skybox", skybox_mesh_id, skybox_pipeline),
+		create_render_object(m_renderer, "text", m_fps_mesh->GetAssetId(), text_pipeline, &m_fps_label)
 	};
 }
 

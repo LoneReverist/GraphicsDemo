@@ -76,6 +76,8 @@ std::optional<GraphicsPipeline> TexturePipeline::CreateGraphicsPipeline(
 	builder.SetPerObjectConstantsCallback(
 		[](GraphicsPipeline const & pipeline, RenderObject const & obj)
 		{
+			// For optimal performance, we assume that the object data is of the correct type.
+			// Use compile-time checks when creating render objects to ensure the data is compatible with the pipeline.
 			auto const * data = static_cast<ObjectData const *>(obj.GetPipelineData());
 			if (!data)
 			{
