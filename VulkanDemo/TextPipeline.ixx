@@ -21,6 +21,7 @@ export class TextPipeline
 {
 public:
 	using VertexT = Texture2dVertex;
+	using AssetIdT = AssetId<VertexT>;
 
 	struct ObjectData
 	{
@@ -35,12 +36,12 @@ public:
 		FontAtlas const & font_atlas);
 
 	TextPipeline() = default;
-	TextPipeline(AssetId<VertexT> asset_id) : m_asset_id(asset_id) {}
+	TextPipeline(AssetIdT asset_id) : m_asset_id(asset_id) {}
 
-	AssetId<VertexT> GetAssetId() const { return m_asset_id; }
+	AssetIdT GetAssetId() const { return m_asset_id; }
 
 private:
-	AssetId<VertexT> m_asset_id;
+	AssetIdT m_asset_id;
 };
 
 std::optional<GraphicsPipeline> TextPipeline::CreateGraphicsPipeline(
@@ -73,7 +74,7 @@ std::optional<GraphicsPipeline> TextPipeline::CreateGraphicsPipeline(
 			{
 				// For optimal performance, we assume that the object data is of the correct type.
 				// Use compile-time checks when creating render objects to ensure the data is compatible with the pipeline.
-				auto const * data = static_cast<ObjectData const *>(obj.GetPipelineData());
+				auto const * data = static_cast<ObjectData const *>(obj.GetObjectData());
 				if (!data)
 				{
 					std::cout << "TextObjectData is null for TextPipeline" << std::endl;

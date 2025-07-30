@@ -20,6 +20,7 @@ export class SkyboxPipeline
 {
 public:
 	using VertexT = PositionVertex;
+	using AssetIdT = AssetId<VertexT>;
 
 	static std::optional<GraphicsPipeline> CreateGraphicsPipeline(
 		GraphicsApi const & graphics_api,
@@ -28,12 +29,12 @@ public:
 		Texture const & skybox);
 
 	SkyboxPipeline() = default;
-	SkyboxPipeline(AssetId<VertexT> asset_id) : m_asset_id(asset_id) {}
+	SkyboxPipeline(AssetIdT asset_id) : m_asset_id(asset_id) {}
 
-	AssetId<VertexT> GetAssetId() const { return m_asset_id; }
+	AssetIdT GetAssetId() const { return m_asset_id; }
 
 private:
-	AssetId<VertexT> m_asset_id;
+	AssetIdT m_asset_id;
 };
 
 std::optional<GraphicsPipeline> SkyboxPipeline::CreateGraphicsPipeline(

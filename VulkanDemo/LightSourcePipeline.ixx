@@ -21,6 +21,7 @@ export class LightSourcePipeline
 {
 public:
 	using VertexT = NormalVertex;
+	using AssetIdT = AssetId<VertexT>;
 
 	struct ObjectData
 	{
@@ -34,12 +35,12 @@ public:
 		Camera const & camera);
 
 	LightSourcePipeline() = default;
-	LightSourcePipeline(AssetId<VertexT> asset_id) : m_asset_id(asset_id) {}
+	LightSourcePipeline(AssetIdT asset_id) : m_asset_id(asset_id) {}
 
-	AssetId<VertexT> GetAssetId() const { return m_asset_id; }
+	AssetIdT GetAssetId() const { return m_asset_id; }
 
 private:
-	AssetId<VertexT> m_asset_id;
+	AssetIdT m_asset_id;
 };
 
 std::optional<GraphicsPipeline> LightSourcePipeline::CreateGraphicsPipeline(
@@ -76,7 +77,7 @@ std::optional<GraphicsPipeline> LightSourcePipeline::CreateGraphicsPipeline(
 		{
 			// For optimal performance, we assume that the object data is of the correct type.
 			// Use compile-time checks when creating render objects to ensure the data is compatible with the pipeline.
-			auto const * data = static_cast<ObjectData const *>(obj.GetPipelineData());
+			auto const * data = static_cast<ObjectData const *>(obj.GetObjectData());
 			if (!data)
 			{
 				std::cout << "ObjectData is null for LightSourcePipeline" << std::endl;
