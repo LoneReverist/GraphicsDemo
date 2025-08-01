@@ -342,15 +342,33 @@ TextPipeline Scene::create_text_pipeline(FontAtlas const & font_atlas)
 	return TextPipeline{ asset_id };
 }
 
-template <typename MeshAssetId, typename PipelineAssetId>
-	requires AssetsAreCompatible<MeshAssetId, PipelineAssetId>
+template <typename ObjectData, typename Pipeline>
+concept ObjectDataIsCompatibleWithPipeline = std::same_as<ObjectData, typename Pipeline::ObjectData>;
+
+template <typename MeshAssetId, typename Pipeline, typename ObjectData>
+	requires AssetsAreCompatible<MeshAssetId, typename Pipeline::AssetIdT>
+	&& ObjectDataIsCompatibleWithPipeline<ObjectData, Pipeline>
 std::shared_ptr<RenderObject> create_render_object(
 	Renderer & renderer,
 	std::string const & name,
 	MeshAssetId mesh_id,
-	PipelineAssetId pipeline_id)
+	Pipeline const & pipeline,
+	ObjectData const & object_data)
 {
-	return renderer.CreateRenderObject(name, mesh_id.m_index, pipeline_id.m_index);
+	std::shared_ptr<RenderObject> obj = renderer.CreateRenderObject(name, mesh_id.m_index, pipeline.GetAssetId().m_index);
+	obj->SetObjectData(&object_data);
+	return obj;
+}
+
+template <typename MeshAssetId, typename Pipeline>
+	requires AssetsAreCompatible<MeshAssetId, Pipeline>
+std::shared_ptr<RenderObject> create_render_object(
+	Renderer & renderer,
+	std::string const & name,
+	MeshAssetId mesh_id,
+	Pipeline pipeline)
+{
+	return renderer.CreateRenderObject(name, mesh_id.m_index, pipeline.GetAssetId().m_index);
 }
 
 void init_sword_transform(int index, glm::mat4 & transform)
@@ -406,6 +424,9 @@ void update_gem_transform(glm::mat4 & transform, float delta_time)
 
 void Scene::Init()
 {
+	m_dpi_scale = PlatformUtils::GetDPIScalingFactor();
+	float label_font_size = 18.0f * m_dpi_scale;
+
 	m_resources_path = PlatformUtils::GetExecutableDir() / "resources";
 	const std::filesystem::path textures_path = m_resources_path / "textures";
 	const std::filesystem::path objects_path = m_resources_path / "objects";
@@ -442,27 +463,25 @@ void Scene::Init()
 	AssetId<GroundMesh::VertexT> ground_mesh_id = GroundMesh::Create(m_graphics_api, m_renderer);
 	AssetId<SkyboxMesh::VertexT> skybox_mesh_id = SkyboxMesh::Create(m_graphics_api, m_renderer);
 
-	m_fps_label = std::make_unique<TextMesh>(TextMesh::Create(m_graphics_api, m_renderer,
-		"", *m_arial_font, 36.0 /*font_size*/, glm::vec2{ -0.9, -0.9 } /*origin*/, 0 /*viewport_width*/, 0/*viewport_height*/));
+	m_fps_mesh = std::make_unique<TextMesh>(TextMesh::Create(m_graphics_api, m_renderer,
+		"FPS: ", *m_arial_font, label_font_size, glm::vec2{ -0.9, -0.9 } /*origin*/,
+		0 /*viewport_width*/, 0/*viewport_height*/, false /*flip_y*/));
 
-	m_sword0 = create_render_object(m_renderer, "sword0", sword_mesh_id, reflection_pipeline.GetAssetId());
-	m_sword1 = create_render_object(m_renderer, "sword1", sword_mesh_id, reflection_pipeline.GetAssetId());
-	m_red_gem = create_render_object(m_renderer, "red gem", red_gem_mesh_id, light_source_pipeline.GetAssetId());
-	m_green_gem = create_render_object(m_renderer, "green gem", green_gem_mesh_id, light_source_pipeline.GetAssetId());
-	m_blue_gem = create_render_object(m_renderer, "blue gem", blue_gem_mesh_id, light_source_pipeline.GetAssetId());
-	m_ground = create_render_object(m_renderer, "ground", ground_mesh_id, ground_pipeline.GetAssetId());
-	m_skybox = create_render_object(m_renderer, "skybox", skybox_mesh_id, skybox_pipeline.GetAssetId());
-	m_text = create_render_object(m_renderer, "text", m_fps_label->GetAssetId(), text_pipeline.GetAssetId());
+	m_fps_label = TextPipeline::ObjectData{
+		.m_screen_px_range = m_fps_mesh->GetScreenPxRange(),
+		.m_bg_color = { 0.0f, 0.0f, 0.0f, 0.3f },
+		.m_text_color = { 1.0f, 1.0f, 0.0f, 1.0 },
+	};
 
-	m_red_gem->SetColor({ 1.0, 0.0, 0.0 });
-	m_green_gem->SetColor({ 0.0, 1.0, 0.0 });
-	m_blue_gem->SetColor({ 0.0, 0.0, 1.0 });
+	m_red_gem.m_color = glm::vec3{ 1.0f, 0.0f, 0.0f };
+	m_green_gem.m_color = glm::vec3{ 0.0f, 1.0f, 0.0f };
+	m_blue_gem.m_color = glm::vec3{ 0.0f, 0.0f, 1.0f };
 
-	init_sword_transform(0, m_sword0->ModifyModelTransform());
-	init_sword_transform(1, m_sword1->ModifyModelTransform());
-	init_gem_transform(0, m_red_gem->ModifyModelTransform());
-	init_gem_transform(1, m_green_gem->ModifyModelTransform());
-	init_gem_transform(2, m_blue_gem->ModifyModelTransform());
+	init_sword_transform(0, m_sword0.m_model);
+	init_sword_transform(1, m_sword1.m_model);
+	init_gem_transform(0, m_red_gem.m_model);
+	init_gem_transform(1, m_green_gem.m_model);
+	init_gem_transform(2, m_blue_gem.m_model);
 
 	m_lights.SetAmbientLight(AmbientLight{ glm::vec3{ 0.5, 0.5, 0.5 } });
 
@@ -477,12 +496,23 @@ void Scene::Init()
 	glm::vec3 camera_pos{ 0.0f, -10.0f, 5.0f };
 	glm::vec3 camera_dir = glm::normalize(glm::vec3{ 0.0f, 0.0f, 2.5f } - camera_pos);
 	m_camera.Init(camera_pos, camera_dir);
+
+	m_render_objs = {
+		create_render_object(m_renderer, "sword0", sword_mesh_id, reflection_pipeline, m_sword0),
+		create_render_object(m_renderer, "sword1", sword_mesh_id, reflection_pipeline, m_sword1),
+		create_render_object(m_renderer, "red gem", red_gem_mesh_id, light_source_pipeline, m_red_gem),
+		create_render_object(m_renderer, "green gem", green_gem_mesh_id, light_source_pipeline, m_green_gem),
+		create_render_object(m_renderer, "blue gem", blue_gem_mesh_id, light_source_pipeline, m_blue_gem),
+		create_render_object(m_renderer, "ground", ground_mesh_id, ground_pipeline, m_ground),
+		create_render_object(m_renderer, "skybox", skybox_mesh_id, skybox_pipeline),
+		create_render_object(m_renderer, "text", m_fps_mesh->GetAssetId(), text_pipeline, m_fps_label)
+	};
 }
 
 void Scene::OnViewportResized(int width, int height)
 {
 	m_camera.OnViewportResized(width, height);
-	m_fps_label->OnViewportResized(width, height);
+	m_fps_mesh->OnViewportResized(width, height);
 }
 
 void Scene::Update(double delta_time, Input const & input)
@@ -495,7 +525,7 @@ void Scene::Update(double delta_time, Input const & input)
 	if (m_frame_timer >= 1.0)
 	{
 		float fps = static_cast<float>(m_frame_count) / m_frame_timer;
-		m_fps_label->SetText("FPS: " + std::to_string(static_cast<int>(fps)));
+		m_fps_mesh->SetText("FPS: " + std::to_string(static_cast<int>(fps)));
 		m_frame_timer = 0.0;
 		m_frame_count = 0;
 	}
@@ -508,27 +538,27 @@ void Scene::Update(double delta_time, Input const & input)
 	bg_color.b = std::tan(m_timer) / 2.0f + 0.5f;
 	m_renderer.SetClearColor(bg_color);
 
-	update_sword_transform(0, m_sword0->ModifyModelTransform(), m_timer, dt);
-	update_sword_transform(1, m_sword1->ModifyModelTransform(), m_timer, dt);
-	update_gem_transform(m_red_gem->ModifyModelTransform(), dt);
-	update_gem_transform(m_green_gem->ModifyModelTransform(), dt);
-	update_gem_transform(m_blue_gem->ModifyModelTransform(), dt);
+	update_sword_transform(0, m_sword0.m_model, m_timer, dt);
+	update_sword_transform(1, m_sword1.m_model, m_timer, dt);
+	update_gem_transform(m_red_gem.m_model, dt);
+	update_gem_transform(m_green_gem.m_model, dt);
+	update_gem_transform(m_blue_gem.m_model, dt);
 
-	glm::mat4 const & red_gem_transform = m_red_gem->GetModelTransform();
+	glm::mat4 const & red_gem_transform = m_red_gem.m_model;
 	m_lights.SetPointLight1(PointLight{
 		.m_pos{ red_gem_transform[3][0], red_gem_transform[3][1], red_gem_transform[3][2] },
 		.m_color{ 1.0, 0.0, 0.0 },
 		.m_radius = 20.0f
 		});
 
-	glm::mat4 const & green_gem_transform = m_green_gem->GetModelTransform();
+	glm::mat4 const & green_gem_transform = m_green_gem.m_model;
 	m_lights.SetPointLight2(PointLight{
 		.m_pos{ green_gem_transform[3][0], green_gem_transform[3][1], green_gem_transform[3][2] },
 		.m_color{ 0.0, 1.0, 0.0 },
 		.m_radius = 20.0f
 		});
 
-	glm::mat4 const & blue_gem_transform = m_blue_gem->GetModelTransform();
+	glm::mat4 const & blue_gem_transform = m_blue_gem.m_model;
 	m_lights.SetPointLight3(PointLight{
 		.m_pos{ blue_gem_transform[3][0], blue_gem_transform[3][1], blue_gem_transform[3][2] },
 		.m_color{ 0.0, 0.0, 1.0 },

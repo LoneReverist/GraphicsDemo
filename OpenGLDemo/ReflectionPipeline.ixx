@@ -23,6 +23,12 @@ export class ReflectionPipeline
 {
 public:
 	using VertexT = NormalVertex;
+	using AssetIdT = AssetId<VertexT>;
+
+	struct ObjectData
+	{
+		glm::mat4 m_model{ 1.0 };
+	};
 
 	static std::optional<GraphicsPipeline> CreateGraphicsPipeline(
 		GraphicsApi const & graphics_api,
@@ -32,12 +38,12 @@ public:
 		Texture const & texture);
 
 	ReflectionPipeline() = default;
-	ReflectionPipeline(AssetId<VertexT> asset_id) : m_asset_id(asset_id) {}
+	ReflectionPipeline(AssetIdT asset_id) : m_asset_id(asset_id) {}
 
-	AssetId<VertexT> GetAssetId() const { return m_asset_id; }
+	AssetIdT GetAssetId() const { return m_asset_id; }
 
 private:
-	AssetId<VertexT> m_asset_id;
+	AssetIdT m_asset_id;
 };
 
 std::optional<GraphicsPipeline> ReflectionPipeline::CreateGraphicsPipeline(
@@ -64,7 +70,16 @@ std::optional<GraphicsPipeline> ReflectionPipeline::CreateGraphicsPipeline(
 	builder.SetPerObjectConstantsCallback(
 		[&texture](GraphicsPipeline const & pipeline, RenderObject const & obj)
 		{
-			pipeline.SetUniform("model_transform", obj.GetModelTransform());
+			// For optimal performance, we assume that the object data is of the correct type.
+			// Use compile-time checks when creating render objects to ensure the data is compatible with the pipeline.
+			auto const * data = static_cast<ObjectData const *>(obj.GetObjectData());
+			if (!data)
+			{
+				std::cout << "ObjectData is null for ReflectionPipeline" << std::endl;
+				return;
+			}
+
+			pipeline.SetUniform("model_transform", data->m_model);
 
 			texture.Bind();
 		});

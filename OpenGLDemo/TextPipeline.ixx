@@ -21,6 +21,14 @@ export class TextPipeline
 {
 public:
 	using VertexT = Texture2dVertex;
+	using AssetIdT = AssetId<VertexT>;
+
+	struct ObjectData
+	{
+		float m_screen_px_range = 1.0f;
+		glm::vec4 m_bg_color = glm::vec4(0.0f);
+		glm::vec4 m_text_color = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f);
+	};
 
 	static std::optional<GraphicsPipeline> CreateGraphicsPipeline(
 		GraphicsApi const & graphics_api,
@@ -28,12 +36,12 @@ public:
 		FontAtlas const & font_atlas);
 
 	TextPipeline() = default;
-	TextPipeline(AssetId<VertexT> asset_id) : m_asset_id(asset_id) {}
+	TextPipeline(AssetIdT asset_id) : m_asset_id(asset_id) {}
 
-	AssetId<VertexT> GetAssetId() const { return m_asset_id; }
+	AssetIdT GetAssetId() const { return m_asset_id; }
 
 private:
-	AssetId<VertexT> m_asset_id;
+	AssetIdT m_asset_id;
 };
 
 std::optional<GraphicsPipeline> TextPipeline::CreateGraphicsPipeline(
@@ -54,12 +62,19 @@ std::optional<GraphicsPipeline> TextPipeline::CreateGraphicsPipeline(
 	builder.SetPerObjectConstantsCallback(
 		[&font_atlas](GraphicsPipeline const & pipeline, RenderObject const & obj)
 		{
-			float scale = 4.0f; // TODO: font size * dpi scaling?
-			float screen_px_range = scale * font_atlas.GetPxRange();
-			pipeline.SetUniform("screen_px_range", screen_px_range);
+			// For optimal performance, we assume that the object data is of the correct type.
+			// Use compile-time checks when creating render objects to ensure the data is compatible with the pipeline.
+			auto const * data = static_cast<ObjectData const *>(obj.GetObjectData());
+			if (!data)
+			{
+				std::cout << "TextObjectData is null for TextPipeline" << std::endl;
+				return;
+			}
 
-			pipeline.SetUniform("bg_color", glm::vec4(0.0, 0.0, 0.0, 0.0));
-			pipeline.SetUniform("text_color", glm::vec4(obj.GetColor(), 1.0));
+			pipeline.SetUniform("screen_px_range", data->m_screen_px_range);
+
+			pipeline.SetUniform("bg_color", data->m_bg_color);
+			pipeline.SetUniform("text_color", data->m_text_color);
 
 			font_atlas.GetTexture().Bind();
 		});

@@ -25,9 +25,9 @@ public:
 
 	struct ObjectData
 	{
-		float screen_px_range = 1.0f;
-		glm::vec4 bg_color = glm::vec4(0.0f);
-		glm::vec4 text_color = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f);
+		float m_screen_px_range = 1.0f;
+		glm::vec4 m_bg_color = glm::vec4(0.0f);
+		glm::vec4 m_text_color = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f);
 	};
 
 	static std::optional<GraphicsPipeline> CreateGraphicsPipeline(
@@ -84,9 +84,9 @@ std::optional<GraphicsPipeline> TextPipeline::CreateGraphicsPipeline(
 				pipeline.SetPushConstants(
 					std::nullopt,
 					FSPushConstant{
-						.screen_px_range = data->screen_px_range,
-						.bg_color = data->bg_color,
-						.text_color = data->text_color
+						.screen_px_range = data->m_screen_px_range,
+						.bg_color = data->m_bg_color,
+						.text_color = data->m_text_color
 					});
 			});
 

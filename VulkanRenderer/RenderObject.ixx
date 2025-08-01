@@ -32,6 +32,6 @@ private:
 	int m_mesh_id = -1;
 	int m_pipeline_id = -1;
 
-	// Pointer to per-object data that gets passed into shaders, expected to be of type CustomPipeline::ObjectData
+	// Pointer to per-object data that gets passed into shaders, expected to be of type Pipeline::ObjectData
 	void const * m_object_data = nullptr;
 };

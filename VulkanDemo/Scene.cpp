@@ -467,9 +467,9 @@ void Scene::Init()
 		0 /*viewport_width*/, 0/*viewport_height*/, true /*flip_y*/));
 
 	m_fps_label = TextPipeline::ObjectData{
-		.screen_px_range = m_fps_mesh->GetScreenPxRange(),
-		.bg_color = { 0.0f, 0.0f, 0.0f, 0.3f },
-		.text_color = { 1.0f, 1.0f, 0.0f, 1.0 },
+		.m_screen_px_range = m_fps_mesh->GetScreenPxRange(),
+		.m_bg_color = { 0.0f, 0.0f, 0.0f, 0.3f },
+		.m_text_color = { 1.0f, 1.0f, 0.0f, 1.0 },
 	};
 
 	m_red_gem.m_color = glm::vec3{ 1.0f, 0.0f, 0.0f };
