@@ -483,7 +483,7 @@ void Scene::Init()
 	init_gem_transform(1, m_green_gem.m_model);
 	init_gem_transform(2, m_blue_gem.m_model);
 
-	m_lights.SetAmbientLight(AmbientLight{ glm::vec3{ 0.5, 0.5, 0.5 } });
+	m_lights.SetAmbientLight(AmbientLight{ glm::vec3{ 0.3, 0.3, 0.3 } });
 
 	m_lights.SetSpotLight(SpotLight{
 		.m_pos{ 0.0f, 0.0f, 25.0f },
