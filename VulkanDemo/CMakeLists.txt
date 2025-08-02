@@ -32,7 +32,12 @@ foreach(SHADER ${SHADER_FILES})
     list(APPEND COMPILED_SHADERS ${OUTPUT_FILE})
 endforeach()
 
-add_custom_target(VulkanShaders ALL DEPENDS ${COMPILED_SHADERS})
+add_custom_target(VulkanShaders ALL
+    COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:VulkanDemo>/resources/shaders"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${SHADER_BINARY_DIR}" "$<TARGET_FILE_DIR:VulkanDemo>/resources/shaders"
+    DEPENDS ${COMPILED_SHADERS}
+    COMMENT "Copying shaders to resources directory"
+)
 add_dependencies(VulkanDemo VulkanShaders)
 
 file(GLOB MODULE_FILES CONFIGURE_DEPENDS
@@ -75,10 +80,4 @@ add_custom_command(TARGET VulkanDemo POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
     "${CMAKE_SOURCE_DIR}/resources"
     "$<TARGET_FILE_DIR:VulkanDemo>/resources"
-)
-
-add_custom_command(TARGET VulkanDemo POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-    "${SHADER_BINARY_DIR}"
-    "$<TARGET_FILE_DIR:VulkanDemo>/resources/shaders"
 )
