@@ -485,7 +485,7 @@ void Scene::Init()
 		0 /*viewport_width*/, 0 /*viewport_height*/, false /*flip_y*/));
 	m_fps_label = TextPipeline::ObjectData{
 		.m_screen_px_range = m_fps_mesh->GetScreenPxRange(),
-		.m_bg_color = { 0.0f, 0.0f, 0.0f, 0.3f },
+		.m_bg_color = { 0.0f, 0.0f, 0.0f, 0.0f },
 		.m_text_color = { 1.0f, 1.0f, 0.0f, 1.0 },
 	};
 
@@ -493,7 +493,7 @@ void Scene::Init()
 		"OpenGL Demo", *m_arial_font, title_font_size, glm::vec2{ -0.9, 0.8 } /*origin*/,
 		0 /*viewport_width*/, 0 /*viewport_height*/, false /*flip_y*/));
 	m_title_label = RainbowTextPipeline::ObjectData{
-		.m_bg_color = { 0.0f, 0.0f, 0.0f, 0.3f },
+		.m_bg_color = { 0.0f, 0.0f, 0.0f, 0.0f },
 		.m_screen_px_range = m_title_mesh->GetScreenPxRange(),
 		.m_rainbow_width = 200.0f * m_dpi_scale,
 		.m_slant_factor = -1.0f

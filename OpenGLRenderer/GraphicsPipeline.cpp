@@ -15,10 +15,12 @@ GraphicsPipeline::GraphicsPipeline(
 	std::vector<size_t> vs_uniform_sizes,
 	std::vector<size_t> fs_uniform_sizes,
 	DepthTestOptions const & depth_options,
+	BlendOptions const & blend_options,
 	CullMode cull_mode,
 	PerFrameConstantsCallback per_frame_constants_callback,
 	PerObjectConstantsCallback per_object_constants_callback)
 	: m_depth_test_options(depth_options)
+	, m_blend_options(blend_options)
 	, m_cull_mode(cull_mode)
 	, m_per_frame_constants_callback(per_frame_constants_callback)
 	, m_per_object_constants_callback(per_object_constants_callback)
@@ -74,18 +76,13 @@ GraphicsPipeline & GraphicsPipeline::operator=(GraphicsPipeline && other)
 
 	destroy_pipeline();
 
-	m_program_id = other.m_program_id;
-	m_depth_test_options = other.m_depth_test_options;
-	m_descriptor_set = other.m_descriptor_set;
-	m_per_frame_constants_callback = other.m_per_frame_constants_callback;
-	m_per_object_constants_callback = other.m_per_object_constants_callback;
-
-	other.m_program_id = 0;
-	other.m_depth_test_options = DepthTestOptions{};
-	other.m_descriptor_set = DescriptorSet{};
-	other.m_per_frame_constants_callback = nullptr;
-	other.m_per_object_constants_callback = nullptr;
-
+	std::swap(m_program_id, other.m_program_id);
+	std::swap(m_depth_test_options, other.m_depth_test_options);
+	std::swap(m_blend_options, other.m_blend_options);
+	std::swap(m_cull_mode, other.m_cull_mode);
+	std::swap(m_descriptor_set, other.m_descriptor_set);
+	std::swap(m_per_frame_constants_callback, other.m_per_frame_constants_callback);
+	std::swap(m_per_object_constants_callback, other.m_per_object_constants_callback);
 	return *this;
 }
 
@@ -97,16 +94,6 @@ void GraphicsPipeline::Activate() const
 		return;
 	}
 
-	if (m_cull_mode != CullMode::NONE)
-	{
-		glEnable(GL_CULL_FACE);
-		glCullFace(static_cast<GLenum>(m_cull_mode));
-	}
-	else
-	{
-		glDisable(GL_CULL_FACE);
-	}
-
 	if (m_depth_test_options.m_enable_depth_test)
 	{
 		glEnable(GL_DEPTH_TEST);
@@ -116,6 +103,26 @@ void GraphicsPipeline::Activate() const
 	else
 	{
 		glDisable(GL_DEPTH_TEST);
+	}
+
+	if (m_blend_options.m_enable_blend)
+	{
+		glEnable(GL_BLEND);
+		glBlendFunc(static_cast<GLenum>(m_blend_options.m_src_factor), static_cast<GLenum>(m_blend_options.m_dst_factor));
+	}
+	else
+	{
+		glDisable(GL_BLEND);
+	}
+
+	if (m_cull_mode != CullMode::NONE)
+	{
+		glEnable(GL_CULL_FACE);
+		glCullFace(static_cast<GLenum>(m_cull_mode));
+	}
+	else
+	{
+		glDisable(GL_CULL_FACE);
 	}
 
 	glUseProgram(m_program_id);

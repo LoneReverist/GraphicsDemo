@@ -45,6 +45,31 @@ export struct DepthTestOptions
 	DepthCompareOp m_depth_compare_op = DepthCompareOp::LESS;
 };
 
+export enum class BlendFactor {
+	ZERO = GL_ZERO,
+	ONE = GL_ONE,
+	SRC_COLOR = GL_SRC_COLOR,
+	ONE_MINUS_SRC_COLOR = GL_ONE_MINUS_SRC_COLOR,
+	DST_COLOR = GL_DST_COLOR,
+	ONE_MINUS_DST_COLOR = GL_ONE_MINUS_DST_COLOR,
+	SRC_ALPHA = GL_SRC_ALPHA,
+	ONE_MINUS_SRC_ALPHA = GL_ONE_MINUS_SRC_ALPHA,
+	DST_ALPHA = GL_DST_ALPHA,
+	ONE_MINUS_DST_ALPHA = GL_ONE_MINUS_DST_ALPHA,
+	CONSTANT_COLOR = GL_CONSTANT_COLOR,
+	ONE_MINUS_CONSTANT_COLOR = GL_ONE_MINUS_CONSTANT_COLOR,
+	CONSTANT_ALPHA = GL_CONSTANT_ALPHA,
+	ONE_MINUS_CONSTANT_ALPHA = GL_ONE_MINUS_CONSTANT_ALPHA,
+	SRC_ALPHA_SATURATE = GL_SRC_ALPHA_SATURATE
+};
+
+export struct BlendOptions
+{
+	bool m_enable_blend = false;
+	BlendFactor m_src_factor = BlendFactor::SRC_ALPHA;
+	BlendFactor m_dst_factor = BlendFactor::ONE_MINUS_SRC_ALPHA;
+};
+
 // By default, front facing facets have counter-clockwise vertex windings.
 export enum class CullMode
 {
@@ -65,6 +90,7 @@ public:
 		std::vector<size_t> vs_uniform_sizes,
 		std::vector<size_t> fs_uniform_sizes,
 		DepthTestOptions const & depth_options,
+		BlendOptions const & blend_options,
 		CullMode cull_mode,
 		PerFrameConstantsCallback per_frame_constants_callback,
 		PerObjectConstantsCallback per_object_constants_callback);
@@ -97,6 +123,7 @@ private:
 	DescriptorSet m_descriptor_set;
 
 	DepthTestOptions m_depth_test_options;
+	BlendOptions m_blend_options;
 	CullMode m_cull_mode = CullMode::NONE;
 
 	PerFrameConstantsCallback m_per_frame_constants_callback;
