@@ -97,6 +97,9 @@ std::optional<GraphicsPipeline> PipelineBuilder::CreatePipeline() const
 		return std::nullopt;
 	}
 
+	if (m_cull_mode == CullMode::NONE)
+		std::cout << "Warning: Building pipeline with cull mode is set to NONE, this may result in suboptimal performance." << std::endl;
+
 	return GraphicsPipeline{
 		m_graphics_api,
 		m_vert_shader_module,
@@ -108,6 +111,7 @@ std::optional<GraphicsPipeline> PipelineBuilder::CreatePipeline() const
 		m_fs_uniform_sizes,
 		m_texture,
 		m_depth_test_options,
+		m_cull_mode,
 		m_per_frame_constants_callback,
 		m_per_object_constants_callback };
 }

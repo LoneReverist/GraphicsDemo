@@ -30,6 +30,7 @@ public:
 	void SetFSUniformTypes();
 
 	void SetDepthTestOptions(DepthTestOptions const & options) { m_depth_test_options = options; }
+	void SetCullMode(CullMode cull_mode) { m_cull_mode = cull_mode; }
 
 	void SetPerFrameConstantsCallback(PerFrameConstantsCallback callback) { m_per_frame_constants_callback = callback; }
 	void SetPerObjectConstantsCallback(PerObjectConstantsCallback callback) { m_per_object_constants_callback = callback; }
@@ -44,6 +45,7 @@ private:
 	std::vector<size_t> m_fs_uniform_sizes;
 
 	DepthTestOptions m_depth_test_options;
+	CullMode m_cull_mode = CullMode::NONE; // Default to none to ensure objects always appear on screen when testing new pipelines.
 
 	PerFrameConstantsCallback m_per_frame_constants_callback;
 	PerObjectConstantsCallback m_per_object_constants_callback;

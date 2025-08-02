@@ -82,11 +82,11 @@ void PipelineBuilder::LoadShaders(std::filesystem::path const & vs_path, std::fi
 
 std::optional<GraphicsPipeline> PipelineBuilder::CreatePipeline() const
 {
-	if (m_vert_shader_id == 0
-		|| m_frag_shader_id == 0)
-	{
+	if (m_vert_shader_id == 0 || m_frag_shader_id == 0)
 		return std::nullopt;
-	}
+
+	if (m_cull_mode == CullMode::NONE)
+		std::cout << "Warning: Building pipeline with cull mode is set to NONE, this may result in suboptimal performance." << std::endl;
 
 	return GraphicsPipeline{
 		m_vert_shader_id,
@@ -94,6 +94,7 @@ std::optional<GraphicsPipeline> PipelineBuilder::CreatePipeline() const
 		m_vs_uniform_sizes,
 		m_fs_uniform_sizes,
 		m_depth_test_options,
+		m_cull_mode,
 		m_per_frame_constants_callback,
 		m_per_object_constants_callback };
 }

@@ -15,9 +15,11 @@ GraphicsPipeline::GraphicsPipeline(
 	std::vector<size_t> vs_uniform_sizes,
 	std::vector<size_t> fs_uniform_sizes,
 	DepthTestOptions const & depth_options,
+	CullMode cull_mode,
 	PerFrameConstantsCallback per_frame_constants_callback,
 	PerObjectConstantsCallback per_object_constants_callback)
 	: m_depth_test_options(depth_options)
+	, m_cull_mode(cull_mode)
 	, m_per_frame_constants_callback(per_frame_constants_callback)
 	, m_per_object_constants_callback(per_object_constants_callback)
 {
@@ -95,7 +97,15 @@ void GraphicsPipeline::Activate() const
 		return;
 	}
 
-	glEnable(GL_CULL_FACE); // cull back facing facets. by default, front facing facets have counter-clockwise vertex windings.
+	if (m_cull_mode != CullMode::NONE)
+	{
+		glEnable(GL_CULL_FACE);
+		glCullFace(static_cast<GLenum>(m_cull_mode));
+	}
+	else
+	{
+		glDisable(GL_CULL_FACE);
+	}
 
 	if (m_depth_test_options.m_enable_depth_test)
 	{

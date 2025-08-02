@@ -45,6 +45,14 @@ export struct DepthTestOptions
 	DepthCompareOp m_depth_compare_op = DepthCompareOp::LESS;
 };
 
+// By default, front facing facets have counter-clockwise vertex windings.
+export enum class CullMode
+{
+	NONE = GL_NONE,
+	FRONT = GL_FRONT,
+	BACK = GL_BACK
+};
+
 export class GraphicsPipeline
 {
 public:
@@ -57,6 +65,7 @@ public:
 		std::vector<size_t> vs_uniform_sizes,
 		std::vector<size_t> fs_uniform_sizes,
 		DepthTestOptions const & depth_options,
+		CullMode cull_mode,
 		PerFrameConstantsCallback per_frame_constants_callback,
 		PerObjectConstantsCallback per_object_constants_callback);
 	~GraphicsPipeline();
@@ -88,6 +97,7 @@ private:
 	DescriptorSet m_descriptor_set;
 
 	DepthTestOptions m_depth_test_options;
+	CullMode m_cull_mode = CullMode::NONE;
 
 	PerFrameConstantsCallback m_per_frame_constants_callback;
 	PerObjectConstantsCallback m_per_object_constants_callback;

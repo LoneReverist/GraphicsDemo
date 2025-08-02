@@ -55,6 +55,7 @@ std::optional<GraphicsPipeline> SkyboxPipeline::CreateGraphicsPipeline(
 		.m_enable_depth_write = false,
 		.m_depth_compare_op = DepthCompareOp::EQUAL
 		});
+	builder.SetCullMode(CullMode::BACK);
 
 	builder.SetPerFrameConstantsCallback(
 		[&camera](GraphicsPipeline const & pipeline)

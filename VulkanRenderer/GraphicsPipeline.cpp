@@ -43,7 +43,8 @@ namespace
 		std::vector<VkPipelineShaderStageCreateInfo> const & shader_stages,
 		VkVertexInputBindingDescription const & binding_desc,
 		std::vector<VkVertexInputAttributeDescription> const & attrib_descs,
-		DepthTestOptions const & depth_options)
+		DepthTestOptions const & depth_options,
+		CullMode cull_mode)
 	{
 		std::vector<VkDynamicState> dynamic_states = {
 			VK_DYNAMIC_STATE_VIEWPORT,
@@ -81,7 +82,7 @@ namespace
 			.depthClampEnable = VK_FALSE,
 			.rasterizerDiscardEnable = VK_FALSE,
 			.polygonMode = VK_POLYGON_MODE_FILL,
-			.cullMode = VK_CULL_MODE_BACK_BIT,
+			.cullMode = static_cast<VkCullModeFlags>(cull_mode),
 			.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE,
 			.depthBiasEnable = VK_FALSE,
 			.depthBiasConstantFactor = 0.0f,
@@ -385,6 +386,7 @@ GraphicsPipeline::GraphicsPipeline(GraphicsApi const & graphics_api,
 	std::vector<VkDeviceSize> fs_uniform_sizes,
 	Texture const * texture,
 	DepthTestOptions const & depth_options,
+	CullMode cull_mode,
 	PerFrameConstantsCallback per_frame_constants_callback,
 	PerObjectConstantsCallback per_object_constants_callback)
 	: m_graphics_api(graphics_api)
@@ -456,7 +458,8 @@ GraphicsPipeline::GraphicsPipeline(GraphicsApi const & graphics_api,
 		shader_stages,
 		binding_desc,
 		attrib_descs,
-		depth_options);
+		depth_options,
+		cull_mode);
 }
 
 GraphicsPipeline::~GraphicsPipeline()

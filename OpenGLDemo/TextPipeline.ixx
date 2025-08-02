@@ -58,6 +58,7 @@ std::optional<GraphicsPipeline> TextPipeline::CreateGraphicsPipeline(
 		.m_enable_depth_write = false,
 		.m_depth_compare_op = DepthCompareOp::ALWAYS
 		});
+	builder.SetCullMode(CullMode::BACK);
 
 	builder.SetPerObjectConstantsCallback(
 		[&font_atlas](GraphicsPipeline const & pipeline, RenderObject const & obj)

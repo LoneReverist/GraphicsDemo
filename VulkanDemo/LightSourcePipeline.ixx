@@ -65,6 +65,7 @@ std::optional<GraphicsPipeline> LightSourcePipeline::CreateGraphicsPipeline(
 	builder.SetPushConstantTypes<VSPushConstant, FSPushConstant>();
 	builder.SetVSUniformTypes<ViewProjUniform>();
 	builder.SetFSUniformTypes<CameraPosUniform>();
+	builder.SetCullMode(CullMode::BACK);
 
 	builder.SetPerFrameConstantsCallback(
 		[&camera](GraphicsPipeline const & pipeline)

@@ -54,6 +54,7 @@ std::optional<GraphicsPipeline> LightSourcePipeline::CreateGraphicsPipeline(
 		shaders_path / "light_source.frag");
 	builder.SetVSUniformTypes<ViewProjUniform>();
 	builder.SetFSUniformTypes<CameraPosUniform>();
+	builder.SetCullMode(CullMode::BACK);
 
 	builder.SetPerFrameConstantsCallback(
 		[&camera](GraphicsPipeline const & pipeline)

@@ -59,6 +59,7 @@ std::optional<GraphicsPipeline> ReflectionPipeline::CreateGraphicsPipeline(
 		shaders_path / "reflection.frag");
 	builder.SetVSUniformTypes<ViewProjUniform>();
 	builder.SetFSUniformTypes<LightsUniform, CameraPosUniform>();
+	builder.SetCullMode(CullMode::BACK);
 
 	builder.SetPerFrameConstantsCallback(
 		[&camera, &lights](GraphicsPipeline const & pipeline)

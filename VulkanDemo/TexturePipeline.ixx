@@ -67,6 +67,7 @@ std::optional<GraphicsPipeline> TexturePipeline::CreateGraphicsPipeline(
 	builder.SetVSUniformTypes<ViewProjUniform>();
 	builder.SetFSUniformTypes<LightsUniform>();
 	builder.SetTexture(texture);
+	builder.SetCullMode(CullMode::BACK);
 
 	builder.SetPerFrameConstantsCallback(
 		[&camera, &lights](GraphicsPipeline const & pipeline)
