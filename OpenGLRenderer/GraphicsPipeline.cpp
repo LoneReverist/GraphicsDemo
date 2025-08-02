@@ -9,6 +9,36 @@ module;
 
 module GraphicsPipeline;
 
+Program::~Program()
+{
+	if (m_id != 0)
+		glDeleteProgram(m_id);
+}
+
+Program::Program(Program && other) noexcept
+{
+	*this = std::move(other);
+}
+
+Program & Program::operator=(Program && other) noexcept
+{
+	if (this != &other)
+	{
+		if (m_id != 0)
+			glDeleteProgram(m_id);
+
+		std::swap(m_id, other.m_id);
+	}
+	return *this;
+}
+
+void Program::Create()
+{
+	if (m_id != 0)
+		return;
+	m_id = glCreateProgram();
+}
+
 GraphicsPipeline::GraphicsPipeline(
 	unsigned int vert_shader_id,
 	unsigned int frag_shader_id,
@@ -25,17 +55,17 @@ GraphicsPipeline::GraphicsPipeline(
 	, m_per_frame_constants_callback(per_frame_constants_callback)
 	, m_per_object_constants_callback(per_object_constants_callback)
 {
-	m_program_id = glCreateProgram();
-	glAttachShader(m_program_id, vert_shader_id);
-	glAttachShader(m_program_id, frag_shader_id);
-	glLinkProgram(m_program_id);
+	m_program.Create();
+	glAttachShader(m_program.GetId(), vert_shader_id);
+	glAttachShader(m_program.GetId(), frag_shader_id);
+	glLinkProgram(m_program.GetId());
 
 	int success = 0;
-	glGetProgramiv(m_program_id, GL_LINK_STATUS, &success);
+	glGetProgramiv(m_program.GetId(), GL_LINK_STATUS, &success);
 	if (!success)
 	{
 		char info_log[512];
-		glGetProgramInfoLog(m_program_id, 512, nullptr, info_log);
+		glGetProgramInfoLog(m_program.GetId(), 512, nullptr, info_log);
 		std::cout << "Failed to link shader program:\n" << info_log << std::endl;
 	}
 
@@ -53,42 +83,9 @@ GraphicsPipeline::GraphicsPipeline(
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
-GraphicsPipeline::~GraphicsPipeline()
-{
-	destroy_pipeline();
-}
-
-void GraphicsPipeline::destroy_pipeline()
-{
-	glDeleteProgram(m_program_id);
-	m_program_id = 0;
-}
-
-GraphicsPipeline::GraphicsPipeline(GraphicsPipeline && other)
-{
-	*this = std::move(other);
-}
-
-GraphicsPipeline & GraphicsPipeline::operator=(GraphicsPipeline && other)
-{
-	if (this == &other)
-		return *this;
-
-	destroy_pipeline();
-
-	std::swap(m_program_id, other.m_program_id);
-	std::swap(m_depth_test_options, other.m_depth_test_options);
-	std::swap(m_blend_options, other.m_blend_options);
-	std::swap(m_cull_mode, other.m_cull_mode);
-	std::swap(m_descriptor_set, other.m_descriptor_set);
-	std::swap(m_per_frame_constants_callback, other.m_per_frame_constants_callback);
-	std::swap(m_per_object_constants_callback, other.m_per_object_constants_callback);
-	return *this;
-}
-
 void GraphicsPipeline::Activate() const
 {
-	if (m_program_id == 0)
+	if (m_program.GetId() == 0)
 	{
 		std::cout << "Activating invalid shader program" << std::endl;
 		return;
@@ -125,7 +122,7 @@ void GraphicsPipeline::Activate() const
 		glDisable(GL_CULL_FACE);
 	}
 
-	glUseProgram(m_program_id);
+	glUseProgram(m_program.GetId());
 }
 
 void GraphicsPipeline::UpdatePerFrameConstants() const

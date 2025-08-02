@@ -78,6 +78,26 @@ export enum class CullMode
 	BACK = GL_BACK
 };
 
+class Program
+{
+public:
+	Program() = default;
+	~Program();
+
+	Program(Program && other) noexcept;
+	Program & operator=(Program && other) noexcept;
+
+	Program(Program const &) = delete;
+	Program & operator=(Program const &) = delete;
+
+	void Create();
+
+	unsigned int GetId() const { return m_id; }
+
+private:
+	unsigned int m_id = 0;
+};
+
 export class GraphicsPipeline
 {
 public:
@@ -94,15 +114,15 @@ public:
 		CullMode cull_mode,
 		PerFrameConstantsCallback per_frame_constants_callback,
 		PerObjectConstantsCallback per_object_constants_callback);
-	~GraphicsPipeline();
+	~GraphicsPipeline() = default;
 
-	GraphicsPipeline(GraphicsPipeline && other);
-	GraphicsPipeline & operator=(GraphicsPipeline && other);
+	GraphicsPipeline(GraphicsPipeline && other) = default;
+	GraphicsPipeline & operator=(GraphicsPipeline && other) = default;
 
-	GraphicsPipeline(GraphicsPipeline &) = delete;
-	GraphicsPipeline & operator=(GraphicsPipeline &) = delete;
+	GraphicsPipeline(GraphicsPipeline const &) = delete;
+	GraphicsPipeline & operator=(GraphicsPipeline const &) = delete;
 
-	bool IsValid() const { return m_program_id != 0; }
+	bool IsValid() const { return m_program.GetId() != 0; }
 
 	void Activate() const;
 	void UpdatePerFrameConstants() const;
@@ -118,7 +138,7 @@ private:
 	void destroy_pipeline();
 
 private:
-	unsigned int m_program_id = 0;
+	Program m_program;
 
 	DescriptorSet m_descriptor_set;
 
@@ -133,7 +153,7 @@ private:
 template <typename UniformData>
 void GraphicsPipeline::SetUniform(std::string const & label, UniformData const & data) const
 {
-	GLint uniform_loc = glGetUniformLocation(m_program_id, label.c_str());
+	GLint uniform_loc = glGetUniformLocation(m_program.GetId(), label.c_str());
 	if (uniform_loc == -1)
 	{
 		std::cout << "Uniform not found: " << label << std::endl;

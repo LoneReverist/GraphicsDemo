@@ -35,6 +35,34 @@ GLenum to_gl_format(PixelFormat format)
 	return 0;
 }
 
+Tex::~Tex()
+{
+	if (m_id != 0)
+		glDeleteTextures(1, &m_id);
+}
+
+Tex::Tex(Tex && other)
+{
+	*this = std::move(other);
+}
+
+Tex & Tex::operator=(Tex && other)
+{
+	if (this != &other)
+	{
+		if (m_id != 0)
+			glDeleteTextures(1, &m_id);
+
+		std::swap(m_id, other.m_id);
+	}
+	return *this;
+}
+
+void Tex::Create()
+{
+	glGenTextures(1, &m_id);
+}
+
 bool Texture::ImageData::IsValid() const
 {
 	return m_data != nullptr && m_width > 0 && m_height > 0;
@@ -62,8 +90,8 @@ Texture::Texture(GraphicsApi const & graphics_api, ImageData const & image_data,
 		throw std::runtime_error("Texture() image_data not valid");
 
 	m_type = GL_TEXTURE_2D;
-	glGenTextures(1, &m_tex_id);
-	glBindTexture(m_type, m_tex_id);
+	m_tex.Create();
+	glBindTexture(m_type, m_tex.GetId());
 
 	glTexParameteri(m_type, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(m_type, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -94,8 +122,8 @@ Texture::Texture(GraphicsApi const & graphics_api, CubeImageData const & image_d
 		throw std::runtime_error("Texture() image_data not valid");
 
 	m_type = GL_TEXTURE_CUBE_MAP;
-	glGenTextures(1, &m_tex_id);
-	glBindTexture(m_type, m_tex_id);
+	m_tex.Create();
+	glBindTexture(m_type, m_tex.GetId());
 
 	glTexParameteri(m_type, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(m_type, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -120,46 +148,12 @@ Texture::Texture(GraphicsApi const & graphics_api, CubeImageData const & image_d
 	}
 }
 
-Texture::~Texture()
-{
-	destroy_texture();
-}
-
-void Texture::destroy_texture()
-{
-	glDeleteTextures(1, &m_tex_id);
-	m_tex_id = 0;
-	m_type = 0;
-}
-
-Texture::Texture(Texture && other)
-	: m_graphics_api(other.m_graphics_api)
-{
-	*this = std::move(other);
-}
-
-Texture & Texture::operator=(Texture && other)
-{
-	if (this == &other)
-		return *this;
-
-	destroy_texture();
-
-	m_tex_id = other.m_tex_id;
-	m_type = other.m_type;
-
-	other.m_tex_id = 0;
-	other.m_type = 0;
-
-	return *this;
-}
-
 bool Texture::IsValid() const
 {
-	return m_tex_id != 0 && m_type != 0;
+	return m_tex.GetId() != 0 && m_type != 0;
 }
 
 void Texture::Bind() const
 {
-	glBindTexture(m_type, m_tex_id);
+	glBindTexture(m_type, m_tex.GetId());
 }

@@ -21,6 +21,26 @@ export std::uint8_t GetPixelSize(PixelFormat format)
 	return 0;
 }
 
+class Tex
+{
+public:
+	Tex() = default;
+	~Tex();
+
+	Tex(Tex && other);
+	Tex & operator=(Tex && other);
+
+	Tex(Tex const &) = delete;
+	Tex & operator=(Tex const &) = delete;
+
+	void Create();
+
+	unsigned int GetId() const { return m_id; }
+
+private:
+	unsigned int m_id = 0;
+};
+
 export class Texture
 {
 public:
@@ -49,24 +69,21 @@ public:
 public:
 	Texture(GraphicsApi const & graphics_api, ImageData const & image_data, bool use_mip_map = true);
 	Texture(GraphicsApi const & graphics_api, CubeImageData const & image_data);
-	~Texture();
+	~Texture() = default;
 
-	Texture(Texture && other);
-	Texture & operator=(Texture && other);
+	Texture(Texture && other) = default;
+	Texture & operator=(Texture && other) = default;
 
-	Texture(Texture &) = delete;
-	Texture & operator=(Texture &) = delete;
+	Texture(Texture const &) = delete;
+	Texture & operator=(Texture const &) = delete;
 
 	bool IsValid() const;
 
 	void Bind() const;
 
 private:
-	void destroy_texture();
-
-private:
-	GraphicsApi const & m_graphics_api;
+	std::reference_wrapper<GraphicsApi const> m_graphics_api;
 
 	unsigned int m_type = 0;
-	unsigned int m_tex_id = 0;
+	Tex m_tex;
 };
