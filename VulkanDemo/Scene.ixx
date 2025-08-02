@@ -22,6 +22,7 @@ import TextMesh;
 import TextPipeline;
 import Texture;
 import TexturePipeline;
+import RainbowTextPipeline;
 
 export class Scene
 {
@@ -45,6 +46,7 @@ private:
 	LightSourcePipeline create_light_source_pipeline();
 	ReflectionPipeline create_reflection_pipeline(Texture const & texture);
 	TextPipeline create_text_pipeline(FontAtlas const & font_atlas);
+	RainbowTextPipeline create_rainbow_text_pipeline(FontAtlas const & font_atlas);
 
 private:
 	GraphicsApi const & m_graphics_api;
@@ -58,6 +60,7 @@ private:
 	std::unique_ptr<FontAtlas> m_arial_font;
 
 	std::unique_ptr<TextMesh> m_fps_mesh;
+	std::unique_ptr<TextMesh> m_title_mesh;
 
 	std::vector<std::shared_ptr<RenderObject>> m_render_objs;
 
@@ -68,6 +71,7 @@ private:
 	LightSourcePipeline::ObjectData m_blue_gem;
 	TexturePipeline::ObjectData m_ground;
 	TextPipeline::ObjectData m_fps_label;
+	RainbowTextPipeline::ObjectData m_title_label;
 
 	LightsManager m_lights;
 

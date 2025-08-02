@@ -11,6 +11,7 @@ add_custom_target(OpenGLShaders ALL
     COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:OpenGLDemo>/resources/shaders"
     COMMAND ${CMAKE_COMMAND} -E copy_directory "${SHADER_SOURCE_DIR}" "$<TARGET_FILE_DIR:OpenGLDemo>/resources/shaders"
     DEPENDS ${SHADER_FILES}
+    COMMENT "Copying shaders to resources directory"
 )
 add_dependencies(OpenGLDemo OpenGLShaders)
 

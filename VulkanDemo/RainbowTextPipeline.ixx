@@ -28,7 +28,7 @@ public:
         glm::vec4 m_bg_color = glm::vec4(0.0f);
         float m_screen_px_range = 1.0f;
         float m_time = 0.0f;
-		float m_rainbow_width = 200.0f; // in pixels, adjust for dpi
+        float m_rainbow_width = 200.0f; // in pixels, adjust for dpi
 
 		// Adjust for slant angle (0.0 = vertical, 1.0 = 45 degrees forward, -1.0 = 45 degrees backward)
         float m_slant_factor = -1.0f;
@@ -49,14 +49,26 @@ private:
 };
 
 std::optional<GraphicsPipeline> RainbowTextPipeline::CreateGraphicsPipeline(
-    GraphicsApi const & /*graphics_api*/,
+    GraphicsApi const & graphics_api,
     std::filesystem::path const & shaders_path,
     FontAtlas const & font_atlas)
 {
-    PipelineBuilder builder;
+    struct FSPushConstant
+    {
+        alignas(16) glm::vec4 bg_color;
+        alignas(4) float screen_px_range;
+        alignas(4) float time;
+        alignas(4) float rainbow_width;
+        alignas(4) float slant_factor;
+    };
+
+    PipelineBuilder builder{ graphics_api };
     builder.LoadShaders(
-        shaders_path / "msdf_text.vert",
-        shaders_path / "rainbow_text.frag");
+        shaders_path / "msdf_text.vert.spv",
+        shaders_path / "rainbow_text.frag.spv");
+    builder.SetVertexType<VertexT>();
+    builder.SetPushConstantTypes<std::nullopt_t, FSPushConstant>();
+    builder.SetTexture(font_atlas.GetTexture());
     builder.SetDepthTestOptions(DepthTestOptions{
         .m_enable_depth_test = false,
         .m_enable_depth_write = false,
@@ -74,13 +86,15 @@ std::optional<GraphicsPipeline> RainbowTextPipeline::CreateGraphicsPipeline(
                 return;
             }
 
-            pipeline.SetUniform("bg_color", data->m_bg_color);
-            pipeline.SetUniform("screen_px_range", data->m_screen_px_range);
-            pipeline.SetUniform("time", data->m_time);
-            pipeline.SetUniform("rainbow_width", data->m_rainbow_width);
-            pipeline.SetUniform("slant_factor", data->m_slant_factor);
-
-            font_atlas.GetTexture().Bind();
+            pipeline.SetPushConstants(
+                std::nullopt,
+                FSPushConstant{
+                    .bg_color = data->m_bg_color,
+                    .screen_px_range = data->m_screen_px_range,
+                    .time = data->m_time,
+                    .rainbow_width = data->m_rainbow_width,
+                    .slant_factor = data->m_slant_factor
+                });
         });
 
     return builder.CreatePipeline();

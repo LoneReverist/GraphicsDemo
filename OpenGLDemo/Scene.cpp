@@ -493,9 +493,10 @@ void Scene::Init()
 		"OpenGL Demo", *m_arial_font, title_font_size, glm::vec2{ -0.9, 0.8 } /*origin*/,
 		0 /*viewport_width*/, 0 /*viewport_height*/, false /*flip_y*/));
 	m_title_label = RainbowTextPipeline::ObjectData{
-		.m_screen_px_range = m_title_mesh->GetScreenPxRange(),
 		.m_bg_color = { 0.0f, 0.0f, 0.0f, 0.3f },
-		.m_time = 0.0f
+		.m_screen_px_range = m_title_mesh->GetScreenPxRange(),
+		.m_rainbow_width = 200.0f * m_dpi_scale,
+		.m_slant_factor = -1.0f
 	};
 
 	m_red_gem.m_color = glm::vec3{ 1.0f, 0.0f, 0.0f };
@@ -594,8 +595,7 @@ void Scene::Update(double delta_time, Input const & input)
 		.m_radius = 20.0f
 		});
 
-	if (m_title_mesh)
-		m_title_label.m_time = m_timer;
+	m_title_label.m_time = m_timer;
 }
 
 void Scene::Render() const
