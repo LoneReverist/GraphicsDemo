@@ -20,6 +20,7 @@ import Mesh;
 import ObjLoader;
 import PlatformUtils;
 import StbImage;
+import TextMesh;
 import Vertex;
 
 std::unique_ptr<Texture> create_texture(
@@ -342,6 +343,20 @@ TextPipeline Scene::create_text_pipeline(FontAtlas const & font_atlas)
 	return TextPipeline{ asset_id };
 }
 
+RainbowTextPipeline Scene::create_rainbow_text_pipeline(FontAtlas const & font_atlas)
+{
+	std::filesystem::path shaders_path = m_resources_path / "shaders";
+	std::optional<GraphicsPipeline> pipeline = RainbowTextPipeline::CreateGraphicsPipeline(
+		m_graphics_api, shaders_path, font_atlas);
+	if (!pipeline.has_value())
+	{
+		std::cout << "Failed to create RainbowTextPipeline" << std::endl;
+		return RainbowTextPipeline{};
+	}
+	AssetId<RainbowTextPipeline::VertexT> asset_id{ m_renderer.AddPipeline(std::move(pipeline.value())) };
+	return RainbowTextPipeline{ asset_id };
+}
+
 template <typename ObjectData, typename Pipeline>
 concept ObjectDataIsCompatibleWithPipeline = std::same_as<ObjectData, typename Pipeline::ObjectData>;
 
@@ -426,6 +441,7 @@ void Scene::Init()
 {
 	m_dpi_scale = PlatformUtils::GetDPIScalingFactor();
 	float label_font_size = 18.0f * m_dpi_scale;
+	float title_font_size = 32.0f * m_dpi_scale;
 
 	m_resources_path = PlatformUtils::GetExecutableDir() / "resources";
 	const std::filesystem::path textures_path = m_resources_path / "textures";
@@ -451,6 +467,7 @@ void Scene::Init()
 	LightSourcePipeline light_source_pipeline = create_light_source_pipeline();
 	ReflectionPipeline reflection_pipeline = create_reflection_pipeline(*m_skybox_tex);
 	TextPipeline text_pipeline = create_text_pipeline(*m_arial_font);
+	RainbowTextPipeline rainbow_text_pipeline = create_rainbow_text_pipeline(*m_arial_font);
 
 	AssetId<FileMesh::VertexT> sword_mesh_id = FileMesh::Create(m_graphics_api, m_renderer,
 		objects_path / "skullsword.obj");
@@ -465,12 +482,20 @@ void Scene::Init()
 
 	m_fps_mesh = std::make_unique<TextMesh>(TextMesh::Create(m_graphics_api, m_renderer,
 		"FPS: ", *m_arial_font, label_font_size, glm::vec2{ -0.9, -0.9 } /*origin*/,
-		0 /*viewport_width*/, 0/*viewport_height*/, false /*flip_y*/));
-
+		0 /*viewport_width*/, 0 /*viewport_height*/, false /*flip_y*/));
 	m_fps_label = TextPipeline::ObjectData{
 		.m_screen_px_range = m_fps_mesh->GetScreenPxRange(),
 		.m_bg_color = { 0.0f, 0.0f, 0.0f, 0.3f },
 		.m_text_color = { 1.0f, 1.0f, 0.0f, 1.0 },
+	};
+
+	m_title_mesh = std::make_unique<TextMesh>(TextMesh::Create(m_graphics_api, m_renderer,
+		"OpenGL Demo", *m_arial_font, title_font_size, glm::vec2{ -0.9, 0.8 } /*origin*/,
+		0 /*viewport_width*/, 0 /*viewport_height*/, false /*flip_y*/));
+	m_title_label = RainbowTextPipeline::ObjectData{
+		.m_screen_px_range = m_title_mesh->GetScreenPxRange(),
+		.m_bg_color = { 0.0f, 0.0f, 0.0f, 0.3f },
+		.m_time = 0.0f
 	};
 
 	m_red_gem.m_color = glm::vec3{ 1.0f, 0.0f, 0.0f };
@@ -505,14 +530,18 @@ void Scene::Init()
 		create_render_object(m_renderer, "blue gem", blue_gem_mesh_id, light_source_pipeline, m_blue_gem),
 		create_render_object(m_renderer, "ground", ground_mesh_id, ground_pipeline, m_ground),
 		create_render_object(m_renderer, "skybox", skybox_mesh_id, skybox_pipeline),
-		create_render_object(m_renderer, "text", m_fps_mesh->GetAssetId(), text_pipeline, m_fps_label)
+		create_render_object(m_renderer, "text", m_fps_mesh->GetAssetId(), text_pipeline, m_fps_label),
+		create_render_object(m_renderer, "title", m_title_mesh->GetAssetId(), rainbow_text_pipeline, m_title_label)
 	};
 }
 
 void Scene::OnViewportResized(int width, int height)
 {
 	m_camera.OnViewportResized(width, height);
-	m_fps_mesh->OnViewportResized(width, height);
+	if (m_fps_mesh)
+		m_fps_mesh->OnViewportResized(width, height);
+	if (m_title_mesh)
+		m_title_mesh->OnViewportResized(width, height);
 }
 
 void Scene::Update(double delta_time, Input const & input)
@@ -564,6 +593,9 @@ void Scene::Update(double delta_time, Input const & input)
 		.m_color{ 0.0, 0.0, 1.0 },
 		.m_radius = 20.0f
 		});
+
+	if (m_title_mesh)
+		m_title_label.m_time = m_timer;
 }
 
 void Scene::Render() const
