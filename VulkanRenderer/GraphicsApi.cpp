@@ -587,18 +587,6 @@ namespace
 
 		return fences;
 	}
-
-	std::uint32_t find_memory_type(PhysicalDeviceInfo const & phys_device_info, std::uint32_t type_filter, VkMemoryPropertyFlags properties)
-	{
-		VkPhysicalDeviceMemoryProperties const & mem_properties = phys_device_info.mem_properties;
-		for (std::uint32_t i = 0; i < mem_properties.memoryTypeCount; i++)
-		{
-			if (type_filter & (1 << i) && (mem_properties.memoryTypes[i].propertyFlags & properties) == properties)
-				return i;
-		}
-
-		throw std::runtime_error("failed to find suitable memory type!");
-	}
 }
 
 GraphicsApi::GraphicsApi(
@@ -845,59 +833,16 @@ void GraphicsApi::WaitForLastFrame() const
 	vkDeviceWaitIdle(m_logical_device);
 }
 
-VkResult GraphicsApi::CreateBuffer(
-	VkDeviceSize size,
-	VkBufferUsageFlags usage,
-	VkMemoryPropertyFlags properties,
-	VkBuffer & out_buffer,
-	VkDeviceMemory & out_buffer_memory) const
+std::uint32_t GraphicsApi::FindMemoryType(std::uint32_t type_filter, VkMemoryPropertyFlags properties) const
 {
-	VkBufferCreateInfo buffer_info{
-		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-		.size = size,
-		.usage = usage,
-		.sharingMode = VK_SHARING_MODE_EXCLUSIVE
-	};
-
-	VkResult result = vkCreateBuffer(m_logical_device, &buffer_info, nullptr, &out_buffer);
-	if (result != VK_SUCCESS)
+	VkPhysicalDeviceMemoryProperties const & mem_properties = m_phys_device_info.mem_properties;
+	for (std::uint32_t i = 0; i < mem_properties.memoryTypeCount; i++)
 	{
-		std::cout << "Failed to create buffer" << std::endl;
-		return result;
+		if (type_filter & (1 << i) && (mem_properties.memoryTypes[i].propertyFlags & properties) == properties)
+			return i;
 	}
 
-	return CreateBufferMemory(out_buffer, properties, out_buffer_memory);
-}
-
-VkResult GraphicsApi::CreateBufferMemory(
-	VkBuffer buffer,
-	VkMemoryPropertyFlags properties,
-	VkDeviceMemory & out_buffer_memory) const
-{
-	VkMemoryRequirements mem_requirements;
-	vkGetBufferMemoryRequirements(m_logical_device, buffer, &mem_requirements);
-
-	std::uint32_t mem_type_index = find_memory_type(
-		m_phys_device_info,
-		mem_requirements.memoryTypeBits,
-		properties);
-
-	VkMemoryAllocateInfo alloc_info{
-		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-		.allocationSize = mem_requirements.size,
-		.memoryTypeIndex = mem_type_index
-	};
-
-	// TODO: should use something like VulkanMemoryAllocator library for managing memory
-	VkResult result = vkAllocateMemory(m_logical_device, &alloc_info, nullptr, &out_buffer_memory);
-	if (result != VK_SUCCESS)
-	{
-		std::cout << "Failed to allocate buffer memory" << std::endl;
-		return result;
-	}
-
-	vkBindBufferMemory(m_logical_device, buffer, out_buffer_memory, 0);
-	return VK_SUCCESS;
+	throw std::runtime_error("failed to find suitable memory type!");
 }
 
 VkResult GraphicsApi::Create2dImage(
@@ -949,10 +894,7 @@ VkResult GraphicsApi::CreateImageMemory(
 	VkMemoryRequirements mem_requirements;
 	vkGetImageMemoryRequirements(m_logical_device, image, &mem_requirements);
 
-	std::uint32_t mem_type_index = find_memory_type(
-		m_phys_device_info,
-		mem_requirements.memoryTypeBits,
-		properties);
+	std::uint32_t mem_type_index = FindMemoryType(mem_requirements.memoryTypeBits, properties);
 
 	VkMemoryAllocateInfo alloc_info{
 		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,

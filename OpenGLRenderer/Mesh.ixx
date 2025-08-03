@@ -9,28 +9,9 @@ module;
 
 export module Mesh;
 
+import Buffer;
 import GraphicsApi;
 import Vertex;
-
-class Buffer
-{
-public:
-	Buffer() = default;
-	~Buffer();
-
-	Buffer(Buffer && other);
-	Buffer & operator=(Buffer && other);
-
-	Buffer(Buffer const &) = delete;
-	Buffer & operator=(Buffer const &) = delete;
-
-	void Create();
-
-	unsigned int GetId() const { return m_id; }
-
-private:
-	unsigned int m_id = 0;
-};
 
 class VertexArrayObject
 {

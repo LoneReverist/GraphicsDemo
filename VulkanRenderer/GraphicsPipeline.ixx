@@ -12,14 +12,14 @@ module;
 
 export module GraphicsPipeline;
 
+import Buffer;
 import GraphicsApi;
 import RenderObject;
 import Texture;
 
 struct UniformBuffer
 {
-	VkBuffer m_buffer = VK_NULL_HANDLE;
-	VkDeviceMemory m_memory = VK_NULL_HANDLE;
+	Buffer m_buffer;
 	void * m_mapping{ nullptr };
 };
 

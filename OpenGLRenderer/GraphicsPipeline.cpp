@@ -72,13 +72,14 @@ GraphicsPipeline::GraphicsPipeline(
 	std::vector<size_t> uniform_sizes{ vs_uniform_sizes };
 	uniform_sizes.insert(uniform_sizes.end(), fs_uniform_sizes.begin(), fs_uniform_sizes.end());
 
+	m_descriptor_set.m_uniform_buffers.reserve(uniform_sizes.size());
 	for (size_t binding = 0; binding < uniform_sizes.size(); ++binding)
 	{
-		unsigned int buffer_id = 0;
-		glGenBuffers(1, &buffer_id);
-		glBindBuffer(GL_UNIFORM_BUFFER, buffer_id);
-		glBufferData(GL_UNIFORM_BUFFER, uniform_sizes[binding], nullptr, GL_DYNAMIC_DRAW);
-		m_descriptor_set.m_uniform_buffers.emplace_back(buffer_id, uniform_sizes[binding]);
+		UniformBuffer & uniform = m_descriptor_set.m_uniform_buffers.emplace_back();
+		uniform.m_buffer.Create();
+		uniform.m_size = uniform_sizes[binding];
+		glBindBuffer(GL_UNIFORM_BUFFER, uniform.m_buffer.GetId());
+		glBufferData(GL_UNIFORM_BUFFER, uniform.m_size, nullptr, GL_DYNAMIC_DRAW);
 	}
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }

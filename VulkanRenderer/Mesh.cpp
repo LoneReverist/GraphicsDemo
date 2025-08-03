@@ -8,45 +8,6 @@ module;
 
 module Mesh;
 
-Buffer::~Buffer()
-{
-	destroy();
-}
-
-Buffer::Buffer(Buffer && other)
-	: m_graphics_api(other.m_graphics_api)
-{
-	*this = std::move(other);
-}
-
-Buffer & Buffer::operator=(Buffer && other)
-{
-	if (this != &other)
-	{
-		destroy();
-
-		std::swap(m_buffer, other.m_buffer);
-		std::swap(m_buffer_memory, other.m_buffer_memory);
-	}
-	return *this;
-}
-
-void Buffer::destroy()
-{
-	VkDevice device = m_graphics_api.get().GetDevice();
-
-	if (m_buffer != VK_NULL_HANDLE)
-	{
-		vkDestroyBuffer(device, m_buffer, nullptr);
-		m_buffer = VK_NULL_HANDLE;
-	}
-	if (m_buffer_memory != VK_NULL_HANDLE)
-	{
-		vkFreeMemory(device, m_buffer_memory, nullptr);
-		m_buffer_memory = VK_NULL_HANDLE;
-	}
-}
-
 bool Mesh::IsInitialized() const
 {
 	return m_vertex_buffer.Get() != VK_NULL_HANDLE

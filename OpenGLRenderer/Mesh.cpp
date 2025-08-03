@@ -8,34 +8,6 @@ module;
 
 module Mesh;
 
-Buffer::~Buffer()
-{
-	if (m_id != 0)
-		glDeleteBuffers(1, &m_id);
-}
-
-Buffer::Buffer(Buffer && other)
-{
-	*this = std::move(other);
-}
-
-Buffer & Buffer::operator=(Buffer && other)
-{
-	if (this != &other)
-	{
-		if (m_id != 0)
-			glDeleteBuffers(1, &m_id);
-
-		std::swap(m_id, other.m_id);
-	}
-	return *this;
-}
-
-void Buffer::Create()
-{
-	glGenBuffers(1, &m_id);
-}
-
 VertexArrayObject::~VertexArrayObject()
 {
 	if (m_id != 0)

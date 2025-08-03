@@ -349,24 +349,20 @@ namespace
 	void create_uniform_buffer(
 		GraphicsApi const & graphics_api,
 		VkDeviceSize buffer_size,
-		VkBuffer & out_uniform_buffer,
-		VkDeviceMemory & out_buffer_memory,
-		void *& out_mapped_buffer)
+		UniformBuffer & out_uniform_buffer)
 	{
-		graphics_api.CreateBuffer(
+		out_uniform_buffer.m_buffer.Create(
 			buffer_size,
 			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-			out_uniform_buffer,
-			out_buffer_memory);
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
 		vkMapMemory(
 			graphics_api.GetDevice(),
-			out_buffer_memory,
+			out_uniform_buffer.m_buffer.GetMemory(),
 			0 /*offset*/,
 			buffer_size,
 			0 /*flags*/,
-			&out_mapped_buffer);
+			&out_uniform_buffer.m_mapping);
 	}
 }
 
@@ -406,13 +402,12 @@ GraphicsPipeline::GraphicsPipeline(GraphicsApi const & graphics_api,
 	std::array<std::vector<VkBuffer>, GraphicsApi::m_max_frames_in_flight> uniform_buffers;
 	for (size_t frame = 0; frame < GraphicsApi::m_max_frames_in_flight; ++frame)
 	{
-		m_descriptor_sets[frame].m_uniform_buffers.resize(uniform_sizes.size());
+		m_descriptor_sets[frame].m_uniform_buffers.reserve(uniform_sizes.size());
 		for (int binding = 0; binding < uniform_sizes.size(); ++binding)
 		{
-			UniformBuffer & uniform = m_descriptor_sets[frame].m_uniform_buffers[binding];
-			create_uniform_buffer(m_graphics_api, uniform_sizes[binding],
-				uniform.m_buffer, uniform.m_memory, uniform.m_mapping);
-			uniform_buffers[frame].push_back(uniform.m_buffer);
+			UniformBuffer & uniform = m_descriptor_sets[frame].m_uniform_buffers.emplace_back(m_graphics_api);
+			create_uniform_buffer(m_graphics_api, uniform_sizes[binding], uniform);
+			uniform_buffers[frame].push_back(uniform.m_buffer.Get());
 		}
 	}
 
@@ -468,13 +463,7 @@ void GraphicsPipeline::destroy_pipeline()
 	VkDevice device = m_graphics_api.GetDevice();
 
 	for (DescriptorSet & descriptor_set : m_descriptor_sets)
-	{
-		for (UniformBuffer & uniform : descriptor_set.m_uniform_buffers)
-		{
-			vkDestroyBuffer(device, uniform.m_buffer, nullptr);
-			vkFreeMemory(device, uniform.m_memory, nullptr);
-		}
-	}
+		descriptor_set.m_uniform_buffers.clear();
 
 	vkDestroyDescriptorPool(device, m_descriptor_pool, nullptr);
 	vkDestroyDescriptorSetLayout(device, m_descriptor_set_layout, nullptr);
@@ -496,21 +485,13 @@ GraphicsPipeline & GraphicsPipeline::operator=(GraphicsPipeline && other)
 
 	destroy_pipeline();
 
-	m_graphics_pipeline = other.m_graphics_pipeline;
-	m_pipeline_layout = other.m_pipeline_layout;
-	m_descriptor_set_layout = other.m_descriptor_set_layout;
-	m_descriptor_pool = other.m_descriptor_pool;
-	m_descriptor_sets = std::move(other.m_descriptor_sets);
-	m_per_frame_constants_callback = other.m_per_frame_constants_callback;
-	m_per_object_constants_callback = other.m_per_object_constants_callback;
-
-	other.m_graphics_pipeline = VK_NULL_HANDLE;
-	other.m_pipeline_layout = VK_NULL_HANDLE;
-	other.m_descriptor_set_layout = VK_NULL_HANDLE;
-	other.m_descriptor_pool = VK_NULL_HANDLE;
-	other.m_descriptor_sets.fill(DescriptorSet{});
-	other.m_per_frame_constants_callback = nullptr;
-	other.m_per_object_constants_callback = nullptr;
+	std::swap(m_graphics_pipeline, other.m_graphics_pipeline);
+	std::swap(m_pipeline_layout, other.m_pipeline_layout);
+	std::swap(m_descriptor_set_layout, other.m_descriptor_set_layout);
+	std::swap(m_descriptor_pool, other.m_descriptor_pool);
+	std::swap(m_descriptor_sets, other.m_descriptor_sets);
+	std::swap(m_per_frame_constants_callback, other.m_per_frame_constants_callback);
+	std::swap(m_per_object_constants_callback, other.m_per_object_constants_callback);
 
 	return *this;
 }

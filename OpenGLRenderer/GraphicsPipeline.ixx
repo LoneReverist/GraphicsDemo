@@ -13,11 +13,12 @@ module;
 
 export module GraphicsPipeline;
 
+import Buffer;
 import RenderObject;
 
 struct UniformBuffer
 {
-	unsigned int m_buffer_id = 0;
+	Buffer m_buffer;
 	size_t m_size = 0;
 };
 
@@ -182,20 +183,20 @@ void GraphicsPipeline::SetUniform(std::uint32_t binding, UniformData const & dat
 		std::cout << "Invalid uniform binding: " << binding << std::endl;
 		return;
 	}
-	UniformBuffer const & buffer = m_descriptor_set.m_uniform_buffers[binding];
-	if (buffer.m_buffer_id == 0)
+	UniformBuffer const & uniform = m_descriptor_set.m_uniform_buffers[binding];
+	if (uniform.m_buffer.GetId() == 0)
 	{
 		std::cout << "Uniform buffer not initialized for binding: " << binding << std::endl;
 		return;
 	}
-	if (buffer.m_size != sizeof(data))
+	if (uniform.m_size != sizeof(data))
 	{
 		std::cout << "Uniform buffer size is different from data size: " << binding << std::endl;
 		return;
 	}
 
-	glBindBuffer(GL_UNIFORM_BUFFER, buffer.m_buffer_id);
-	glBindBufferBase(GL_UNIFORM_BUFFER, binding, buffer.m_buffer_id);
+	glBindBuffer(GL_UNIFORM_BUFFER, uniform.m_buffer.GetId());
+	glBindBufferBase(GL_UNIFORM_BUFFER, binding, uniform.m_buffer.GetId());
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(data), &data);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }

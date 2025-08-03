@@ -11,38 +11,9 @@ module;
 
 export module Mesh;
 
+import Buffer;
 import GraphicsApi;
 import Vertex;
-
-class Buffer
-{
-public:
-	Buffer(GraphicsApi const & graphics_api) : m_graphics_api(graphics_api) {}
-	~Buffer();
-
-	Buffer(Buffer && other);
-	Buffer & operator=(Buffer && other);
-
-	Buffer(Buffer const &) = delete;
-	Buffer & operator=(Buffer const &) = delete;
-
-	template <typename T>
-	VkResult Create(
-		std::vector<T> objects,
-		VkBufferUsageFlags buffer_usage);
-
-	VkBuffer Get() const { return m_buffer; }
-	VkDeviceMemory GetMemory() const { return m_buffer_memory; }
-
-private:
-	void destroy();
-
-private:
-	std::reference_wrapper<GraphicsApi const> m_graphics_api;
-
-	VkBuffer m_buffer = VK_NULL_HANDLE;
-	VkDeviceMemory m_buffer_memory = VK_NULL_HANDLE;
-};
 
 export class Mesh
 {
@@ -76,23 +47,21 @@ private:
 };
 
 template <typename T>
-VkResult Buffer::Create(
+VkResult create_buffer(
+	GraphicsApi const & graphics_api,
 	std::vector<T> objects,
-	VkBufferUsageFlags buffer_usage)
+	VkBufferUsageFlags buffer_usage,
+	Buffer & out_buffer)
 {
-	GraphicsApi const & graphics_api = m_graphics_api.get();
 	VkDevice device = graphics_api.GetDevice();
 
-	VkBuffer staging_buffer;
-	VkDeviceMemory staging_buffer_memory;
-
 	VkDeviceSize buffer_size = sizeof(objects[0]) * objects.size();
-	VkResult result = graphics_api.CreateBuffer(
+	Buffer staging_buffer(graphics_api);
+	VkResult result = staging_buffer.Create(
 		buffer_size,
 		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-		staging_buffer,
-		staging_buffer_memory);
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+	);
 	if (result != VK_SUCCESS)
 	{
 		std::cout << "Failed to create staging buffer" << std::endl;
@@ -100,26 +69,21 @@ VkResult Buffer::Create(
 	}
 
 	void * data;
-	vkMapMemory(device, staging_buffer_memory, 0, buffer_size, 0, &data);
+	vkMapMemory(device, staging_buffer.GetMemory(), 0, buffer_size, 0, &data);
 	std::memcpy(data, objects.data(), (size_t)buffer_size);
-	vkUnmapMemory(device, staging_buffer_memory);
+	vkUnmapMemory(device, staging_buffer.GetMemory());
 
-	result = graphics_api.CreateBuffer(
+	result = out_buffer.Create(
 		buffer_size,
 		VK_BUFFER_USAGE_TRANSFER_DST_BIT | buffer_usage,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		m_buffer,
-		m_buffer_memory);
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	if (result != VK_SUCCESS)
 	{
 		std::cout << "Failed to create device local buffer" << std::endl;
 		return result;
 	}
 
-	graphics_api.CopyBuffer(staging_buffer, m_buffer, buffer_size);
-
-	vkDestroyBuffer(device, staging_buffer, nullptr);
-	vkFreeMemory(device, staging_buffer_memory, nullptr);
+	graphics_api.CopyBuffer(staging_buffer.Get(), out_buffer.Get(), buffer_size);
 
 	return VK_SUCCESS;
 }
@@ -136,14 +100,22 @@ Mesh::Mesh(
 	if (vertices.empty() || indices.empty())
 		return;
 
-	VkResult result = m_vertex_buffer.Create(vertices, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+	VkResult result = create_buffer(
+		m_graphics_api.get(),
+		vertices,
+		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+		m_vertex_buffer);
 	if (result != VK_SUCCESS)
 	{
 		std::cout << "Failed to create vertex buffer" << std::endl;
 		return;
 	}
 
-	result = m_index_buffer.Create(indices, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+	result = create_buffer(
+		m_graphics_api.get(),
+		indices,
+		VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+		m_index_buffer);
 	if (result != VK_SUCCESS)
 	{
 		std::cout << "Failed to create index buffer" << std::endl;

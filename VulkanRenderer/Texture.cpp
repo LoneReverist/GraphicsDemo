@@ -13,6 +13,8 @@ module;
 
 module Texture;
 
+import Buffer;
+
 VkFormat to_vk_format(PixelFormat format)
 {
 	if (format == PixelFormat::RGBA_UNORM)
@@ -86,8 +88,7 @@ void Image::destroy()
 VkResult load_image_into_buffer(
 	GraphicsApi const & graphics_api,
 	ImageData const & image_data,
-	VkBuffer & out_buffer,
-	VkDeviceMemory & out_buffer_memory)
+	Buffer & out_buffer)
 {
 	std::uint64_t input_size = image_data.GetSize();
 
@@ -111,21 +112,19 @@ VkResult load_image_into_buffer(
 		buffer_size = pixel_count * 4;
 	}
 
-	VkResult result = graphics_api.CreateBuffer(
+	VkResult result = out_buffer.Create(
 		buffer_size,
 		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-		out_buffer,
-		out_buffer_memory);
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 	if (result != VK_SUCCESS)
 		return result;
 
 	VkDevice device = graphics_api.GetDevice();
 
 	void * buffer_data = nullptr;
-	vkMapMemory(device, out_buffer_memory, 0, buffer_size, 0, &buffer_data);
+	vkMapMemory(device, out_buffer.GetMemory(), 0, buffer_size, 0, &buffer_data);
 	std::memcpy(buffer_data, data_ptr, buffer_size);
-	vkUnmapMemory(device, out_buffer_memory);
+	vkUnmapMemory(device, out_buffer.GetMemory());
 
 	return VK_SUCCESS; // image goes out of scope and frees memory
 }
@@ -138,9 +137,8 @@ VkResult Image::Create2dImage(ImageData const & image_data)
 	GraphicsApi const & graphics_api = m_graphics_api.get();
 	VkDevice device = graphics_api.GetDevice();
 
-	VkBuffer staging_buffer = VK_NULL_HANDLE;
-	VkDeviceMemory staging_buffer_memory = VK_NULL_HANDLE;
-	VkResult result = load_image_into_buffer(graphics_api, image_data, staging_buffer, staging_buffer_memory);
+	Buffer staging_buffer{ graphics_api };
+	VkResult result = load_image_into_buffer(graphics_api, image_data, staging_buffer);
 	if (result != VK_SUCCESS)
 		throw std::runtime_error("Image::Create2dImage Failed to create staging buffer");
 
@@ -167,7 +165,7 @@ VkResult Image::Create2dImage(ImageData const & image_data)
 		VK_IMAGE_LAYOUT_UNDEFINED,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 	graphics_api.CopyBufferToImage(
-		staging_buffer,
+		staging_buffer.Get(),
 		m_image,
 		image_data.m_width,
 		image_data.m_height,
@@ -189,40 +187,34 @@ VkResult Image::Create2dImage(ImageData const & image_data)
 	if (result != VK_SUCCESS)
 		throw std::runtime_error("Image::Create2dImage Failed to create vulkan image view for texture");
 
-	vkDestroyBuffer(device, staging_buffer, nullptr);
-	vkFreeMemory(device, staging_buffer_memory, nullptr);
-
 	return result;
 }
 
 VkResult load_cube_image_into_buffer(
 	GraphicsApi const & graphics_api,
 	CubeImageData const & image_data,
-	VkBuffer & out_buffer,
-	VkDeviceMemory & out_buffer_memory)
+	Buffer & out_buffer)
 {
 	std::uint64_t image_size = image_data.GetSize();
 	std::uint64_t buffer_size = image_size * image_data.m_data.size();
 
-	VkResult result = graphics_api.CreateBuffer(
+	VkResult result = out_buffer.Create(
 		buffer_size,
 		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-		out_buffer,
-		out_buffer_memory);
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 	if (result != VK_SUCCESS)
 		return result;
 
 	VkDevice device = graphics_api.GetDevice();
 
 	void * buffer_data = nullptr;
-	vkMapMemory(device, out_buffer_memory, 0, buffer_size, 0, &buffer_data);
+	vkMapMemory(device, out_buffer.GetMemory(), 0, buffer_size, 0, &buffer_data);
 	for (std::uint8_t const * data : image_data.m_data)
 	{
 		std::memcpy(buffer_data, data, image_size);
 		buffer_data = static_cast<std::uint8_t *>(buffer_data) + image_size;
 	}
-	vkUnmapMemory(device, out_buffer_memory);
+	vkUnmapMemory(device, out_buffer.GetMemory());
 	return VK_SUCCESS;
 }
 
@@ -234,9 +226,8 @@ VkResult Image::CreateCubeImage(CubeImageData const & image_data)
 	GraphicsApi const & graphics_api = m_graphics_api.get();
 	VkDevice device = graphics_api.GetDevice();
 
-	VkBuffer staging_buffer = VK_NULL_HANDLE;
-	VkDeviceMemory staging_buffer_memory = VK_NULL_HANDLE;
-	VkResult result = load_cube_image_into_buffer(graphics_api, image_data, staging_buffer, staging_buffer_memory);
+	Buffer staging_buffer{ graphics_api };
+	VkResult result = load_cube_image_into_buffer(graphics_api, image_data, staging_buffer);
 	if (result != VK_SUCCESS)
 		throw std::runtime_error("Image::CreateCubeImage Failed to create staging buffer");
 
@@ -264,7 +255,7 @@ VkResult Image::CreateCubeImage(CubeImageData const & image_data)
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
 	graphics_api.CopyBufferToImage(
-		staging_buffer,
+		staging_buffer.Get(),
 		m_image,
 		image_data.m_width,
 		image_data.m_height,
@@ -286,9 +277,6 @@ VkResult Image::CreateCubeImage(CubeImageData const & image_data)
 		m_image_view);
 	if (result != VK_SUCCESS)
 		throw std::runtime_error("Image::CreateCubeImage Failed to create vulkan image view for texture");
-
-	vkDestroyBuffer(device, staging_buffer, nullptr);
-	vkFreeMemory(device, staging_buffer_memory, nullptr);
 
 	return result;
 }

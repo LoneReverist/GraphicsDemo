@@ -66,17 +66,7 @@ public:
 	void DrawFrame(std::function<void()> render_fn, bool & out_window_size_out_of_date);
 	void WaitForLastFrame() const;
 
-	VkResult CreateBuffer(
-		VkDeviceSize size,
-		VkBufferUsageFlags usage,
-		VkMemoryPropertyFlags properties,
-		VkBuffer & out_buffer,
-		VkDeviceMemory & out_buffer_memory) const;
-
-	VkResult CreateBufferMemory(
-		VkBuffer buffer,
-		VkMemoryPropertyFlags properties,
-		VkDeviceMemory & out_buffer_memory) const;
+	std::uint32_t FindMemoryType(std::uint32_t type_filter, VkMemoryPropertyFlags properties) const;
 
 	VkResult Create2dImage(
 		std::uint32_t width,
