@@ -14,6 +14,37 @@ export module Mesh;
 import GraphicsApi;
 import Vertex;
 
+class Buffer
+{
+public:
+	Buffer(GraphicsApi const & graphics_api) : m_graphics_api(graphics_api) {}
+	~Buffer();
+
+	Buffer(Buffer && other);
+	Buffer & operator=(Buffer && other);
+
+	Buffer(Buffer const &) = delete;
+	Buffer & operator=(Buffer const &) = delete;
+
+	template <typename T>
+	VkResult Create(
+		GraphicsApi const & graphics_api,
+		std::vector<T> objects,
+		VkBufferUsageFlags buffer_usage);
+
+	VkBuffer Get() const { return m_buffer; }
+	VkDeviceMemory GetMemory() const { return m_buffer_memory; }
+
+private:
+	void destroy();
+
+private:
+	std::reference_wrapper<GraphicsApi const> m_graphics_api;
+
+	VkBuffer m_buffer = VK_NULL_HANDLE;
+	VkDeviceMemory m_buffer_memory = VK_NULL_HANDLE;
+};
+
 export class Mesh
 {
 public:
@@ -24,39 +55,32 @@ public:
 		GraphicsApi const & graphics_api,
 		std::vector<VertexT> const & vertices,
 		std::vector<IndexT> const & indices);
-	~Mesh();
+	~Mesh() = default;
 
-	Mesh(Mesh && other);
-	Mesh & operator=(Mesh && other);
+	Mesh(Mesh && other) = default;
+	Mesh & operator=(Mesh && other) = default;
 
-	Mesh(Mesh &) = delete;
-	Mesh & operator=(Mesh &) = delete;
+	Mesh(Mesh const &) = delete;
+	Mesh & operator=(Mesh const &) = delete;
 
 	bool IsInitialized() const;
 
 	void Render() const;
 
 private:
-	void destroy_buffers();
+	std::reference_wrapper<GraphicsApi const> m_graphics_api;
 
-private:
-	GraphicsApi const & m_graphics_api;
-
-	VkBuffer m_vertex_buffer = VK_NULL_HANDLE;
-	VkDeviceMemory m_vertex_buffer_memory = VK_NULL_HANDLE;
-	VkBuffer m_index_buffer = VK_NULL_HANDLE;
-	VkDeviceMemory m_index_buffer_memory = VK_NULL_HANDLE;
+	Buffer m_vertex_buffer;
+	Buffer m_index_buffer;
 
 	std::uint32_t m_index_count = 0;
 };
 
 template <typename T>
-VkResult init_buffer(
+VkResult Buffer::Create(
 	GraphicsApi const & graphics_api,
 	std::vector<T> objects,
-	VkBufferUsageFlags buffer_usage,
-	VkBuffer & out_buffer,
-	VkDeviceMemory & out_buffer_memory)
+	VkBufferUsageFlags buffer_usage)
 {
 	VkDevice device = graphics_api.GetDevice();
 
@@ -85,15 +109,15 @@ VkResult init_buffer(
 		buffer_size,
 		VK_BUFFER_USAGE_TRANSFER_DST_BIT | buffer_usage,
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		out_buffer,
-		out_buffer_memory);
+		m_buffer,
+		m_buffer_memory);
 	if (result != VK_SUCCESS)
 	{
 		std::cout << "Failed to create device local buffer" << std::endl;
 		return result;
 	}
 
-	graphics_api.CopyBuffer(staging_buffer, out_buffer, buffer_size);
+	graphics_api.CopyBuffer(staging_buffer, m_buffer, buffer_size);
 
 	vkDestroyBuffer(device, staging_buffer, nullptr);
 	vkFreeMemory(device, staging_buffer_memory, nullptr);
@@ -107,36 +131,26 @@ Mesh::Mesh(
 	std::vector<VertexT> const & vertices,
 	std::vector<IndexT> const & indices)
 	: m_graphics_api{ graphics_api }
+	, m_vertex_buffer{ graphics_api }
+	, m_index_buffer{ graphics_api }
 {
-	if (vertices.empty())
-	{
-		//std::cout << "Mesh verts empty" << std::endl;
+	if (vertices.empty() || indices.empty())
 		return;
-	}
-	if (indices.empty())
-	{
-		//std::cout << "Mesh indices empty" << std::endl;
-		return;
-	}
 
-	VkResult result = init_buffer(
+	VkResult result = m_vertex_buffer.Create(
 		m_graphics_api,
 		vertices,
-		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-		m_vertex_buffer,
-		m_vertex_buffer_memory);
+		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 	if (result != VK_SUCCESS)
 	{
 		std::cout << "Failed to create vertex buffer" << std::endl;
 		return;
 	}
 
-	result = init_buffer(
+	result = m_index_buffer.Create(
 		m_graphics_api,
 		indices,
-		VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-		m_index_buffer,
-		m_index_buffer_memory);
+		VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 	if (result != VK_SUCCESS)
 	{
 		std::cout << "Failed to create index buffer" << std::endl;
@@ -144,93 +158,4 @@ Mesh::Mesh(
 	}
 
 	m_index_count = static_cast<std::uint32_t>(indices.size());
-}
-
-Mesh::~Mesh()
-{
-	destroy_buffers();
-}
-
-void Mesh::destroy_buffers()
-{
-	VkDevice device = m_graphics_api.GetDevice();
-
-	vkDestroyBuffer(device, m_index_buffer, nullptr);
-	m_index_buffer = VK_NULL_HANDLE;
-	vkFreeMemory(device, m_index_buffer_memory, nullptr);
-	m_index_buffer_memory = VK_NULL_HANDLE;
-
-	vkDestroyBuffer(device, m_vertex_buffer, nullptr);
-	m_vertex_buffer = VK_NULL_HANDLE;
-	vkFreeMemory(device, m_vertex_buffer_memory, nullptr);
-	m_vertex_buffer_memory = VK_NULL_HANDLE;
-}
-
-Mesh::Mesh(Mesh && other)
-	: m_graphics_api(other.m_graphics_api)
-{
-	*this = std::move(other);
-}
-
-Mesh & Mesh::operator=(Mesh && other)
-{
-	if (this == &other)
-		return *this;
-
-	destroy_buffers();
-
-	m_vertex_buffer = other.m_vertex_buffer;
-	m_vertex_buffer_memory = other.m_vertex_buffer_memory;
-	m_index_buffer = other.m_index_buffer;
-	m_index_buffer_memory = other.m_index_buffer_memory;
-	m_index_count = other.m_index_count;
-
-	other.m_vertex_buffer = VK_NULL_HANDLE;
-	other.m_vertex_buffer_memory = VK_NULL_HANDLE;
-	other.m_index_buffer = VK_NULL_HANDLE;
-	other.m_index_buffer_memory = VK_NULL_HANDLE;
-	other.m_index_count = 0;
-
-	return *this;
-}
-
-bool Mesh::IsInitialized() const
-{
-	return m_vertex_buffer != VK_NULL_HANDLE
-		&& m_vertex_buffer_memory != VK_NULL_HANDLE
-		&& m_index_buffer != VK_NULL_HANDLE
-		&& m_index_buffer_memory != VK_NULL_HANDLE
-		&& m_index_count > 0;
-}
-
-void Mesh::Render() const
-{
-	if (!IsInitialized())
-		return;
-
-	VkCommandBuffer command_buffer = m_graphics_api.GetCurCommandBuffer();
-
-	VkBuffer vertex_buffers[] = { m_vertex_buffer };
-	VkDeviceSize offsets[] = { 0 };
-	vkCmdBindVertexBuffers(
-		command_buffer,
-		0 /*firstBinding*/,
-		1 /*bindingCount*/,
-		vertex_buffers,
-		offsets);
-
-	static_assert(std::same_as<IndexT, std::uint16_t>);
-	vkCmdBindIndexBuffer(
-		command_buffer,
-		m_index_buffer,
-		0 /*offset*/,
-		VK_INDEX_TYPE_UINT16);
-
-	vkCmdDrawIndexed(
-		command_buffer,
-		m_index_count,
-		1 /*instanceCount*/,
-		0 /*firstIndex*/,
-		0 /*vertexOffset*/,
-		0 /*firstInstance*/);
 }
