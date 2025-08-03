@@ -36,7 +36,7 @@ std::unique_ptr<Texture> create_texture(
 
 	return std::make_unique<Texture>(
 		graphics_api,
-		Texture::ImageData{
+		ImageData{
 			.m_data = image.GetData(),
 			.m_format = format,
 			.m_width = static_cast<std::uint32_t>(image.GetWidth()),
@@ -79,7 +79,7 @@ std::unique_ptr<Texture> create_cubemap_texture(
 
 	return std::make_unique<Texture>(
 		graphics_api,
-		Texture::CubeImageData{
+		CubeImageData{
 			.m_data = data,
 			.m_format = format,
 			.m_width = static_cast<std::uint32_t>(width),

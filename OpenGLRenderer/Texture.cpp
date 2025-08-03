@@ -35,18 +35,38 @@ GLenum to_gl_format(PixelFormat format)
 	return 0;
 }
 
-Tex::~Tex()
+bool ImageData::IsValid() const
+{
+	return m_data != nullptr && m_width > 0 && m_height > 0;
+}
+
+std::uint64_t ImageData::GetSize() const
+{
+	return static_cast<std::uint64_t>(m_width * m_height * GetPixelSize(m_format));
+}
+
+bool CubeImageData::IsValid() const
+{
+	return std::ranges::all_of(m_data, [](std::uint8_t  const * data) { return data != nullptr; }) && m_width > 0 && m_height > 0;
+}
+
+std::uint64_t CubeImageData::GetSize() const
+{
+	return static_cast<std::uint64_t>(m_width * m_height * GetPixelSize(m_format));
+}
+
+Image::~Image()
 {
 	if (m_id != 0)
 		glDeleteTextures(1, &m_id);
 }
 
-Tex::Tex(Tex && other)
+Image::Image(Image && other)
 {
 	*this = std::move(other);
 }
 
-Tex & Tex::operator=(Tex && other)
+Image & Image::operator=(Image && other)
 {
 	if (this != &other)
 	{
@@ -58,29 +78,9 @@ Tex & Tex::operator=(Tex && other)
 	return *this;
 }
 
-void Tex::Create()
+void Image::Create()
 {
 	glGenTextures(1, &m_id);
-}
-
-bool Texture::ImageData::IsValid() const
-{
-	return m_data != nullptr && m_width > 0 && m_height > 0;
-}
-
-std::uint64_t Texture::ImageData::GetSize() const
-{
-	return static_cast<std::uint64_t>(m_width * m_height * GetPixelSize(m_format));
-}
-
-bool Texture::CubeImageData::IsValid() const
-{
-	return std::ranges::all_of(m_data, [](std::uint8_t  const * data) { return data != nullptr; }) && m_width > 0 && m_height > 0;
-}
-
-std::uint64_t Texture::CubeImageData::GetSize() const
-{
-	return static_cast<std::uint64_t>(m_width * m_height * GetPixelSize(m_format));
 }
 
 Texture::Texture(GraphicsApi const & graphics_api, ImageData const & image_data, bool use_mip_map /*= true*/)
@@ -90,8 +90,8 @@ Texture::Texture(GraphicsApi const & graphics_api, ImageData const & image_data,
 		throw std::runtime_error("Texture() image_data not valid");
 
 	m_type = GL_TEXTURE_2D;
-	m_tex.Create();
-	glBindTexture(m_type, m_tex.GetId());
+	m_image.Create();
+	glBindTexture(m_type, m_image.GetId());
 
 	glTexParameteri(m_type, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(m_type, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -122,8 +122,8 @@ Texture::Texture(GraphicsApi const & graphics_api, CubeImageData const & image_d
 		throw std::runtime_error("Texture() image_data not valid");
 
 	m_type = GL_TEXTURE_CUBE_MAP;
-	m_tex.Create();
-	glBindTexture(m_type, m_tex.GetId());
+	m_image.Create();
+	glBindTexture(m_type, m_image.GetId());
 
 	glTexParameteri(m_type, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(m_type, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -150,10 +150,10 @@ Texture::Texture(GraphicsApi const & graphics_api, CubeImageData const & image_d
 
 bool Texture::IsValid() const
 {
-	return m_tex.GetId() != 0 && m_type != 0;
+	return m_image.GetId() != 0 && m_type != 0;
 }
 
 void Texture::Bind() const
 {
-	glBindTexture(m_type, m_tex.GetId());
+	glBindTexture(m_type, m_image.GetId());
 }

@@ -21,17 +21,39 @@ export std::uint8_t GetPixelSize(PixelFormat format)
 	return 0;
 }
 
-class Tex
+export struct ImageData
+{
+	std::uint8_t const * m_data = nullptr;
+	PixelFormat m_format = PixelFormat::RGBA_SRGB;
+	std::uint32_t m_width = 0;
+	std::uint32_t m_height = 0;
+
+	bool IsValid() const;
+	std::uint64_t GetSize() const;
+};
+
+export struct CubeImageData
+{
+	std::array<std::uint8_t const *, 6> m_data;
+	PixelFormat m_format = PixelFormat::RGBA_SRGB;
+	std::uint32_t m_width = 0;
+	std::uint32_t m_height = 0;
+
+	bool IsValid() const;
+	std::uint64_t GetSize() const;
+};
+
+class Image
 {
 public:
-	Tex() = default;
-	~Tex();
+	Image() = default;
+	~Image();
 
-	Tex(Tex && other);
-	Tex & operator=(Tex && other);
+	Image(Image && other);
+	Image & operator=(Image && other);
 
-	Tex(Tex const &) = delete;
-	Tex & operator=(Tex const &) = delete;
+	Image(Image const &) = delete;
+	Image & operator=(Image const &) = delete;
 
 	void Create();
 
@@ -43,29 +65,6 @@ private:
 
 export class Texture
 {
-public:
-	struct ImageData
-	{
-		std::uint8_t const * m_data = nullptr;
-		PixelFormat m_format = PixelFormat::RGBA_SRGB;
-		std::uint32_t m_width = 0;
-		std::uint32_t m_height = 0;
-
-		bool IsValid() const;
-		std::uint64_t GetSize() const;
-	};
-
-	struct CubeImageData
-	{
-		std::array<std::uint8_t const *, 6> m_data;
-		PixelFormat m_format = PixelFormat::RGBA_SRGB;
-		std::uint32_t m_width = 0;
-		std::uint32_t m_height = 0;
-
-		bool IsValid() const;
-		std::uint64_t GetSize() const;
-	};
-
 public:
 	Texture(GraphicsApi const & graphics_api, ImageData const & image_data, bool use_mip_map = true);
 	Texture(GraphicsApi const & graphics_api, CubeImageData const & image_data);
@@ -85,5 +84,5 @@ private:
 	std::reference_wrapper<GraphicsApi const> m_graphics_api;
 
 	unsigned int m_type = 0;
-	Tex m_tex;
+	Image m_image;
 };

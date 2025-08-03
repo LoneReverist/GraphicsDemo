@@ -27,60 +27,65 @@ VkFormat to_vk_format(PixelFormat format)
 	return VK_FORMAT_UNDEFINED;
 }
 
-bool Texture::ImageData::IsValid() const
+bool ImageData::IsValid() const
 {
 	return m_data != nullptr && m_width > 0 && m_height > 0;
 }
 
-std::uint64_t Texture::ImageData::GetSize() const
+std::uint64_t ImageData::GetSize() const
 {
 	return static_cast<std::uint64_t>(m_width * m_height * GetPixelSize(m_format));
 }
 
-bool Texture::CubeImageData::IsValid() const
+bool CubeImageData::IsValid() const
 {
 	return std::ranges::all_of(m_data, [](std::uint8_t  const * data) { return data != nullptr; }) && m_width > 0 && m_height > 0;
 }
 
-std::uint64_t Texture::CubeImageData::GetSize() const
+std::uint64_t CubeImageData::GetSize() const
 {
 	return static_cast<std::uint64_t>(m_width * m_height * GetPixelSize(m_format));
 }
 
-VkSampler create_texture_sampler(GraphicsApi const & graphics_api)
+Image::~Image()
 {
-	VkPhysicalDeviceProperties const & props = graphics_api.GetPhysicalDeviceInfo().properties;
+	destroy();
+}
 
-	VkSamplerCreateInfo sampler_info{
-		.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
-		.magFilter = VK_FILTER_LINEAR,
-		.minFilter = VK_FILTER_LINEAR,
-		.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
-		.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-		.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-		.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-		.mipLodBias = 0.0f,
-		.anisotropyEnable = VK_TRUE,
-		.maxAnisotropy = props.limits.maxSamplerAnisotropy,
-		.compareEnable = VK_FALSE,
-		.compareOp = VK_COMPARE_OP_ALWAYS,
-		.minLod = 0.0f,
-		.maxLod = 0.0f,
-		.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
-		.unnormalizedCoordinates = VK_FALSE
-	};
+Image::Image(Image && other)
+	: m_graphics_api(other.m_graphics_api)
+{
+	*this = std::move(other);
+}
 
-	VkSampler sampler;
-	VkResult result = vkCreateSampler(graphics_api.GetDevice(), &sampler_info, nullptr, &sampler);
-	if (result != VK_SUCCESS)
-		throw std::runtime_error("Failed to create vulkan sampler for texture");
+Image & Image::operator=(Image && other)
+{
+	if (this != &other)
+	{
+		destroy();
 
-	return sampler;
+		std::swap(m_image, other.m_image);
+		std::swap(m_image_memory, other.m_image_memory);
+		std::swap(m_image_view, other.m_image_view);
+	}
+	return *this;
+}
+
+void Image::destroy()
+{
+	VkDevice device = m_graphics_api.get().GetDevice();
+
+	vkDestroyImageView(device, m_image_view, nullptr);
+	m_image_view = VK_NULL_HANDLE;
+	vkDestroyImage(device, m_image, nullptr);
+	m_image = VK_NULL_HANDLE;
+	vkFreeMemory(device, m_image_memory, nullptr);
+	m_image_memory = VK_NULL_HANDLE;
 }
 
 VkResult load_image_into_buffer(
 	GraphicsApi const & graphics_api,
-	Texture::ImageData const & image_data,
+	ImageData const & image_data,
 	VkBuffer & out_buffer,
 	VkDeviceMemory & out_buffer_memory)
 {
@@ -113,7 +118,7 @@ VkResult load_image_into_buffer(
 		out_buffer,
 		out_buffer_memory);
 	if (result != VK_SUCCESS)
-		throw std::runtime_error("load_image_into_buffer() Failed to create staging buffer");
+		return result;
 
 	VkDevice device = graphics_api.GetDevice();
 
@@ -125,51 +130,19 @@ VkResult load_image_into_buffer(
 	return VK_SUCCESS; // image goes out of scope and frees memory
 }
 
-VkResult load_cube_image_into_buffer(
-	GraphicsApi const & graphics_api,
-	Texture::CubeImageData const & image_data,
-	VkBuffer & out_buffer,
-	VkDeviceMemory & out_buffer_memory)
-{
-	std::uint64_t image_size = image_data.GetSize();
-	std::uint64_t buffer_size = image_size * image_data.m_data.size();
-
-	VkResult result = graphics_api.CreateBuffer(
-		buffer_size,
-		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-		out_buffer,
-		out_buffer_memory);
-	if (result != VK_SUCCESS)
-		throw std::runtime_error("load_images_into_buffer() Failed to create staging buffer");
-
-	VkDevice device = graphics_api.GetDevice();
-
-	void * buffer_data = nullptr;
-	vkMapMemory(device, out_buffer_memory, 0, buffer_size, 0, &buffer_data);
-	for (std::uint8_t const * data : image_data.m_data)
-	{
-		std::memcpy(buffer_data, data, image_size);
-		buffer_data = static_cast<std::uint8_t *>(buffer_data) + image_size;
-	}
-	vkUnmapMemory(device, out_buffer_memory);
-	return VK_SUCCESS;
-}
-
-// not using mip maps for now
-Texture::Texture(GraphicsApi const & graphics_api, ImageData const & image_data, bool /*use_mip_map*/ /*= true*/)
-	: m_graphics_api(graphics_api)
+VkResult Image::Create2dImage(ImageData const & image_data)
 {
 	if (!image_data.IsValid())
-		throw std::runtime_error("Texture() image_data not valid");
+		throw std::runtime_error("Image::Create2dImage image_data not valid");
 
-	VkDevice device = m_graphics_api.GetDevice();
+	GraphicsApi const & graphics_api = m_graphics_api.get();
+	VkDevice device = graphics_api.GetDevice();
 
 	VkBuffer staging_buffer = VK_NULL_HANDLE;
 	VkDeviceMemory staging_buffer_memory = VK_NULL_HANDLE;
 	VkResult result = load_image_into_buffer(graphics_api, image_data, staging_buffer, staging_buffer_memory);
 	if (result != VK_SUCCESS)
-		return;
+		throw std::runtime_error("Image::Create2dImage Failed to create staging buffer");
 
 	VkFormat format = to_vk_format(image_data.m_format);
 
@@ -185,28 +158,28 @@ Texture::Texture(GraphicsApi const & graphics_api, ImageData const & image_data,
 		m_image,
 		m_image_memory);
 	if (result != VK_SUCCESS)
-		throw std::runtime_error("Texture() Failed to create image");
+		throw std::runtime_error("Image::Create2dImage Failed to create image");
 
-	m_graphics_api.TransitionImageLayout(
+	graphics_api.TransitionImageLayout(
 		m_image,
 		1 /*layers*/,
 		format,
 		VK_IMAGE_LAYOUT_UNDEFINED,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-	m_graphics_api.CopyBufferToImage(
+	graphics_api.CopyBufferToImage(
 		staging_buffer,
 		m_image,
 		image_data.m_width,
 		image_data.m_height,
 		1 /*layers*/);
-	m_graphics_api.TransitionImageLayout(
+	graphics_api.TransitionImageLayout(
 		m_image,
 		1 /*layers*/,
 		format,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-	result = m_graphics_api.CreateImageView(
+	result = graphics_api.CreateImageView(
 		m_image,
 		VK_IMAGE_VIEW_TYPE_2D,
 		format,
@@ -214,25 +187,58 @@ Texture::Texture(GraphicsApi const & graphics_api, ImageData const & image_data,
 		1 /*layers*/,
 		m_image_view);
 	if (result != VK_SUCCESS)
-		throw std::runtime_error("Failed to create vulkan image view for texture");
-
-	m_sampler = create_texture_sampler(m_graphics_api);
+		throw std::runtime_error("Image::Create2dImage Failed to create vulkan image view for texture");
 
 	vkDestroyBuffer(device, staging_buffer, nullptr);
 	vkFreeMemory(device, staging_buffer_memory, nullptr);
+
+	return result;
 }
 
-Texture::Texture(GraphicsApi const & graphics_api, CubeImageData const & image_data)
-	: m_graphics_api(graphics_api)
+VkResult load_cube_image_into_buffer(
+	GraphicsApi const & graphics_api,
+	CubeImageData const & image_data,
+	VkBuffer & out_buffer,
+	VkDeviceMemory & out_buffer_memory)
+{
+	std::uint64_t image_size = image_data.GetSize();
+	std::uint64_t buffer_size = image_size * image_data.m_data.size();
+
+	VkResult result = graphics_api.CreateBuffer(
+		buffer_size,
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+		out_buffer,
+		out_buffer_memory);
+	if (result != VK_SUCCESS)
+		return result;
+
+	VkDevice device = graphics_api.GetDevice();
+
+	void * buffer_data = nullptr;
+	vkMapMemory(device, out_buffer_memory, 0, buffer_size, 0, &buffer_data);
+	for (std::uint8_t const * data : image_data.m_data)
+	{
+		std::memcpy(buffer_data, data, image_size);
+		buffer_data = static_cast<std::uint8_t *>(buffer_data) + image_size;
+	}
+	vkUnmapMemory(device, out_buffer_memory);
+	return VK_SUCCESS;
+}
+
+VkResult Image::CreateCubeImage(CubeImageData const & image_data)
 {
 	if (!image_data.IsValid())
-		throw std::runtime_error("Texture() image_data not valid");
+		throw std::runtime_error("Image::CreateCubeImage image_data not valid");
+
+	GraphicsApi const & graphics_api = m_graphics_api.get();
+	VkDevice device = graphics_api.GetDevice();
 
 	VkBuffer staging_buffer = VK_NULL_HANDLE;
 	VkDeviceMemory staging_buffer_memory = VK_NULL_HANDLE;
 	VkResult result = load_cube_image_into_buffer(graphics_api, image_data, staging_buffer, staging_buffer_memory);
 	if (result != VK_SUCCESS)
-		return;
+		throw std::runtime_error("Image::CreateCubeImage Failed to create staging buffer");
 
 	VkFormat format = to_vk_format(image_data.m_format);
 
@@ -248,30 +254,30 @@ Texture::Texture(GraphicsApi const & graphics_api, CubeImageData const & image_d
 		m_image,
 		m_image_memory);
 	if (result != VK_SUCCESS)
-		throw std::runtime_error("Texture() Failed to create cubemap");
+		throw std::runtime_error("Image::CreateCubeImage Failed to create cubemap");
 
-	m_graphics_api.TransitionImageLayout(
+	graphics_api.TransitionImageLayout(
 		m_image,
 		6 /*layers*/,
 		format,
 		VK_IMAGE_LAYOUT_UNDEFINED,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-	m_graphics_api.CopyBufferToImage(
+	graphics_api.CopyBufferToImage(
 		staging_buffer,
 		m_image,
 		image_data.m_width,
 		image_data.m_height,
 		6 /*layers*/);
 
-	m_graphics_api.TransitionImageLayout(
+	graphics_api.TransitionImageLayout(
 		m_image,
 		6 /*layers*/,
 		format,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-	result = m_graphics_api.CreateImageView(
+	result = graphics_api.CreateImageView(
 		m_image,
 		VK_IMAGE_VIEW_TYPE_CUBE,
 		format,
@@ -279,64 +285,107 @@ Texture::Texture(GraphicsApi const & graphics_api, CubeImageData const & image_d
 		6 /*layers*/,
 		m_image_view);
 	if (result != VK_SUCCESS)
-		throw std::runtime_error("Failed to create vulkan image view for texture");
+		throw std::runtime_error("Image::CreateCubeImage Failed to create vulkan image view for texture");
 
-	m_sampler = create_texture_sampler(m_graphics_api);
-
-	VkDevice device = m_graphics_api.GetDevice();
 	vkDestroyBuffer(device, staging_buffer, nullptr);
 	vkFreeMemory(device, staging_buffer_memory, nullptr);
+
+	return result;
 }
 
-Texture::~Texture()
+Sampler::~Sampler()
 {
-	destroy_texture();
+	destroy();
 }
 
-void Texture::destroy_texture()
-{
-	VkDevice device = m_graphics_api.GetDevice();
-
-	vkDestroySampler(device, m_sampler, nullptr);
-	m_sampler = VK_NULL_HANDLE;
-	vkDestroyImageView(device, m_image_view, nullptr);
-	m_image_view = VK_NULL_HANDLE;
-
-	vkDestroyImage(device, m_image, nullptr);
-	m_image = VK_NULL_HANDLE;
-	vkFreeMemory(device, m_image_memory, nullptr);
-	m_image_memory = VK_NULL_HANDLE;
-}
-
-Texture::Texture(Texture && other)
+Sampler::Sampler(Sampler && other)
 	: m_graphics_api(other.m_graphics_api)
 {
 	*this = std::move(other);
 }
 
-Texture & Texture::operator=(Texture && other)
+Sampler & Sampler::operator=(Sampler && other)
 {
-	if (this == &other)
-		return *this;
+	if (this != &other)
+	{
+		destroy();
 
-	destroy_texture();
-
-	m_image = other.m_image;
-	m_image_memory = other.m_image_memory;
-	m_image_view = other.m_image_view;
-	m_sampler = other.m_sampler;
-
-	other.m_image = VK_NULL_HANDLE;
-	other.m_image_memory = VK_NULL_HANDLE;
-	other.m_image_view = VK_NULL_HANDLE;
-	other.m_sampler = VK_NULL_HANDLE;
-
+		std::swap(m_sampler, other.m_sampler);
+	}
 	return *this;
+}
+
+void Sampler::destroy()
+{
+	VkDevice device = m_graphics_api.get().GetDevice();
+
+	vkDestroySampler(device, m_sampler, nullptr);
+	m_sampler = VK_NULL_HANDLE;
+}
+
+VkResult Sampler::Create()
+{
+	VkPhysicalDeviceProperties const & props = m_graphics_api.get().GetPhysicalDeviceInfo().properties;
+
+	VkSamplerCreateInfo sampler_info{
+		.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+		.magFilter = VK_FILTER_LINEAR,
+		.minFilter = VK_FILTER_LINEAR,
+		.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+		.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+		.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+		.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+		.mipLodBias = 0.0f,
+		.anisotropyEnable = VK_TRUE,
+		.maxAnisotropy = props.limits.maxSamplerAnisotropy,
+		.compareEnable = VK_FALSE,
+		.compareOp = VK_COMPARE_OP_ALWAYS,
+		.minLod = 0.0f,
+		.maxLod = 0.0f,
+		.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
+		.unnormalizedCoordinates = VK_FALSE
+	};
+
+	VkResult result = vkCreateSampler(m_graphics_api.get().GetDevice(), &sampler_info, nullptr, &m_sampler);
+	if (result != VK_SUCCESS)
+		std::cout << "Failed to create vulkan sampler for texture" << std::endl;
+
+	return result;
+}
+
+// not using mip maps for now
+Texture::Texture(GraphicsApi const & graphics_api, ImageData const & image_data, bool /*use_mip_map*/ /*= true*/)
+	: m_graphics_api(graphics_api)
+	, m_image(graphics_api)
+	, m_sampler(graphics_api)
+{
+	VkResult result = m_image.Create2dImage(image_data);
+	if (result != VK_SUCCESS)
+		throw std::runtime_error("Failed to create vulkan image for texture");
+
+	result = m_sampler.Create();
+	if (result != VK_SUCCESS)
+		throw std::runtime_error("Failed to create vulkan sampler for texture");
+}
+
+Texture::Texture(GraphicsApi const & graphics_api, CubeImageData const & image_data)
+	: m_graphics_api(graphics_api)
+	, m_image(graphics_api)
+	, m_sampler(graphics_api)
+{
+	VkResult result = m_image.CreateCubeImage(image_data);
+	if (result != VK_SUCCESS)
+		throw std::runtime_error("Failed to create vulkan cube image for texture");
+
+	result = m_sampler.Create();
+	if (result != VK_SUCCESS)
+		throw std::runtime_error("Failed to create vulkan sampler for texture");
 }
 
 bool Texture::IsValid() const
 {
-	return m_image != VK_NULL_HANDLE
-		&& m_image_memory != VK_NULL_HANDLE
-		&& m_image_view != VK_NULL_HANDLE;
+	return m_image.Get() != VK_NULL_HANDLE
+		&& m_image.GetMemory() != VK_NULL_HANDLE
+		&& m_image.GetView() != VK_NULL_HANDLE
+		&& m_sampler.Get() != VK_NULL_HANDLE;
 }

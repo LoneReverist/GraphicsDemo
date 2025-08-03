@@ -68,7 +68,7 @@ private:
 
 		m_texture = std::make_unique<Texture>(
 			graphics_api,
-			Texture::ImageData{
+			ImageData{
 				.m_data = image.GetData(),
 				.m_format = format,
 				.m_width = m_width,

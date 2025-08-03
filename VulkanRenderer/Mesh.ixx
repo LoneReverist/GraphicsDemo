@@ -28,7 +28,6 @@ public:
 
 	template <typename T>
 	VkResult Create(
-		GraphicsApi const & graphics_api,
 		std::vector<T> objects,
 		VkBufferUsageFlags buffer_usage);
 
@@ -78,10 +77,10 @@ private:
 
 template <typename T>
 VkResult Buffer::Create(
-	GraphicsApi const & graphics_api,
 	std::vector<T> objects,
 	VkBufferUsageFlags buffer_usage)
 {
+	GraphicsApi const & graphics_api = m_graphics_api.get();
 	VkDevice device = graphics_api.GetDevice();
 
 	VkBuffer staging_buffer;
@@ -137,20 +136,14 @@ Mesh::Mesh(
 	if (vertices.empty() || indices.empty())
 		return;
 
-	VkResult result = m_vertex_buffer.Create(
-		m_graphics_api,
-		vertices,
-		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+	VkResult result = m_vertex_buffer.Create(vertices, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 	if (result != VK_SUCCESS)
 	{
 		std::cout << "Failed to create vertex buffer" << std::endl;
 		return;
 	}
 
-	result = m_index_buffer.Create(
-		m_graphics_api,
-		indices,
-		VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+	result = m_index_buffer.Create(indices, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 	if (result != VK_SUCCESS)
 	{
 		std::cout << "Failed to create index buffer" << std::endl;
