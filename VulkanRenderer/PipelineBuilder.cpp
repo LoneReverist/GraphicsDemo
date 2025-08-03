@@ -111,6 +111,7 @@ std::optional<GraphicsPipeline> PipelineBuilder::CreatePipeline() const
 		m_fs_uniform_sizes,
 		m_texture,
 		m_depth_test_options,
+		m_blend_options,
 		m_cull_mode,
 		m_per_frame_constants_callback,
 		m_per_object_constants_callback };

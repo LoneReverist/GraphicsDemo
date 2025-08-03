@@ -42,6 +42,7 @@ public:
 
 	void SetTexture(Texture const & texture) { m_texture = &texture; }
 	void SetDepthTestOptions(DepthTestOptions const & options) { m_depth_test_options = options; }
+	void SetBlendOptions(BlendOptions const & options) { m_blend_options = options; }
 	void SetCullMode(CullMode cull_mode) { m_cull_mode = cull_mode; }
 
 	void SetPerFrameConstantsCallback(PerFrameConstantsCallback callback) { m_per_frame_constants_callback = callback; }
@@ -64,6 +65,7 @@ private:
 	Texture const * m_texture = nullptr;
 
 	DepthTestOptions m_depth_test_options;
+	BlendOptions m_blend_options;
 	CullMode m_cull_mode = CullMode::NONE; // Default to none to ensure objects always appear on screen when testing new pipelines.
 
 	PerFrameConstantsCallback m_per_frame_constants_callback;

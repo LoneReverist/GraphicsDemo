@@ -44,6 +44,7 @@ namespace
 		VkVertexInputBindingDescription const & binding_desc,
 		std::vector<VkVertexInputAttributeDescription> const & attrib_descs,
 		DepthTestOptions const & depth_options,
+		BlendOptions const & blend_options,
 		CullMode cull_mode)
 	{
 		std::vector<VkDynamicState> dynamic_states = {
@@ -101,21 +102,14 @@ namespace
 			.alphaToOneEnable = VK_FALSE
 		};
 
-		VkPipelineColorBlendAttachmentState color_blend_attachment{ // per framebuffer blending options
-			.blendEnable = VK_FALSE,
-			.srcColorBlendFactor = VK_BLEND_FACTOR_ONE,
-			.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO,
+		VkPipelineColorBlendAttachmentState color_blend_attachment{
+			.blendEnable = blend_options.m_enable_blend ? VK_TRUE : VK_FALSE,
+			.srcColorBlendFactor = static_cast<VkBlendFactor>(blend_options.m_src_factor),
+			.dstColorBlendFactor = static_cast<VkBlendFactor>(blend_options.m_dst_factor),
 			.colorBlendOp = VK_BLEND_OP_ADD,
-			.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
-			.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
+			.srcAlphaBlendFactor = static_cast<VkBlendFactor>(blend_options.m_src_factor),
+			.dstAlphaBlendFactor = static_cast<VkBlendFactor>(blend_options.m_dst_factor),
 			.alphaBlendOp = VK_BLEND_OP_ADD,
-			//.blendEnable = VK_TRUE,
-			//.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
-			//.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
-			//.colorBlendOp = VK_BLEND_OP_ADD,
-			//.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
-			//.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
-			//.alphaBlendOp = VK_BLEND_OP_ADD,
 			.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT
 		};
 
@@ -386,6 +380,7 @@ GraphicsPipeline::GraphicsPipeline(GraphicsApi const & graphics_api,
 	std::vector<VkDeviceSize> fs_uniform_sizes,
 	Texture const * texture,
 	DepthTestOptions const & depth_options,
+	BlendOptions const & blend_options,
 	CullMode cull_mode,
 	PerFrameConstantsCallback per_frame_constants_callback,
 	PerObjectConstantsCallback per_object_constants_callback)
@@ -459,6 +454,7 @@ GraphicsPipeline::GraphicsPipeline(GraphicsApi const & graphics_api,
 		binding_desc,
 		attrib_descs,
 		depth_options,
+		blend_options,
 		cull_mode);
 }
 

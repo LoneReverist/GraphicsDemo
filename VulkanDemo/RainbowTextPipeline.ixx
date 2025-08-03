@@ -74,6 +74,11 @@ std::optional<GraphicsPipeline> RainbowTextPipeline::CreateGraphicsPipeline(
         .m_enable_depth_write = false,
         .m_depth_compare_op = DepthCompareOp::ALWAYS
         });
+	builder.SetBlendOptions(BlendOptions{
+		.m_enable_blend = true,
+		.m_src_factor = BlendFactor::SRC_ALPHA,
+		.m_dst_factor = BlendFactor::ONE_MINUS_SRC_ALPHA
+		});
     builder.SetCullMode(CullMode::BACK);
 
     builder.SetPerObjectConstantsCallback(

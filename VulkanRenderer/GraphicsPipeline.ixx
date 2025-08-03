@@ -56,13 +56,38 @@ export enum class CullMode
 	BACK = VK_CULL_MODE_BACK_BIT
 };
 
+export enum class BlendFactor {
+	ZERO = VK_BLEND_FACTOR_ZERO,
+	ONE = VK_BLEND_FACTOR_ONE,
+	SRC_COLOR = VK_BLEND_FACTOR_SRC_COLOR,
+	ONE_MINUS_SRC_COLOR = VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR,
+	DST_COLOR = VK_BLEND_FACTOR_DST_COLOR,
+	ONE_MINUS_DST_COLOR = VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR,
+	SRC_ALPHA = VK_BLEND_FACTOR_SRC_ALPHA,
+	ONE_MINUS_SRC_ALPHA = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+	DST_ALPHA = VK_BLEND_FACTOR_DST_ALPHA,
+	ONE_MINUS_DST_ALPHA = VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA,
+	CONSTANT_COLOR = VK_BLEND_FACTOR_CONSTANT_COLOR,
+	ONE_MINUS_CONSTANT_COLOR = VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR,
+	CONSTANT_ALPHA = VK_BLEND_FACTOR_CONSTANT_ALPHA,
+	ONE_MINUS_CONSTANT_ALPHA = VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA,
+	SRC_ALPHA_SATURATE = VK_BLEND_FACTOR_SRC_ALPHA_SATURATE
+};
+
+export struct BlendOptions {
+	bool m_enable_blend = false;
+	BlendFactor m_src_factor = BlendFactor::SRC_ALPHA;
+	BlendFactor m_dst_factor = BlendFactor::ONE_MINUS_SRC_ALPHA;
+};
+
 export class GraphicsPipeline
 {
 public:
 	using PerFrameConstantsCallback = std::function<void(GraphicsPipeline const & pipeline)>;
 	using PerObjectConstantsCallback = std::function<void(GraphicsPipeline const & pipeline, RenderObject const &)>;
 
-	GraphicsPipeline(GraphicsApi const & graphics_api,
+	GraphicsPipeline(
+		GraphicsApi const & graphics_api,
 		VkShaderModule vert_shader_module,
 		VkShaderModule frag_shader_module,
 		VkVertexInputBindingDescription const & binding_desc,
@@ -72,6 +97,7 @@ public:
 		std::vector<VkDeviceSize> fs_uniform_sizes,
 		Texture const * texture,
 		DepthTestOptions const & depth_options,
+		BlendOptions const & blend_options,
 		CullMode cull_mode,
 		PerFrameConstantsCallback per_frame_constants_callback,
 		PerObjectConstantsCallback per_object_constants_callback);
