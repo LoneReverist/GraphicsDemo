@@ -15,4 +15,6 @@ public:
 	~GraphicsApi();
 
 	void SetViewport(int width, int height) const;
+
+	bool ShouldFlipScreenY() const { return false; }
 };

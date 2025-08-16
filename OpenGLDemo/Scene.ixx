@@ -30,7 +30,7 @@ public:
 	explicit Scene(GraphicsApi const & graphics_api)
 		: m_graphics_api{ graphics_api }
 		, m_renderer{ graphics_api }
-		, m_camera{ false /*flip_proj_y*/ }
+		, m_camera{ graphics_api.ShouldFlipScreenY() }
 	{
 	}
 

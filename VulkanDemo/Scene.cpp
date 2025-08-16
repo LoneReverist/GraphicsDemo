@@ -480,7 +480,7 @@ void Scene::Init()
 
 	m_fps_mesh = std::make_unique<TextMesh>(TextMesh::Create(m_graphics_api, m_renderer,
 		"FPS: ", *m_arial_font, label_font_size, glm::vec2{ -0.9, -0.9 } /*origin*/,
-		0 /*viewport_width*/, 0 /*viewport_height*/, true /*flip_y*/));
+		0 /*viewport_width*/, 0 /*viewport_height*/));
 	m_fps_label = TextPipeline::ObjectData{
 		.m_screen_px_range = m_fps_mesh->GetScreenPxRange(),
 		.m_bg_color = { 0.0f, 0.0f, 0.0f, 0.0f },
@@ -489,7 +489,7 @@ void Scene::Init()
 
 	m_title_mesh = std::make_unique<TextMesh>(TextMesh::Create(m_graphics_api, m_renderer,
 		"Vulkan Demo", *m_arial_font, title_font_size, glm::vec2{ -0.9, 0.8 } /*origin*/,
-		0 /*viewport_width*/, 0 /*viewport_height*/, true /*flip_y*/));
+		0 /*viewport_width*/, 0 /*viewport_height*/));
 	m_title_label = RainbowTextPipeline::ObjectData{
 		.m_bg_color = { 0.0f, 0.0f, 0.0f, 0.0f },
 		.m_screen_px_range = m_title_mesh->GetScreenPxRange(),

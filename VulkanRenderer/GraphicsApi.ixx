@@ -98,6 +98,9 @@ public:
 	void CopyBufferToImage(VkBuffer buffer, VkImage image, std::uint32_t width, std::uint32_t height, std::uint32_t layers) const;
 	void TransitionImageLayout(VkImage image, std::uint32_t layers, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout) const;
 
+	// glm expects opengl style screen coordinates, so we need to flip the Y axis
+	bool ShouldFlipScreenY() const { return true; }
+
 	VkDevice GetDevice() const { return m_logical_device; }
 	VkFormat GetSwapChainImageFormat() const { return m_swap_chain_image_format; }
 	VkExtent2D GetSwapChainExtent() const { return m_swap_chain_extent; }

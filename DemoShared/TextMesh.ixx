@@ -29,10 +29,9 @@ public:
 		float font_size,
 		glm::vec2 origin,
 		int viewport_width,
-		int viewport_height,
-		bool flip_y = false)
+		int viewport_height)
 	{
-		TextMesh text_mesh{ graphics_api, renderer, text, font_atlas, font_size, origin, viewport_width, viewport_height, flip_y };
+		TextMesh text_mesh{ graphics_api, renderer, text, font_atlas, font_size, origin, viewport_width, viewport_height };
 
 		Mesh mesh = text_mesh.create_mesh();
 		text_mesh.m_asset_id.m_index = renderer.AddMesh(std::move(mesh));
@@ -75,8 +74,7 @@ private:
 		float font_size,
 		glm::vec2 origin,
 		int viewport_width,
-		int viewport_height,
-		bool flip_y)
+		int viewport_height)
 		: m_graphics_api(graphics_api)
 		, m_renderer(renderer)
 		, m_text(text)
@@ -86,7 +84,6 @@ private:
 		, m_origin(origin)
 		, m_viewport_width(viewport_width)
 		, m_viewport_height(viewport_height)
-		, m_flip_y(flip_y)
 	{
 	}
 
@@ -149,7 +146,7 @@ private:
 
 		// Vulkan screen coordinates are different from OpenGL, the y-axis is -1 at the top instead of the bottom of the screen.
 		// We could create a projection matrix that flips the y-axis and pass that into the 2d shaders, but for now we'll do this
-		if (m_flip_y)
+		if (m_graphics_api.ShouldFlipScreenY())
 		{
 			for (VertexT & v : verts)
 				v.m_pos.y = -v.m_pos.y;
@@ -171,5 +168,4 @@ private:
 
 	int m_viewport_width = 0;
 	int m_viewport_height = 0;
-	bool m_flip_y = false;
 };
