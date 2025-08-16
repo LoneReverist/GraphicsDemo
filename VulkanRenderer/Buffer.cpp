@@ -23,11 +23,9 @@ Buffer::~Buffer()
 
 Buffer::Buffer(Buffer && other) noexcept
 	: m_graphics_api(other.m_graphics_api)
-	, m_buffer(other.m_buffer)
-	, m_memory(other.m_memory)
 {
-	other.m_buffer = VK_NULL_HANDLE;
-	other.m_memory = VK_NULL_HANDLE;
+	std::swap(m_buffer, other.m_buffer);
+	std::swap(m_memory, other.m_memory);
 }
 
 Buffer & Buffer::operator=(Buffer && other) noexcept
@@ -35,7 +33,6 @@ Buffer & Buffer::operator=(Buffer && other) noexcept
 	if (this != &other)
 	{
 		Destroy();
-
 		std::swap(m_buffer, other.m_buffer);
 		std::swap(m_memory, other.m_memory);
 	}

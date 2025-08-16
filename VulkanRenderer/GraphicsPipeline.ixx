@@ -29,6 +29,60 @@ struct DescriptorSet
 	std::vector<UniformBuffer> m_uniform_buffers;
 };
 
+class DescriptorSets
+{
+public:
+	DescriptorSets(GraphicsApi const & graphics_api);
+	~DescriptorSets();
+
+	DescriptorSets(DescriptorSets && other);
+	DescriptorSets & operator=(DescriptorSets && other);
+
+	DescriptorSets(DescriptorSets &) = delete;
+	DescriptorSets & operator=(DescriptorSets &) = delete;
+
+	void Create(
+		std::vector<VkDeviceSize> const & vs_uniform_sizes,
+		std::vector<VkDeviceSize> const & fs_uniform_sizes,
+		Texture const * texture);
+	void Destroy();
+
+	DescriptorSet const & GetCurrent() const { return m_descriptor_sets[m_graphics_api.GetCurFrameIndex()]; }
+	VkDescriptorSetLayout GetLayout() const { return m_descriptor_set_layout; }
+	VkDescriptorPool GetPool() const { return m_descriptor_pool; }
+
+private:
+	GraphicsApi const & m_graphics_api;
+
+	VkDescriptorSetLayout m_descriptor_set_layout = VK_NULL_HANDLE;
+	VkDescriptorPool m_descriptor_pool = VK_NULL_HANDLE;
+
+	std::array<DescriptorSet, GraphicsApi::m_max_frames_in_flight> m_descriptor_sets;
+};
+
+class PipelineLayout
+{
+public:
+	PipelineLayout(GraphicsApi const & graphics_api);
+	~PipelineLayout();
+
+	PipelineLayout(PipelineLayout && other);
+	PipelineLayout & operator=(PipelineLayout && other);
+
+	PipelineLayout(PipelineLayout const &) = delete;
+	PipelineLayout & operator=(PipelineLayout const &) = delete;
+
+	VkResult Create(VkDescriptorSetLayout descriptor_set_layout, std::vector<VkPushConstantRange> const & push_constants_ranges);
+	void Destroy();
+
+	VkPipelineLayout Get() const { return m_pipeline_layout; }
+
+private:
+	GraphicsApi const & m_graphics_api;
+
+	VkPipelineLayout m_pipeline_layout = VK_NULL_HANDLE;
+};
+
 export enum class DepthCompareOp
 {
 	NEVER = VK_COMPARE_OP_NEVER,
@@ -56,7 +110,8 @@ export enum class CullMode
 	BACK = VK_CULL_MODE_BACK_BIT
 };
 
-export enum class BlendFactor {
+export enum class BlendFactor
+{
 	ZERO = VK_BLEND_FACTOR_ZERO,
 	ONE = VK_BLEND_FACTOR_ONE,
 	SRC_COLOR = VK_BLEND_FACTOR_SRC_COLOR,
@@ -74,10 +129,43 @@ export enum class BlendFactor {
 	SRC_ALPHA_SATURATE = VK_BLEND_FACTOR_SRC_ALPHA_SATURATE
 };
 
-export struct BlendOptions {
+export struct BlendOptions
+{
 	bool m_enable_blend = false;
 	BlendFactor m_src_factor = BlendFactor::SRC_ALPHA;
 	BlendFactor m_dst_factor = BlendFactor::ONE_MINUS_SRC_ALPHA;
+};
+
+class Pipeline
+{
+public:
+	Pipeline(GraphicsApi const & graphics_api);
+	~Pipeline();
+
+	Pipeline(Pipeline && other);
+	Pipeline & operator=(Pipeline && other);
+
+	Pipeline(Pipeline const &) = delete;
+	Pipeline & operator=(Pipeline const &) = delete;
+
+	VkResult Create(
+		VkDevice device,
+		VkRenderPass render_pass,
+		VkPipelineLayout pipeline_layout,
+		std::vector<VkPipelineShaderStageCreateInfo> const & shader_stages,
+		VkVertexInputBindingDescription const & binding_desc,
+		std::vector<VkVertexInputAttributeDescription> const & attrib_descs,
+		DepthTestOptions const & depth_options,
+		BlendOptions const & blend_options,
+		CullMode cull_mode);
+	void Destroy();
+
+	VkPipeline Get() const { return m_pipeline; }
+
+private:
+	GraphicsApi const & m_graphics_api;
+
+	VkPipeline m_pipeline = VK_NULL_HANDLE;
 };
 
 export class GraphicsPipeline
@@ -92,24 +180,24 @@ public:
 		VkShaderModule frag_shader_module,
 		VkVertexInputBindingDescription const & binding_desc,
 		std::vector<VkVertexInputAttributeDescription> const & attrib_descs,
-		std::vector<VkPushConstantRange> push_constants_ranges,
-		std::vector<VkDeviceSize> vs_uniform_sizes,
-		std::vector<VkDeviceSize> fs_uniform_sizes,
+		std::vector<VkPushConstantRange> const & push_constants_ranges,
+		std::vector<VkDeviceSize> const & vs_uniform_sizes,
+		std::vector<VkDeviceSize> const & fs_uniform_sizes,
 		Texture const * texture,
 		DepthTestOptions const & depth_options,
 		BlendOptions const & blend_options,
 		CullMode cull_mode,
 		PerFrameConstantsCallback per_frame_constants_callback,
 		PerObjectConstantsCallback per_object_constants_callback);
-	~GraphicsPipeline();
+	~GraphicsPipeline() = default;
 
-	GraphicsPipeline(GraphicsPipeline && other);
-	GraphicsPipeline & operator=(GraphicsPipeline && other);
+	GraphicsPipeline(GraphicsPipeline && other) = default;
+	GraphicsPipeline & operator=(GraphicsPipeline && other) = default;
 
 	GraphicsPipeline(GraphicsPipeline &) = delete;
 	GraphicsPipeline & operator=(GraphicsPipeline &) = delete;
 
-	bool IsValid() const { return m_graphics_pipeline != VK_NULL_HANDLE; }
+	bool IsValid() const { return m_pipeline.Get() != VK_NULL_HANDLE; }
 
 	void Activate() const;
 	void UpdatePerFrameConstants() const;
@@ -122,18 +210,12 @@ public:
 	void SetPushConstants(VSConstantData const & vs_data, FSConstantData const & fs_data) const;
 
 private:
-	void destroy_pipeline();
+	std::reference_wrapper<GraphicsApi const> m_graphics_api;
 
-private:
-	GraphicsApi const & m_graphics_api;
+	PipelineLayout m_pipeline_layout;
+	Pipeline m_pipeline;
 
-	VkPipelineLayout m_pipeline_layout = VK_NULL_HANDLE;
-	VkPipeline m_graphics_pipeline = VK_NULL_HANDLE;
-
-	VkDescriptorSetLayout m_descriptor_set_layout = VK_NULL_HANDLE;
-	VkDescriptorPool m_descriptor_pool = VK_NULL_HANDLE;
-
-	std::array<DescriptorSet, GraphicsApi::m_max_frames_in_flight> m_descriptor_sets;
+	DescriptorSets m_descriptor_sets;
 
 	PerFrameConstantsCallback m_per_frame_constants_callback;
 	PerObjectConstantsCallback m_per_object_constants_callback;
@@ -142,7 +224,7 @@ private:
 template <typename UniformData>
 void GraphicsPipeline::SetUniform(std::uint32_t binding, UniformData const & data) const
 {
-	UniformBuffer const & buffer = m_descriptor_sets[m_graphics_api.GetCurFrameIndex()].m_uniform_buffers[binding];
+	UniformBuffer const & buffer = m_descriptor_sets.GetCurrent().m_uniform_buffers[binding];
 	std::memcpy(buffer.m_mapping, &data, sizeof(data));
 }
 
@@ -152,12 +234,12 @@ void GraphicsPipeline::SetPushConstants(VSConstantData const & vs_data, FSConsta
 	static_assert(!std::same_as<VSConstantData, std::nullopt_t> || !std::same_as<FSConstantData, std::nullopt_t>,
 		"At least one push constant data must be provided");
 
-	VkCommandBuffer command_buffer = m_graphics_api.GetCurCommandBuffer();
+	VkCommandBuffer command_buffer = m_graphics_api.get().GetCurCommandBuffer();
 	std::uint32_t offset = 0;
 
 	if constexpr (!std::same_as<VSConstantData, std::nullopt_t>)
 	{
-		vkCmdPushConstants(command_buffer, m_pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT,
+		vkCmdPushConstants(command_buffer, m_pipeline_layout.Get(), VK_SHADER_STAGE_VERTEX_BIT,
 			offset, sizeof(VSConstantData), &vs_data);
 
 		offset += static_cast<std::uint32_t>(sizeof(VSConstantData));
@@ -165,7 +247,7 @@ void GraphicsPipeline::SetPushConstants(VSConstantData const & vs_data, FSConsta
 
 	if constexpr (!std::same_as<FSConstantData, std::nullopt_t>)
 	{
-		vkCmdPushConstants(command_buffer, m_pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT,
+		vkCmdPushConstants(command_buffer, m_pipeline_layout.Get(), VK_SHADER_STAGE_FRAGMENT_BIT,
 			offset, sizeof(FSConstantData), &fs_data);
 	}
 }
