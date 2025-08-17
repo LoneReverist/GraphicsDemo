@@ -4,6 +4,7 @@ module;
 
 #include <filesystem>
 #include <memory>
+#include <vector>
 
 export module Scene;
 

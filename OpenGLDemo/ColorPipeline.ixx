@@ -16,6 +16,7 @@ import GraphicsApi;
 import GraphicsPipeline;
 import LightsManager;
 import PipelineBuilder;
+import RenderObject;
 import Vertex;
 
 export class ColorPipeline

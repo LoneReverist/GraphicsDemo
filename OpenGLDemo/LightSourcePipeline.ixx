@@ -15,6 +15,7 @@ import Camera;
 import GraphicsApi;
 import GraphicsPipeline;
 import PipelineBuilder;
+import RenderObject;
 import Vertex;
 
 export class LightSourcePipeline

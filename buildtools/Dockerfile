@@ -46,7 +46,7 @@ RUN /opt/vcpkg/vcpkg install \
     glfw3:x64-linux \
     glm:x64-linux \
     vulkan:x64-linux \
-    vulkan-validationlayers:x64-linux \
+#    vulkan-validationlayers:x64-linux \
     glad:x64-linux \
     stb:x64-linux \
     nlohmann-json:x64-linux

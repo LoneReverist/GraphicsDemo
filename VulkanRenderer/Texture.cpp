@@ -8,6 +8,7 @@ module;
 #include <cstring>
 #include <filesystem>
 #include <iostream>
+#include <vector>
 
 #include <vulkan/vulkan.h>
 
@@ -75,7 +76,7 @@ Image & Image::operator=(Image && other)
 
 void Image::destroy()
 {
-	VkDevice device = m_graphics_api.get().GetDevice();
+	VkDevice device = m_graphics_api.GetDevice();
 
 	vkDestroyImageView(device, m_image_view, nullptr);
 	m_image_view = VK_NULL_HANDLE;
@@ -134,17 +135,16 @@ VkResult Image::Create2dImage(ImageData const & image_data)
 	if (!image_data.IsValid())
 		throw std::runtime_error("Image::Create2dImage image_data not valid");
 
-	GraphicsApi const & graphics_api = m_graphics_api.get();
-	VkDevice device = graphics_api.GetDevice();
+	VkDevice device = m_graphics_api.GetDevice();
 
-	Buffer staging_buffer{ graphics_api };
-	VkResult result = load_image_into_buffer(graphics_api, image_data, staging_buffer);
+	Buffer staging_buffer{ m_graphics_api };
+	VkResult result = load_image_into_buffer(m_graphics_api, image_data, staging_buffer);
 	if (result != VK_SUCCESS)
 		throw std::runtime_error("Image::Create2dImage Failed to create staging buffer");
 
 	VkFormat format = to_vk_format(image_data.m_format);
 
-	result = graphics_api.Create2dImage(
+	result = m_graphics_api.Create2dImage(
 		image_data.m_width,
 		image_data.m_height,
 		1 /*layers*/,
@@ -158,26 +158,26 @@ VkResult Image::Create2dImage(ImageData const & image_data)
 	if (result != VK_SUCCESS)
 		throw std::runtime_error("Image::Create2dImage Failed to create image");
 
-	graphics_api.TransitionImageLayout(
+	m_graphics_api.TransitionImageLayout(
 		m_image,
 		1 /*layers*/,
 		format,
 		VK_IMAGE_LAYOUT_UNDEFINED,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-	graphics_api.CopyBufferToImage(
+	m_graphics_api.CopyBufferToImage(
 		staging_buffer.Get(),
 		m_image,
 		image_data.m_width,
 		image_data.m_height,
 		1 /*layers*/);
-	graphics_api.TransitionImageLayout(
+	m_graphics_api.TransitionImageLayout(
 		m_image,
 		1 /*layers*/,
 		format,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-	result = graphics_api.CreateImageView(
+	result = m_graphics_api.CreateImageView(
 		m_image,
 		VK_IMAGE_VIEW_TYPE_2D,
 		format,
@@ -223,17 +223,16 @@ VkResult Image::CreateCubeImage(CubeImageData const & image_data)
 	if (!image_data.IsValid())
 		throw std::runtime_error("Image::CreateCubeImage image_data not valid");
 
-	GraphicsApi const & graphics_api = m_graphics_api.get();
-	VkDevice device = graphics_api.GetDevice();
+	VkDevice device = m_graphics_api.GetDevice();
 
-	Buffer staging_buffer{ graphics_api };
-	VkResult result = load_cube_image_into_buffer(graphics_api, image_data, staging_buffer);
+	Buffer staging_buffer{ m_graphics_api };
+	VkResult result = load_cube_image_into_buffer(m_graphics_api, image_data, staging_buffer);
 	if (result != VK_SUCCESS)
 		throw std::runtime_error("Image::CreateCubeImage Failed to create staging buffer");
 
 	VkFormat format = to_vk_format(image_data.m_format);
 
-	result = graphics_api.Create2dImage(
+	result = m_graphics_api.Create2dImage(
 		image_data.m_width,
 		image_data.m_height,
 		6 /*layers*/,
@@ -247,28 +246,28 @@ VkResult Image::CreateCubeImage(CubeImageData const & image_data)
 	if (result != VK_SUCCESS)
 		throw std::runtime_error("Image::CreateCubeImage Failed to create cubemap");
 
-	graphics_api.TransitionImageLayout(
+	m_graphics_api.TransitionImageLayout(
 		m_image,
 		6 /*layers*/,
 		format,
 		VK_IMAGE_LAYOUT_UNDEFINED,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-	graphics_api.CopyBufferToImage(
+	m_graphics_api.CopyBufferToImage(
 		staging_buffer.Get(),
 		m_image,
 		image_data.m_width,
 		image_data.m_height,
 		6 /*layers*/);
 
-	graphics_api.TransitionImageLayout(
+	m_graphics_api.TransitionImageLayout(
 		m_image,
 		6 /*layers*/,
 		format,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-	result = graphics_api.CreateImageView(
+	result = m_graphics_api.CreateImageView(
 		m_image,
 		VK_IMAGE_VIEW_TYPE_CUBE,
 		format,
@@ -305,7 +304,7 @@ Sampler & Sampler::operator=(Sampler && other)
 
 void Sampler::destroy()
 {
-	VkDevice device = m_graphics_api.get().GetDevice();
+	VkDevice device = m_graphics_api.GetDevice();
 
 	vkDestroySampler(device, m_sampler, nullptr);
 	m_sampler = VK_NULL_HANDLE;
@@ -313,7 +312,7 @@ void Sampler::destroy()
 
 VkResult Sampler::Create()
 {
-	VkPhysicalDeviceProperties const & props = m_graphics_api.get().GetPhysicalDeviceInfo().properties;
+	VkPhysicalDeviceProperties const & props = m_graphics_api.GetPhysicalDeviceInfo().properties;
 
 	VkSamplerCreateInfo sampler_info{
 		.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
@@ -334,7 +333,7 @@ VkResult Sampler::Create()
 		.unnormalizedCoordinates = VK_FALSE
 	};
 
-	VkResult result = vkCreateSampler(m_graphics_api.get().GetDevice(), &sampler_info, nullptr, &m_sampler);
+	VkResult result = vkCreateSampler(m_graphics_api.GetDevice(), &sampler_info, nullptr, &m_sampler);
 	if (result != VK_SUCCESS)
 		std::cout << "Failed to create vulkan sampler for texture" << std::endl;
 

@@ -2,6 +2,7 @@
 
 module;
 
+#include <cstdint>
 #include <utility>
 
 #include <glad/glad.h>

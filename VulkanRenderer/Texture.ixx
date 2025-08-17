@@ -68,7 +68,7 @@ private:
 	void destroy();
 
 private:
-	std::reference_wrapper<GraphicsApi const> m_graphics_api;
+	GraphicsApi const & m_graphics_api;
 
 	VkImage m_image = VK_NULL_HANDLE;
 	VkDeviceMemory m_image_memory = VK_NULL_HANDLE;
@@ -95,7 +95,7 @@ private:
 	void destroy();
 
 private:
-	std::reference_wrapper<GraphicsApi const> m_graphics_api;
+	GraphicsApi const & m_graphics_api;
 
 	VkSampler m_sampler = VK_NULL_HANDLE;
 };
@@ -119,7 +119,7 @@ public:
 	VkSampler GetSampler() const { return m_sampler.Get(); }
 
 private:
-	GraphicsApi const & m_graphics_api;
+	std::reference_wrapper<GraphicsApi const> m_graphics_api;
 
 	Image m_image;
 	Sampler m_sampler;

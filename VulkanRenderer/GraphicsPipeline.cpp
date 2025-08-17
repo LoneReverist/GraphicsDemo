@@ -5,6 +5,7 @@ module;
 #include <algorithm>
 #include <cstdint>
 #include <iostream>
+#include <utility>
 #include <vector>
 
 #include <vulkan/vulkan.h>
@@ -28,7 +29,8 @@ DescriptorSets::DescriptorSets(DescriptorSets && other)
 {
 	std::swap(m_descriptor_set_layout, other.m_descriptor_set_layout);
 	std::swap(m_descriptor_pool, other.m_descriptor_pool);
-	std::swap(m_descriptor_sets, other.m_descriptor_sets);
+	for (size_t i = 0; i < m_descriptor_sets.size(); ++i)
+		std::swap(m_descriptor_sets[i], other.m_descriptor_sets[i]);
 }
 
 DescriptorSets & DescriptorSets::operator=(DescriptorSets && other)
@@ -38,7 +40,8 @@ DescriptorSets & DescriptorSets::operator=(DescriptorSets && other)
 		Destroy();
 		std::swap(m_descriptor_set_layout, other.m_descriptor_set_layout);
 		std::swap(m_descriptor_pool, other.m_descriptor_pool);
-		std::swap(m_descriptor_sets, other.m_descriptor_sets);
+		for (size_t i = 0; i < m_descriptor_sets.size(); ++i)
+			std::swap(m_descriptor_sets[i], other.m_descriptor_sets[i]);
 	}
 	return *this;
 }

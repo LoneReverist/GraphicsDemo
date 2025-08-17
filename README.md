@@ -2,18 +2,19 @@
 
 ![](https://github.com/chill-gamer-dev/GraphicsDemo/blob/master/GraphicsDemo.gif)
 
-## Build:
-1. Run buildtools/Install-Dependencies.ps1, this will install vcpkg and then packages used by OpenGLDemo and VulkanDemo.
+## Build (Windows):
+1. Install vcpkg and the libraries used by OpenGLDemo and VulkanDemo.
 ```
 buildtools/Install-Dependencies.ps1
 ```
 
-2. Run buildtools/Run-CMake.ps1, this will generate Visual Studio files and build OpenGLDemo and VulkanDemo
+2. Install CMake, minimum version 3.29 for C++20 module support
+3. Generate Visual Studio files and build OpenGLDemo and VulkanDemo Release executables
 ```
 buildtools/Run-CMake.ps1
 ```
 
-3. Run the OpenGL/Vulkan demos
+4. Run the demos
 ```
 build/OpenGLDemo/Release/OpenGLDemo.exe
 build/VulkanDemo/Release/VulkanDemo.exe
