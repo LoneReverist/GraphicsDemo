@@ -71,7 +71,6 @@ void VulkanApp::Run()
 				m_title, extension_count, extensions };
 
 			Scene scene{ graphics_api, m_title };
-			scene.Init();
 			scene.OnViewportResized(size.m_width, size.m_height);
 
 			double last_update_time = glfwGetTime();

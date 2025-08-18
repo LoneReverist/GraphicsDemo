@@ -70,7 +70,6 @@ void OpenGLApp::Run()
 			GraphicsApi graphics_api{ reinterpret_cast<GraphicsApi::LoadProcFn *>(glfwGetProcAddress) };
 
 			Scene scene{ graphics_api, m_title };
-			scene.Init();
 			scene.OnViewportResized(size.m_width, size.m_height);
 
 			double last_update_time = glfwGetTime();

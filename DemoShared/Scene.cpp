@@ -437,13 +437,17 @@ void update_gem_transform(glm::mat4 & transform, float delta_time)
 	transform = glm::rotate(glm::mat4(1.0), delta_time * 0.5f, glm::vec3(0.0, 0.0, 1.0)) * transform;
 }
 
-void Scene::Init()
+Scene::Scene(GraphicsApi const & graphics_api, std::string const & title)
+	: m_graphics_api{ graphics_api }
+	, m_resources_path{ PlatformUtils::GetExecutableDir() / "resources" }
+	, m_title{ title }
+	, m_renderer{ graphics_api }
+	, m_camera{ graphics_api.ShouldFlipScreenY() }
 {
 	m_dpi_scale = PlatformUtils::GetDPIScalingFactor();
 	float label_font_size = 18.0f * m_dpi_scale;
 	float title_font_size = 32.0f * m_dpi_scale;
 
-	m_resources_path = PlatformUtils::GetExecutableDir() / "resources";
 	const std::filesystem::path textures_path = m_resources_path / "textures";
 	const std::filesystem::path objects_path = m_resources_path / "objects";
 	const std::filesystem::path fonts_path = m_resources_path / "fonts";

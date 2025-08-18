@@ -28,15 +28,8 @@ import TexturePipeline;
 export class Scene
 {
 public:
-	explicit Scene(GraphicsApi const & graphics_api, std::string const & title)
-		: m_graphics_api{ graphics_api }
-		, m_renderer{ graphics_api }
-		, m_camera{ graphics_api.ShouldFlipScreenY() }
-		, m_title{ title }
-	{
-	}
+	explicit Scene(GraphicsApi const & graphics_api, std::string const & title);
 
-	void Init();
 	void OnViewportResized(int width, int height);
 
 	void Update(double delta_time, Input const & input);
@@ -53,7 +46,7 @@ private:
 
 private:
 	GraphicsApi const & m_graphics_api;
-	std::filesystem::path m_resources_path;
+	std::filesystem::path const m_resources_path;
 	std::string const m_title;
 
 	Renderer m_renderer;
