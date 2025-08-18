@@ -23,7 +23,7 @@ export struct WindowSize
 export class OpenGLApp
 {
 public:
-	OpenGLApp(WindowSize window_size, std::string title);
+	OpenGLApp(WindowSize window_size, std::string const & title);
 	~OpenGLApp();
 
 	void Run();
@@ -37,6 +37,7 @@ public:
 private:
 	bool m_initialized = false;
 	GLFWwindow * m_window = nullptr;
+	std::string const m_title;
 
 	std::atomic<WindowSize> m_window_size;
 	Input m_input;

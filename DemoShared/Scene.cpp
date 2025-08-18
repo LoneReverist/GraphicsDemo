@@ -20,6 +20,7 @@ import Mesh;
 import ObjLoader;
 import PlatformUtils;
 import StbImage;
+import TextMesh;
 import Vertex;
 
 std::unique_ptr<Texture> create_texture(
@@ -124,7 +125,7 @@ Mesh GroundMesh::create_ground_mesh(GraphicsApi const & graphics_api)
 	float scale = 30.0f;
 
 	static_assert(std::same_as<VertexT, TextureVertex>);
-	std::vector<TextureVertex> verts {
+	std::vector<TextureVertex> verts{
 		{ { -scale,  scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.0, 1.0 } },
 		{ {  scale,  scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 1.0, 1.0 } },
 		{ { -scale, -scale, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.0, 0.0 } },
@@ -178,7 +179,7 @@ auto SkyboxMesh::Create(
 Mesh SkyboxMesh::create_skybox_mesh(GraphicsApi const & graphics_api)
 {
 	static_assert(std::same_as<VertexT, PositionVertex>);
-	std::vector<PositionVertex> verts {
+	std::vector<PositionVertex> verts{
 		{ { -1.0f,  1.0f, -1.0f } },
 		{ { -1.0f, -1.0f, -1.0f } },
 		{ {  1.0f, -1.0f, -1.0f } },
@@ -361,7 +362,7 @@ concept ObjectDataIsCompatibleWithPipeline = std::same_as<ObjectData, typename P
 
 template <typename MeshAssetId, typename Pipeline, typename ObjectData>
 	requires AssetsAreCompatible<MeshAssetId, typename Pipeline::AssetIdT>
-	&& ObjectDataIsCompatibleWithPipeline<ObjectData, Pipeline>
+&& ObjectDataIsCompatibleWithPipeline<ObjectData, Pipeline>
 std::shared_ptr<RenderObject> create_render_object(
 	Renderer & renderer,
 	std::string const & name,
@@ -451,11 +452,11 @@ void Scene::Init()
 		textures_path / "skybox" / "top.jpg");
 	m_skybox_tex = create_cubemap_texture(m_graphics_api, std::array<std::filesystem::path, 6>{
 		textures_path / "skybox" / "right.jpg",
-		textures_path / "skybox" / "left.jpg",
-		textures_path / "skybox" / "top.jpg",
-		textures_path / "skybox" / "bottom.jpg",
-		textures_path / "skybox" / "front.jpg",
-		textures_path / "skybox" / "back.jpg"
+			textures_path / "skybox" / "left.jpg",
+			textures_path / "skybox" / "top.jpg",
+			textures_path / "skybox" / "bottom.jpg",
+			textures_path / "skybox" / "front.jpg",
+			textures_path / "skybox" / "back.jpg"
 	});
 
 	m_arial_font = std::make_unique<FontAtlas>(m_graphics_api, fonts_path / "ArialAtlas.png", fonts_path / "ArialAtlas.json");
@@ -489,7 +490,7 @@ void Scene::Init()
 	};
 
 	m_title_mesh = std::make_unique<TextMesh>(TextMesh::Create(m_graphics_api, m_renderer,
-		"Vulkan Demo", *m_arial_font, title_font_size, glm::vec2{ -0.9, 0.8 } /*origin*/,
+		m_title, *m_arial_font, title_font_size, glm::vec2{ -0.9, 0.8 } /*origin*/,
 		0 /*viewport_width*/, 0 /*viewport_height*/));
 	m_title_label = RainbowTextPipeline::ObjectData{
 		.m_bg_color = { 0.0f, 0.0f, 0.0f, 0.0f },

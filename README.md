@@ -19,9 +19,9 @@ GraphicsDemo is a cross-platform C++ project showcasing modern graphics API desi
 	- Abstractions for mesh, texture, pipeline, and renderer logic
 - OpenGLDemo/ & VulkanDemo/
 	- Demo applications utilizing OpenGLRenderer and VulkanRenderer
-	- Implements window creation, update/render loop, scene and custom render pipelines
+	- Implements window creation, update/render loop and custom render pipelines
 - DemoShared/
-	- Core modules for asset management, mesh loading, font loading, and utility functions
+	- Core modules for the scene, input, mesh/font/image loading and utility functions
 - buildtools/
 	- Scripts for installing dependencies and running cmake, linux docker build
 - resources/

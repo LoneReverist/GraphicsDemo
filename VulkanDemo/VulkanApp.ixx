@@ -23,7 +23,7 @@ export struct WindowSize
 export class VulkanApp
 {
 public:
-	VulkanApp(WindowSize window_size, std::string title);
+	VulkanApp(WindowSize window_size, std::string const & title);
 	~VulkanApp();
 
 	void Run();
@@ -37,7 +37,7 @@ public:
 private:
 	bool m_initialized = false;
 	GLFWwindow * m_window = nullptr;
-	std::string m_title;
+	std::string const m_title;
 
 	std::atomic<WindowSize> m_window_size;
 	Input m_input;

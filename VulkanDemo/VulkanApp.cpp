@@ -16,7 +16,7 @@ import GraphicsApi;
 import Renderer;
 import Scene;
 
-VulkanApp::VulkanApp(WindowSize window_size, std::string title)
+VulkanApp::VulkanApp(WindowSize window_size, std::string const & title)
 	: m_title(title)
 {
 	glfwSetErrorCallback([](int error, const char * description)
@@ -70,7 +70,7 @@ void VulkanApp::Run()
 				m_window, size.m_width, size.m_height,
 				m_title, extension_count, extensions };
 
-			Scene scene{ graphics_api };
+			Scene scene{ graphics_api, m_title };
 			scene.Init();
 			scene.OnViewportResized(size.m_width, size.m_height);
 

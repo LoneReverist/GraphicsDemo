@@ -15,7 +15,8 @@ module OpenGLApp;
 import GraphicsApi;
 import Scene;
 
-OpenGLApp::OpenGLApp(WindowSize window_size, std::string title)
+OpenGLApp::OpenGLApp(WindowSize window_size, std::string const & title)
+	: m_title(title)
 {
 	glfwSetErrorCallback([](int error, const char * description)
 		{
@@ -60,15 +61,15 @@ void OpenGLApp::Run()
 	if (!IsInitialized() || !HasWindow())
 		return;
 
-	std::jthread update_render_loop([&window = m_window, &window_size = m_window_size, &input = m_input](std::stop_token s_token)
+	std::jthread update_render_loop([this](std::stop_token s_token)
 		{
-			glfwMakeContextCurrent(window);
+			glfwMakeContextCurrent(m_window);
 
-			WindowSize size = window_size.load();
+			WindowSize size = m_window_size.load();
 
 			GraphicsApi graphics_api{ reinterpret_cast<GraphicsApi::LoadProcFn *>(glfwGetProcAddress) };
 
-			Scene scene{ graphics_api };
+			Scene scene{ graphics_api, m_title };
 			scene.Init();
 			scene.OnViewportResized(size.m_width, size.m_height);
 
@@ -80,12 +81,12 @@ void OpenGLApp::Run()
 				double delta_time = cur_time - last_update_time;
 				last_update_time = cur_time;
 
-				scene.Update(delta_time, input);
+				scene.Update(delta_time, m_input);
 
 				scene.Render();
-				glfwSwapBuffers(window);
+				glfwSwapBuffers(m_window);
 
-				WindowSize new_size = window_size.load();
+				WindowSize new_size = m_window_size.load();
 				if (new_size != size)
 				{
 					graphics_api.SetViewport(new_size.m_width, new_size.m_height);

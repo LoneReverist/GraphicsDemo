@@ -15,23 +15,24 @@ import GraphicsApi;
 import Input;
 import LightsManager;
 import LightSourcePipeline;
+import RainbowTextPipeline;
 import ReflectionPipeline;
 import Renderer;
 import RenderObject;
 import SkyboxPipeline;
 import TextMesh;
 import TextPipeline;
-import RainbowTextPipeline;
 import Texture;
 import TexturePipeline;
 
 export class Scene
 {
 public:
-	explicit Scene(GraphicsApi const & graphics_api)
+	explicit Scene(GraphicsApi const & graphics_api, std::string const & title)
 		: m_graphics_api{ graphics_api }
 		, m_renderer{ graphics_api }
 		, m_camera{ graphics_api.ShouldFlipScreenY() }
+		, m_title{ title }
 	{
 	}
 
@@ -53,6 +54,7 @@ private:
 private:
 	GraphicsApi const & m_graphics_api;
 	std::filesystem::path m_resources_path;
+	std::string const m_title;
 
 	Renderer m_renderer;
 	Camera m_camera;
