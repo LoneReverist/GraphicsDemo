@@ -108,6 +108,8 @@ public:
 	GraphicsPipeline(
 		unsigned int vert_shader_id,
 		unsigned int frag_shader_id,
+		size_t vs_object_uniform_size,
+		size_t fs_object_uniform_size,
 		std::vector<size_t> vs_uniform_sizes,
 		std::vector<size_t> fs_uniform_sizes,
 		DepthTestOptions const & depth_options,
@@ -130,18 +132,17 @@ public:
 	void UpdatePerObjectConstants(RenderObject const & obj) const;
 
 	template <typename UniformData>
-	void SetUniform(std::string const & label, UniformData const & data) const;
-
-	template <typename UniformData>
 	void SetUniform(std::uint32_t binding, UniformData const & data) const;
 
-private:
-	void destroy_pipeline();
+	template <typename ObjectDataVS = std::nullopt_t, typename ObjectDataFS = std::nullopt_t>
+	void SetObjectData(ObjectDataVS const & vs_data, ObjectDataFS const & fs_data) const;
 
 private:
 	Program m_program;
 
 	DescriptorSet m_descriptor_set;
+	UniformBuffer m_vs_object_uniform;
+	UniformBuffer m_fs_object_uniform;
 
 	DepthTestOptions m_depth_test_options;
 	BlendOptions m_blend_options;
@@ -152,38 +153,8 @@ private:
 };
 
 template <typename UniformData>
-void GraphicsPipeline::SetUniform(std::string const & label, UniformData const & data) const
+void set_uniform(std::uint32_t binding, UniformBuffer const & uniform, UniformData const & data)
 {
-	GLint uniform_loc = glGetUniformLocation(m_program.GetId(), label.c_str());
-	if (uniform_loc == -1)
-	{
-		std::cout << "Uniform not found: " << label << std::endl;
-		return;
-	}
-
-	if constexpr (std::same_as<UniformData, float>)
-		glUniform1fv(uniform_loc, 1, &data);
-	else if constexpr (std::same_as<UniformData, glm::vec2>)
-		glUniform2fv(uniform_loc, 1, glm::value_ptr(data));
-	else if constexpr (std::same_as<UniformData, glm::vec3>)
-		glUniform3fv(uniform_loc, 1, glm::value_ptr(data));
-	else if constexpr (std::same_as<UniformData, glm::vec4>)
-		glUniform4fv(uniform_loc, 1, glm::value_ptr(data));
-	else if constexpr (std::same_as<UniformData, glm::mat4>)
-		glUniformMatrix4fv(uniform_loc, 1, GL_FALSE, glm::value_ptr(data));
-	else
-		static_assert(false, "Unsupported uniform type");
-}
-
-template <typename UniformData>
-void GraphicsPipeline::SetUniform(std::uint32_t binding, UniformData const & data) const
-{
-	if (binding >= m_descriptor_set.m_uniform_buffers.size())
-	{
-		std::cout << "Invalid uniform binding: " << binding << std::endl;
-		return;
-	}
-	UniformBuffer const & uniform = m_descriptor_set.m_uniform_buffers[binding];
 	if (uniform.m_buffer.GetId() == 0)
 	{
 		std::cout << "Uniform buffer not initialized for binding: " << binding << std::endl;
@@ -199,4 +170,40 @@ void GraphicsPipeline::SetUniform(std::uint32_t binding, UniformData const & dat
 	glBindBufferBase(GL_UNIFORM_BUFFER, binding, uniform.m_buffer.GetId());
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(data), &data);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+}
+
+template <typename UniformData>
+void GraphicsPipeline::SetUniform(std::uint32_t binding, UniformData const & data) const
+{
+	if (binding >= m_descriptor_set.m_uniform_buffers.size())
+	{
+		std::cout << "Invalid uniform binding: " << binding << std::endl;
+		return;
+	}
+
+	UniformBuffer const & uniform = m_descriptor_set.m_uniform_buffers[binding];
+	set_uniform(binding, uniform, data);
+}
+
+template <typename ObjectDataVS /*= std::nullopt_t*/, typename ObjectDataFS /*= std::nullopt_t*/>
+void GraphicsPipeline::SetObjectData(ObjectDataVS const & vs_data, ObjectDataFS const & fs_data) const
+{
+	static_assert(!std::same_as<ObjectDataVS, std::nullopt_t> || !std::same_as<ObjectDataFS, std::nullopt_t>,
+		"At least one object data must be provided");
+
+	if constexpr (!std::same_as<ObjectDataVS, std::nullopt_t>)
+	{
+		GLuint blockIndex = glGetUniformBlockIndex(m_program.GetId(), "ObjectDataVS");
+		GLint binding = 0;
+		glGetActiveUniformBlockiv(m_program.GetId(), blockIndex, GL_UNIFORM_BLOCK_BINDING, &binding);
+		set_uniform(binding, m_vs_object_uniform, vs_data);
+	}
+
+	if constexpr (!std::same_as<ObjectDataFS, std::nullopt_t>)
+	{
+		GLuint blockIndex = glGetUniformBlockIndex(m_program.GetId(), "ObjectDataFS");
+		GLint binding = 0;
+		glGetActiveUniformBlockiv(m_program.GetId(), blockIndex, GL_UNIFORM_BLOCK_BINDING, &binding);
+		set_uniform(binding, m_fs_object_uniform, fs_data);
+	}
 }

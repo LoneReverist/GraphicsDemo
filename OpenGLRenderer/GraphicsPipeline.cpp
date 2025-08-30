@@ -43,6 +43,8 @@ void Program::Create()
 GraphicsPipeline::GraphicsPipeline(
 	unsigned int vert_shader_id,
 	unsigned int frag_shader_id,
+	size_t vs_object_uniform_size,
+	size_t fs_object_uniform_size,
 	std::vector<size_t> vs_uniform_sizes,
 	std::vector<size_t> fs_uniform_sizes,
 	DepthTestOptions const & depth_options,
@@ -70,6 +72,21 @@ GraphicsPipeline::GraphicsPipeline(
 		std::cout << "Failed to link shader program:\n" << info_log << std::endl;
 	}
 
+	if (vs_object_uniform_size > 0)
+	{
+		m_vs_object_uniform.m_buffer.Create();
+		m_vs_object_uniform.m_size = vs_object_uniform_size;
+		glBindBuffer(GL_UNIFORM_BUFFER, m_vs_object_uniform.m_buffer.GetId());
+		glBufferData(GL_UNIFORM_BUFFER, m_vs_object_uniform.m_size, nullptr, GL_DYNAMIC_DRAW);
+	}
+	if (fs_object_uniform_size > 0)
+	{
+		m_fs_object_uniform.m_buffer.Create();
+		m_fs_object_uniform.m_size = fs_object_uniform_size;
+		glBindBuffer(GL_UNIFORM_BUFFER, m_fs_object_uniform.m_buffer.GetId());
+		glBufferData(GL_UNIFORM_BUFFER, m_fs_object_uniform.m_size, nullptr, GL_DYNAMIC_DRAW);
+	}
+
 	std::vector<size_t> uniform_sizes{ vs_uniform_sizes };
 	uniform_sizes.insert(uniform_sizes.end(), fs_uniform_sizes.begin(), fs_uniform_sizes.end());
 
@@ -83,6 +100,7 @@ GraphicsPipeline::GraphicsPipeline(
 		glBufferData(GL_UNIFORM_BUFFER, uniform.m_size, nullptr, GL_DYNAMIC_DRAW);
 	}
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
 }
 
 void GraphicsPipeline::Activate() const

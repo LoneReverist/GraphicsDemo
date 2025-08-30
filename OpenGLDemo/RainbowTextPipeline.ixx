@@ -54,10 +54,21 @@ std::optional<GraphicsPipeline> RainbowTextPipeline::CreateGraphicsPipeline(
 	std::filesystem::path const & shaders_path,
 	FontAtlas const & font_atlas)
 {
+	struct ObjectDataFS
+	{
+		alignas(16) glm::vec4 bg_color;
+		alignas(4) float screen_px_range;
+		alignas(4) float time;
+		alignas(4) float rainbow_width;
+		alignas(4) float slant_factor;
+	};
+
 	PipelineBuilder builder;
 	builder.LoadShaders(
 		shaders_path / "msdf_text.vert",
 		shaders_path / "rainbow_text.frag");
+	builder.SetVertexType<VertexT>();
+	builder.SetObjectDataTypes<std::nullopt_t, ObjectDataFS>();
 	builder.SetDepthTestOptions(DepthTestOptions{
 		.m_enable_depth_test = false,
 		.m_enable_depth_write = false,
@@ -80,13 +91,17 @@ std::optional<GraphicsPipeline> RainbowTextPipeline::CreateGraphicsPipeline(
 				return;
 			}
 
-			pipeline.SetUniform("bg_color", data->m_bg_color);
-			pipeline.SetUniform("screen_px_range", data->m_screen_px_range);
-			pipeline.SetUniform("time", data->m_time);
-			pipeline.SetUniform("rainbow_width", data->m_rainbow_width);
-			pipeline.SetUniform("slant_factor", data->m_slant_factor);
+			pipeline.SetObjectData(
+				std::nullopt,
+				ObjectDataFS{
+					.bg_color = data->m_bg_color,
+					.screen_px_range = data->m_screen_px_range,
+					.time = data->m_time,
+					.rainbow_width = data->m_rainbow_width,
+					.slant_factor = data->m_slant_factor
+				});
 
-			font_atlas.GetTexture().Bind();
+			font_atlas.GetTexture().Bind(0);
 		});
 
 	return builder.CreatePipeline();

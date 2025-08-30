@@ -24,6 +24,12 @@ public:
 
 	void LoadShaders(std::filesystem::path const & vs_path, std::filesystem::path const & fs_path);
 
+	template <IsVertex VertexT>
+	void SetVertexType();
+
+	template <typename ObjectDataVS = std::nullopt_t, typename ObjectDataFS = std::nullopt_t>
+	void SetObjectDataTypes();
+
 	template <typename... UniformTypes>
 	void SetVSUniformTypes();
 
@@ -43,6 +49,8 @@ private:
 	unsigned int m_vert_shader_id = 0;
 	unsigned int m_frag_shader_id = 0;
 
+	size_t m_vs_object_uniform_size = 0;
+	size_t m_fs_object_uniform_size = 0;
 	std::vector<size_t> m_vs_uniform_sizes;
 	std::vector<size_t> m_fs_uniform_sizes;
 
@@ -53,6 +61,24 @@ private:
 	PerFrameConstantsCallback m_per_frame_constants_callback;
 	PerObjectConstantsCallback m_per_object_constants_callback;
 };
+
+template <IsVertex VertexT>
+void PipelineBuilder::SetVertexType()
+{
+}
+
+template <typename ObjectDataVS /*= std::nullopt_t*/, typename ObjectDataFS /*= std::nullopt_t*/>
+void PipelineBuilder::SetObjectDataTypes()
+{
+	static_assert(!std::same_as<ObjectDataVS, std::nullopt_t> || !std::same_as<ObjectDataFS, std::nullopt_t>,
+		"At least one object data type must be provided");
+
+	if constexpr (!std::same_as<ObjectDataVS, std::nullopt_t>)
+		m_vs_object_uniform_size = sizeof(ObjectDataVS);
+
+	if constexpr (!std::same_as<ObjectDataFS, std::nullopt_t>)
+		m_fs_object_uniform_size = sizeof(ObjectDataFS);
+}
 
 template <typename... UniformTypes>
 void PipelineBuilder::SetVSUniformTypes()

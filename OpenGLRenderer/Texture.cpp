@@ -153,7 +153,8 @@ bool Texture::IsValid() const
 	return m_image.GetId() != 0 && m_type != 0;
 }
 
-void Texture::Bind() const
+void Texture::Bind(unsigned int binding) const
 {
+	glActiveTexture(GL_TEXTURE0 + binding);
 	glBindTexture(m_type, m_image.GetId());
 }

@@ -50,10 +50,19 @@ std::optional<GraphicsPipeline> TextPipeline::CreateGraphicsPipeline(
 	std::filesystem::path const & shaders_path,
 	FontAtlas const & font_atlas)
 {
+	struct ObjectDataFS
+	{
+		alignas(4) float screen_px_range;
+		alignas(16) glm::vec4 bg_color;
+		alignas(16) glm::vec4 text_color;
+	};
+
 	PipelineBuilder builder;
 	builder.LoadShaders(
 		shaders_path / "msdf_text.vert",
 		shaders_path / "msdf_text.frag");
+	builder.SetVertexType<VertexT>();
+	builder.SetObjectDataTypes<std::nullopt_t, ObjectDataFS>();
 	builder.SetDepthTestOptions(DepthTestOptions{
 		.m_enable_depth_test = false,
 		.m_enable_depth_write = false,
@@ -78,12 +87,15 @@ std::optional<GraphicsPipeline> TextPipeline::CreateGraphicsPipeline(
 				return;
 			}
 
-			pipeline.SetUniform("screen_px_range", data->m_screen_px_range);
+			pipeline.SetObjectData(
+				std::nullopt,
+				ObjectDataFS{
+					.screen_px_range = data->m_screen_px_range,
+					.bg_color = data->m_bg_color,
+					.text_color = data->m_text_color
+				});
 
-			pipeline.SetUniform("bg_color", data->m_bg_color);
-			pipeline.SetUniform("text_color", data->m_text_color);
-
-			font_atlas.GetTexture().Bind();
+			font_atlas.GetTexture().Bind(0);
 		});
 
 	return builder.CreatePipeline();

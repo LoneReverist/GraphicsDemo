@@ -10,7 +10,7 @@ layout(push_constant) uniform ObjectData {
 } obj_data;
 
 #else // OpenGL
-layout(std140) uniform ObjectDataVS {
+layout(std140, binding = 9) uniform ObjectDataFS {
 	float screen_px_range;
 	vec4 bg_color;
 	vec4 text_color;

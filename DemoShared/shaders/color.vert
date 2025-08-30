@@ -10,8 +10,8 @@ layout(push_constant) uniform ObjectData {
 	mat4 model;
 } obj_data;
 
-#else // OPENGL
-layout(std140) uniform ObjectDataVS {
+#else // OpenGL
+layout(std140, binding = 8) uniform ObjectDataVS {
 	mat4 model;
 } obj_data;
 
@@ -19,11 +19,11 @@ layout(std140) uniform ObjectDataVS {
 
 layout(location = 0) in vec3 in_pos;
 layout(location = 1) in vec3 in_normal;
-layout(location = 2) in vec2 in_tex_coord;
+layout(location = 2) in vec3 in_color;
 
 layout(location = 0) out vec3 out_pos_world;
 layout(location = 1) out vec3 out_normal_world;
-layout(location = 2) out vec2 out_tex_coord;
+layout(location = 2) out vec3 out_color;
 
 void main()
 {
@@ -31,7 +31,7 @@ void main()
 
 	out_pos_world = vec3(pos_world_vec4);
 	out_normal_world = vec3(obj_data.model * vec4(in_normal, 0.0));
-	out_tex_coord = in_tex_coord;
+	out_color = in_color;
 
 	gl_Position = transforms.proj * transforms.view * pos_world_vec4;
 }

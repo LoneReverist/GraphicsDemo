@@ -91,6 +91,8 @@ std::optional<GraphicsPipeline> PipelineBuilder::CreatePipeline() const
 	return GraphicsPipeline{
 		m_vert_shader_id,
 		m_frag_shader_id,
+		m_vs_object_uniform_size,
+		m_fs_object_uniform_size,
 		m_vs_uniform_sizes,
 		m_fs_uniform_sizes,
 		m_depth_test_options,

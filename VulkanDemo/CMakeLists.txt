@@ -4,6 +4,8 @@ target_compile_features(VulkanDemo PRIVATE cxx_std_20)
 
 set_target_properties(VulkanDemo PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
+set(DEMO_SHARED_DIR ${CMAKE_SOURCE_DIR}/DemoShared)
+
 # Build shaders
 if (WIN32)
 	set(GLSLANG_VALIDATOR_EXECUTABLE ${CMAKE_SOURCE_DIR}/buildtools/glslangValidator.exe)
@@ -11,7 +13,7 @@ elseif(UNIX)
 	set(GLSLANG_VALIDATOR_EXECUTABLE glslangValidator)
 endif()
 
-set(SHADER_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/shaders)
+set(SHADER_SOURCE_DIR ${DEMO_SHARED_DIR}/shaders)
 file(GLOB SHADER_FILES "${SHADER_SOURCE_DIR}/*")
 
 set(SHADER_BINARY_DIR ${CMAKE_BINARY_DIR}/shaders)
@@ -42,11 +44,11 @@ add_dependencies(VulkanDemo VulkanShaders)
 
 file(GLOB MODULE_FILES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/*.ixx"
-    "${CMAKE_SOURCE_DIR}/DemoShared/*.ixx"
+    "${DEMO_SHARED_DIR}/*.ixx"
 )
 file(GLOB SOURCE_FILES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
-    "${CMAKE_SOURCE_DIR}/DemoShared/*.cpp"
+    "${DEMO_SHARED_DIR}/*.cpp"
 )
 
 # Target Source Files
@@ -55,7 +57,7 @@ target_sources(VulkanDemo
 	FILE_SET cxx_modules TYPE CXX_MODULES
 	BASE_DIRS
 		.
-		"${CMAKE_SOURCE_DIR}/DemoShared"
+		${DEMO_SHARED_DIR}
 	FILES
 		${MODULE_FILES}
 

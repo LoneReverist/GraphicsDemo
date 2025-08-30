@@ -51,10 +51,17 @@ std::optional<GraphicsPipeline> ColorPipeline::CreateGraphicsPipeline(
 	Camera const & camera,
 	LightsManager const & lights)
 {
+	struct ObjectDataVS
+	{
+		alignas(16) glm::mat4 m_model;
+	};
+
 	PipelineBuilder builder;
 	builder.LoadShaders(
 		shaders_path / "color.vert",
 		shaders_path / "color.frag");
+	builder.SetVertexType<VertexT>();
+	builder.SetObjectDataTypes<ObjectDataVS, std::nullopt_t>();
 	builder.SetVSUniformTypes<ViewProjUniform>();
 	builder.SetFSUniformTypes<LightsUniform>();
 	builder.SetCullMode(CullMode::BACK);
@@ -77,7 +84,11 @@ std::optional<GraphicsPipeline> ColorPipeline::CreateGraphicsPipeline(
 				return;
 			}
 
-			pipeline.SetUniform("model_transform", data->m_model);
+			pipeline.SetObjectData(
+				ObjectDataVS{
+					.m_model = data->m_model
+				},
+				std::nullopt);
 		});
 
 	return builder.CreatePipeline();

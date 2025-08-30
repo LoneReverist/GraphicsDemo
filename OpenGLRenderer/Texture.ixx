@@ -78,7 +78,7 @@ public:
 
 	bool IsValid() const;
 
-	void Bind() const;
+	void Bind(unsigned int binding) const;
 
 private:
 	std::reference_wrapper<GraphicsApi const> m_graphics_api;

@@ -54,10 +54,17 @@ std::optional<GraphicsPipeline> ReflectionPipeline::CreateGraphicsPipeline(
 	LightsManager const & lights,
 	Texture const & texture)
 {
+	struct ObjectDataVS
+	{
+		alignas(16) glm::mat4 m_model;
+	};
+
 	PipelineBuilder builder;
 	builder.LoadShaders(
 		shaders_path / "reflection.vert",
 		shaders_path / "reflection.frag");
+	builder.SetVertexType<VertexT>();
+	builder.SetObjectDataTypes<ObjectDataVS, std::nullopt_t>();
 	builder.SetVSUniformTypes<ViewProjUniform>();
 	builder.SetFSUniformTypes<LightsUniform, CameraPosUniform>();
 	builder.SetCullMode(CullMode::BACK);
@@ -81,9 +88,13 @@ std::optional<GraphicsPipeline> ReflectionPipeline::CreateGraphicsPipeline(
 				return;
 			}
 
-			pipeline.SetUniform("model_transform", data->m_model);
+			pipeline.SetObjectData(
+				ObjectDataVS{
+					.m_model = data->m_model
+				},
+				std::nullopt);
 
-			texture.Bind();
+			texture.Bind(3);
 		});
 
 	return builder.CreatePipeline();

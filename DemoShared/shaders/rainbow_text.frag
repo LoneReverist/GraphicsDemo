@@ -1,6 +1,6 @@
 #version 450 core
 
-layout(set = 0, binding = 0) uniform sampler2D msdf_texture;
+layout(binding = 0) uniform sampler2D msdf_texture;
 
 #ifdef BUILD_VULKAN
 layout(push_constant) uniform ObjectData {
@@ -12,7 +12,7 @@ layout(push_constant) uniform ObjectData {
 } obj_data;
 
 #else // OpenGL
-layout(std140) uniform ObjectDataVS {
+layout(std140, binding = 9) uniform ObjectDataFS {
 	vec4 bg_color;
 	float screen_px_range;
 	float time;
