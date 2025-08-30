@@ -50,7 +50,7 @@ std::optional<GraphicsPipeline> TextPipeline::CreateGraphicsPipeline(
 	std::filesystem::path const & shaders_path,
 	FontAtlas const & font_atlas)
 {
-	struct FSPushConstant
+	struct ObjectDataFS
 	{
 		alignas(4) float screen_px_range;
 		alignas(16) glm::vec4 bg_color;
@@ -62,7 +62,7 @@ std::optional<GraphicsPipeline> TextPipeline::CreateGraphicsPipeline(
 		shaders_path / "msdf_text.vert.spv",
 		shaders_path / "msdf_text.frag.spv");
 	builder.SetVertexType<VertexT>();
-	builder.SetPushConstantTypes<std::nullopt_t, FSPushConstant>();
+	builder.SetObjectDataTypes<std::nullopt_t, ObjectDataFS>();
 	builder.SetTexture(font_atlas.GetTexture());
 	builder.SetDepthTestOptions(DepthTestOptions{
 		.m_enable_depth_test = false,
@@ -88,9 +88,9 @@ std::optional<GraphicsPipeline> TextPipeline::CreateGraphicsPipeline(
 					return;
 				}
 
-				pipeline.SetPushConstants(
+				pipeline.SetObjectData(
 					std::nullopt,
-					FSPushConstant{
+					ObjectDataFS{
 						.screen_px_range = data->m_screen_px_range,
 						.bg_color = data->m_bg_color,
 						.text_color = data->m_text_color

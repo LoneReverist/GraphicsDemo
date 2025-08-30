@@ -54,7 +54,7 @@ std::optional<GraphicsPipeline> TexturePipeline::CreateGraphicsPipeline(
 	LightsManager const & lights,
 	Texture const & texture)
 {
-	struct VSPushConstant
+	struct ObjectDataVS
 	{
 		alignas(16) glm::mat4 m_model;
 	};
@@ -64,7 +64,7 @@ std::optional<GraphicsPipeline> TexturePipeline::CreateGraphicsPipeline(
 		shaders_path / "texture.vert.spv",
 		shaders_path / "texture.frag.spv");
 	builder.SetVertexType<VertexT>();
-	builder.SetPushConstantTypes<VSPushConstant, std::nullopt_t>();
+	builder.SetObjectDataTypes<ObjectDataVS, std::nullopt_t>();
 	builder.SetVSUniformTypes<ViewProjUniform>();
 	builder.SetFSUniformTypes<LightsUniform>();
 	builder.SetTexture(texture);
@@ -88,8 +88,8 @@ std::optional<GraphicsPipeline> TexturePipeline::CreateGraphicsPipeline(
 				return;
 			}
 
-			pipeline.SetPushConstants(
-				VSPushConstant{
+			pipeline.SetObjectData(
+				ObjectDataVS{
 					.m_model = data->m_model
 				},
 				std::nullopt);

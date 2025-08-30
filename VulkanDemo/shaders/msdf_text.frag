@@ -1,12 +1,22 @@
 #version 420 core
 
+layout(binding = 0) uniform sampler2D msdf_texture;
+
+#ifdef BUILD_VULKAN
 layout(push_constant) uniform ObjectData {
 	float screen_px_range;
 	vec4 bg_color;
 	vec4 text_color;
 } obj_data;
 
-layout(binding = 0) uniform sampler2D msdf_texture;
+#else // OpenGL
+layout(std140) uniform ObjectDataVS {
+	float screen_px_range;
+	vec4 bg_color;
+	vec4 text_color;
+} obj_data;
+
+#endif
 
 layout(location = 0) in vec2 in_uv;
 

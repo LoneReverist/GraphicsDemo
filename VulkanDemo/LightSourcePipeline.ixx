@@ -49,11 +49,11 @@ std::optional<GraphicsPipeline> LightSourcePipeline::CreateGraphicsPipeline(
 	std::filesystem::path const & shaders_path,
 	Camera const & camera)
 {
-	struct VSPushConstant
+	struct ObjectDataVS
 	{
 		alignas(16) glm::mat4 m_model;
 	};
-	struct FSPushConstant
+	struct ObjectDataFS
 	{
 		alignas(16) glm::vec3 m_color;
 	};
@@ -63,7 +63,7 @@ std::optional<GraphicsPipeline> LightSourcePipeline::CreateGraphicsPipeline(
 		shaders_path / "light_source.vert.spv",
 		shaders_path / "light_source.frag.spv");
 	builder.SetVertexType<VertexT>();
-	builder.SetPushConstantTypes<VSPushConstant, FSPushConstant>();
+	builder.SetObjectDataTypes<ObjectDataVS, ObjectDataFS>();
 	builder.SetVSUniformTypes<ViewProjUniform>();
 	builder.SetFSUniformTypes<CameraPosUniform>();
 	builder.SetCullMode(CullMode::BACK);
@@ -86,11 +86,11 @@ std::optional<GraphicsPipeline> LightSourcePipeline::CreateGraphicsPipeline(
 				return;
 			}
 
-			pipeline.SetPushConstants(
-				VSPushConstant{
+			pipeline.SetObjectData(
+				ObjectDataVS{
 					.m_model = data->m_model
 				},
-				FSPushConstant{
+				ObjectDataFS{
 					.m_color = data->m_color,
 				});
 		});

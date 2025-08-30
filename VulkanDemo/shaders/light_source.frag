@@ -1,12 +1,20 @@
 #version 450
 
+layout(std140, binding = 1) uniform CameraPosUniform {
+	vec3 pos_world;
+} camera;
+
+#ifdef BUILD_VULKAN
 layout(push_constant) uniform ObjectData {
 	layout(offset = 64) vec3 color;
 } obj_data;
 
-layout(binding = 1) uniform CameraPosUniform {
-	vec3 pos_world;
-} camera;
+#else // OpenGL
+layout(std140) uniform ObjectDataFS {
+	vec3 color;
+} obj_data;
+
+#endif
 
 layout(location = 0) in vec3 in_pos_world;
 layout(location = 1) in vec3 in_normal_world;

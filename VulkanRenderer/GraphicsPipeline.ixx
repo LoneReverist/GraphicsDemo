@@ -206,8 +206,8 @@ public:
 	template <typename UniformData>
 	void SetUniform(std::uint32_t binding, UniformData const & data) const;
 
-	template <typename VSConstantData = std::nullopt_t, typename FSConstantData = std::nullopt_t>
-	void SetPushConstants(VSConstantData const & vs_data, FSConstantData const & fs_data) const;
+	template <typename ObjectDataVS = std::nullopt_t, typename ObjectDataFS = std::nullopt_t>
+	void SetObjectData(ObjectDataVS const & vs_data, ObjectDataFS const & fs_data) const;
 
 private:
 	std::reference_wrapper<GraphicsApi const> m_graphics_api;
@@ -228,26 +228,26 @@ void GraphicsPipeline::SetUniform(std::uint32_t binding, UniformData const & dat
 	std::memcpy(buffer.m_mapping, &data, sizeof(data));
 }
 
-template <typename VSConstantData /*= std::nullopt_t*/, typename FSConstantData /*= std::nullopt_t*/>
-void GraphicsPipeline::SetPushConstants(VSConstantData const & vs_data, FSConstantData const & fs_data) const
+template <typename ObjectDataVS /*= std::nullopt_t*/, typename ObjectDataFS /*= std::nullopt_t*/>
+void GraphicsPipeline::SetObjectData(ObjectDataVS const & vs_data, ObjectDataFS const & fs_data) const
 {
-	static_assert(!std::same_as<VSConstantData, std::nullopt_t> || !std::same_as<FSConstantData, std::nullopt_t>,
+	static_assert(!std::same_as<ObjectDataVS, std::nullopt_t> || !std::same_as<ObjectDataFS, std::nullopt_t>,
 		"At least one push constant data must be provided");
 
 	VkCommandBuffer command_buffer = m_graphics_api.get().GetCurCommandBuffer();
 	std::uint32_t offset = 0;
 
-	if constexpr (!std::same_as<VSConstantData, std::nullopt_t>)
+	if constexpr (!std::same_as<ObjectDataVS, std::nullopt_t>)
 	{
 		vkCmdPushConstants(command_buffer, m_pipeline_layout.Get(), VK_SHADER_STAGE_VERTEX_BIT,
-			offset, sizeof(VSConstantData), &vs_data);
+			offset, sizeof(ObjectDataVS), &vs_data);
 
-		offset += static_cast<std::uint32_t>(sizeof(VSConstantData));
+		offset += static_cast<std::uint32_t>(sizeof(ObjectDataVS));
 	}
 
-	if constexpr (!std::same_as<FSConstantData, std::nullopt_t>)
+	if constexpr (!std::same_as<ObjectDataFS, std::nullopt_t>)
 	{
 		vkCmdPushConstants(command_buffer, m_pipeline_layout.Get(), VK_SHADER_STAGE_FRAGMENT_BIT,
-			offset, sizeof(FSConstantData), &fs_data);
+			offset, sizeof(ObjectDataFS), &fs_data);
 	}
 }

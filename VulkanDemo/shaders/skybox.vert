@@ -1,6 +1,6 @@
 #version 450
 
-layout(binding = 0) uniform ViewProjUniform {
+layout(std140, binding = 0) uniform ViewProjUniform {
 	mat4 view;
 	mat4 proj;
 } transforms;
@@ -23,7 +23,7 @@ mat3 get_z_correction_matrix()
 
 void main()
 {
-	// vulkan cubemaps expect the Y-axis to be the up direction but we want the Z-axis to be up, so rotate the texture coordinate
+	// cubemaps expect the Y-axis to be the up direction but we want the Z-axis to be up, so rotate the texture coordinate
 	out_tex_coord = get_z_correction_matrix() * in_pos;
 
 	mat4 view = transforms.view;

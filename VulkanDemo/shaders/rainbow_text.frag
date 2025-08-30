@@ -1,13 +1,26 @@
 #version 450 core
 
 layout(set = 0, binding = 0) uniform sampler2D msdf_texture;
-layout(push_constant) uniform PushConstants {
+
+#ifdef BUILD_VULKAN
+layout(push_constant) uniform ObjectData {
     vec4 bg_color;
     float screen_px_range;
     float time;
     float rainbow_width;
     float slant_factor;
 } obj_data;
+
+#else // OpenGL
+layout(std140) uniform ObjectDataVS {
+	vec4 bg_color;
+	float screen_px_range;
+	float time;
+	float rainbow_width;
+	float slant_factor;
+} obj_data;
+
+#endif
 
 // origin_upper_left ensures the rainbow effect is slanted in the same direction as in Vulkan
 layout(origin_upper_left) in vec4 gl_FragCoord;

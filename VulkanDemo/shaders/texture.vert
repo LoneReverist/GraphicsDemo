@@ -1,13 +1,21 @@
 #version 450
 
+layout(std140, binding = 0) uniform ViewProjUniform {
+	mat4 view;
+	mat4 proj;
+} transforms;
+
+#ifdef BUILD_VULKAN
 layout(push_constant) uniform ObjectData {
 	mat4 model;
 } obj_data;
 
-layout(binding = 0) uniform ViewProjUniform {
-	mat4 view;
-	mat4 proj;
-} transforms;
+#else // OPENGL
+layout(std140) uniform ObjectDataVS {
+	mat4 model;
+} obj_data;
+
+#endif
 
 layout(location = 0) in vec3 in_pos;
 layout(location = 1) in vec3 in_normal;

@@ -16,7 +16,7 @@ struct SpotLight
 	float outer_radius;
 };
 
-layout(binding = 1) uniform LightsUniform {
+layout(std140, binding = 1) uniform LightsUniform {
 	vec3 ambient_light_color;
 
 	PointLight pointlight_1;
