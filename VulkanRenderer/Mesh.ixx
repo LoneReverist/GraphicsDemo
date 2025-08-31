@@ -13,14 +13,14 @@ export module Mesh;
 
 import Buffer;
 import GraphicsApi;
-import Vertex;
+import VertexLayout;
 
 export class Mesh
 {
 public:
 	using IndexT = std::uint16_t;
 
-	template <IsVertex VertexT>
+	template <Vertex::VertexWithLayout VertexT>
 	Mesh(
 		GraphicsApi const & graphics_api,
 		std::vector<VertexT> const & vertices,
@@ -88,7 +88,7 @@ VkResult create_buffer(
 	return VK_SUCCESS;
 }
 
-template<IsVertex VertexT>
+template<Vertex::VertexWithLayout VertexT>
 Mesh::Mesh(
 	GraphicsApi const & graphics_api,
 	std::vector<VertexT> const & vertices,

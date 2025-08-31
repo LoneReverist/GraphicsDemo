@@ -11,7 +11,7 @@ export module Mesh;
 
 import Buffer;
 import GraphicsApi;
-import Vertex;
+import VertexLayout;
 
 class VertexArrayObject
 {
@@ -38,7 +38,7 @@ export class Mesh
 public:
 	using IndexT = std::uint16_t;
 
-	template <IsVertex VertexT>
+	template <Vertex::VertexWithLayout VertexT>
 	Mesh(
 		GraphicsApi const & graphics_api,
 		std::vector<VertexT> const & vertices,
@@ -65,7 +65,7 @@ private:
 	GLsizei m_index_count = 0;
 };
 
-template <IsVertex VertexT>
+template <Vertex::VertexWithLayout VertexT>
 Mesh::Mesh(
 	GraphicsApi const & graphics_api,
 	std::vector<VertexT> const & vertices,
@@ -90,7 +90,7 @@ Mesh::Mesh(
 	buffer_size = static_cast<GLsizeiptr>(indices.size() * sizeof(IndexT));
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, buffer_size, indices.data(), GL_STATIC_DRAW);
 
-	Vertex::SetAttributes<VertexT>();
+	Vertex::SetAttributes(VertexT::CreateLayout());
 
 	glBindVertexArray(0);
 

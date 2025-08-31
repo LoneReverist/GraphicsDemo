@@ -11,7 +11,8 @@ export module PipelineBuilder;
 import GraphicsApi;
 import GraphicsPipeline;
 import RenderObject;
-import Vertex;
+import Texture;
+import VertexLayout;
 
 export class PipelineBuilder
 {
@@ -24,7 +25,7 @@ public:
 
 	void LoadShaders(std::filesystem::path const & vs_path, std::filesystem::path const & fs_path);
 
-	template <IsVertex VertexT>
+	template <Vertex::VertexWithLayout VertexT>
 	void SetVertexType();
 
 	template <typename ObjectDataVS = std::nullopt_t, typename ObjectDataFS = std::nullopt_t>
@@ -64,9 +65,10 @@ private:
 	PerObjectConstantsCallback m_per_object_constants_callback;
 };
 
-template <IsVertex VertexT>
+template <Vertex::VertexWithLayout VertexT>
 void PipelineBuilder::SetVertexType()
 {
+	// In OpenGL, vertex attributes are set when binding the VAO for each mesh.
 }
 
 template <typename ObjectDataVS /*= std::nullopt_t*/, typename ObjectDataFS /*= std::nullopt_t*/>
