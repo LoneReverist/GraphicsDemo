@@ -58,8 +58,8 @@ std::optional<GraphicsPipeline> ColorPipeline::CreateGraphicsPipeline(
 
 	PipelineBuilder builder{ graphics_api };
 	builder.LoadShaders(
-		shaders_path / "color.vert.spv",
-		shaders_path / "color.frag.spv");
+		shaders_path / "color.vert",
+		shaders_path / "color.frag");
 	builder.SetVertexType<VertexT>();
 	builder.SetObjectDataTypes<ObjectDataVS, std::nullopt_t>();
 	builder.SetVSUniformTypes<ViewProjUniform>();

@@ -50,7 +50,7 @@ private:
 };
 
 std::optional<GraphicsPipeline> RainbowTextPipeline::CreateGraphicsPipeline(
-	GraphicsApi const & /*graphics_api*/,
+	GraphicsApi const & graphics_api,
 	std::filesystem::path const & shaders_path,
 	FontAtlas const & font_atlas)
 {
@@ -63,7 +63,7 @@ std::optional<GraphicsPipeline> RainbowTextPipeline::CreateGraphicsPipeline(
 		alignas(4) float slant_factor;
 	};
 
-	PipelineBuilder builder;
+	PipelineBuilder builder{ graphics_api };
 	builder.LoadShaders(
 		shaders_path / "msdf_text.vert",
 		shaders_path / "rainbow_text.frag");

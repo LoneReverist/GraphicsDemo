@@ -61,8 +61,8 @@ std::optional<GraphicsPipeline> TexturePipeline::CreateGraphicsPipeline(
 
 	PipelineBuilder builder{ graphics_api };
 	builder.LoadShaders(
-		shaders_path / "texture.vert.spv",
-		shaders_path / "texture.frag.spv");
+		shaders_path / "texture.vert",
+		shaders_path / "texture.frag");
 	builder.SetVertexType<VertexT>();
 	builder.SetObjectDataTypes<ObjectDataVS, std::nullopt_t>();
 	builder.SetVSUniformTypes<ViewProjUniform>();

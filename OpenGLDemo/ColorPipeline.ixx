@@ -46,7 +46,7 @@ private:
 };
 
 std::optional<GraphicsPipeline> ColorPipeline::CreateGraphicsPipeline(
-	GraphicsApi const & /*graphics_api*/,
+	GraphicsApi const & graphics_api,
 	std::filesystem::path const & shaders_path,
 	Camera const & camera,
 	LightsManager const & lights)
@@ -56,7 +56,7 @@ std::optional<GraphicsPipeline> ColorPipeline::CreateGraphicsPipeline(
 		alignas(16) glm::mat4 m_model;
 	};
 
-	PipelineBuilder builder;
+	PipelineBuilder builder{ graphics_api };
 	builder.LoadShaders(
 		shaders_path / "color.vert",
 		shaders_path / "color.frag");

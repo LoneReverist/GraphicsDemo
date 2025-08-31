@@ -45,7 +45,7 @@ private:
 };
 
 std::optional<GraphicsPipeline> LightSourcePipeline::CreateGraphicsPipeline(
-	GraphicsApi const & /*graphics_api*/,
+	GraphicsApi const & graphics_api,
 	std::filesystem::path const & shaders_path,
 	Camera const & camera)
 {
@@ -58,7 +58,7 @@ std::optional<GraphicsPipeline> LightSourcePipeline::CreateGraphicsPipeline(
 		alignas(16) glm::vec3 m_color;
 	};
 
-	PipelineBuilder builder;
+	PipelineBuilder builder{ graphics_api };
 	builder.LoadShaders(
 		shaders_path / "light_source.vert",
 		shaders_path / "light_source.frag");

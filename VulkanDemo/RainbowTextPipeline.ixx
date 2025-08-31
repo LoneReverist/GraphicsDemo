@@ -65,8 +65,8 @@ std::optional<GraphicsPipeline> RainbowTextPipeline::CreateGraphicsPipeline(
 
 	PipelineBuilder builder{ graphics_api };
 	builder.LoadShaders(
-		shaders_path / "msdf_text.vert.spv",
-		shaders_path / "rainbow_text.frag.spv");
+		shaders_path / "msdf_text.vert",
+		shaders_path / "rainbow_text.frag");
 	builder.SetVertexType<VertexT>();
 	builder.SetObjectDataTypes<std::nullopt_t, ObjectDataFS>();
 	builder.SetTexture(font_atlas.GetTexture());

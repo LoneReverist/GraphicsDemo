@@ -46,8 +46,8 @@ std::optional<GraphicsPipeline> SkyboxPipeline::CreateGraphicsPipeline(
 {
 	PipelineBuilder builder{ graphics_api };
 	builder.LoadShaders(
-		shaders_path / "skybox.vert.spv",
-		shaders_path / "skybox.frag.spv");
+		shaders_path / "skybox.vert",
+		shaders_path / "skybox.frag");
 	builder.SetVertexType<VertexT>();
 	builder.SetVSUniformTypes<ViewProjUniform>();
 	builder.SetTexture(skybox);

@@ -84,8 +84,14 @@ void PipelineBuilder::LoadShaders(std::filesystem::path const & vs_path, std::fi
 {
 	VkDevice device = m_graphics_api.GetDevice();
 
-	m_vert_shader_module = load_shader(vs_path, device);
-	m_frag_shader_module = load_shader(fs_path, device);
+	// In Vulkan, the shaders are precompiled to SPIR-V
+	std::filesystem::path vert_spirv_path = vs_path;
+	vert_spirv_path.replace_extension(".vert.spv");
+	m_vert_shader_module = load_shader(vert_spirv_path, device);
+
+	std::filesystem::path frag_spirv_path = fs_path;
+	frag_spirv_path.replace_extension(".frag.spv");
+	m_frag_shader_module = load_shader(frag_spirv_path, device);
 }
 
 std::optional<GraphicsPipeline> PipelineBuilder::CreatePipeline() const

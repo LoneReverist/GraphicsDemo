@@ -39,12 +39,12 @@ private:
 };
 
 std::optional<GraphicsPipeline> SkyboxPipeline::CreateGraphicsPipeline(
-	GraphicsApi const & /*graphics_api*/,
+	GraphicsApi const & graphics_api,
 	std::filesystem::path const & shaders_path,
 	Camera const & camera,
 	Texture const & skybox)
 {
-	PipelineBuilder builder;
+	PipelineBuilder builder{ graphics_api };
 	builder.LoadShaders(
 		shaders_path / "skybox.vert",
 		shaders_path / "skybox.frag");

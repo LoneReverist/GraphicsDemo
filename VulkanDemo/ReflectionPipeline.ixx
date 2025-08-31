@@ -61,8 +61,8 @@ std::optional<GraphicsPipeline> ReflectionPipeline::CreateGraphicsPipeline(
 
 	PipelineBuilder builder{ graphics_api };
 	builder.LoadShaders(
-		shaders_path / "reflection.vert.spv",
-		shaders_path / "reflection.frag.spv");
+		shaders_path / "reflection.vert",
+		shaders_path / "reflection.frag");
 	builder.SetVertexType<VertexT>();
 	builder.SetObjectDataTypes<ObjectDataVS, std::nullopt_t>();
 	builder.SetVSUniformTypes<ViewProjUniform>();

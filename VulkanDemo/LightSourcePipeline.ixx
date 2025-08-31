@@ -60,8 +60,8 @@ std::optional<GraphicsPipeline> LightSourcePipeline::CreateGraphicsPipeline(
 
 	PipelineBuilder builder{ graphics_api };
 	builder.LoadShaders(
-		shaders_path / "light_source.vert.spv",
-		shaders_path / "light_source.frag.spv");
+		shaders_path / "light_source.vert",
+		shaders_path / "light_source.frag");
 	builder.SetVertexType<VertexT>();
 	builder.SetObjectDataTypes<ObjectDataVS, ObjectDataFS>();
 	builder.SetVSUniformTypes<ViewProjUniform>();

@@ -46,7 +46,7 @@ private:
 };
 
 std::optional<GraphicsPipeline> TextPipeline::CreateGraphicsPipeline(
-	GraphicsApi const & /*graphics_api*/,
+	GraphicsApi const & graphics_api,
 	std::filesystem::path const & shaders_path,
 	FontAtlas const & font_atlas)
 {
@@ -57,7 +57,7 @@ std::optional<GraphicsPipeline> TextPipeline::CreateGraphicsPipeline(
 		alignas(16) glm::vec4 text_color;
 	};
 
-	PipelineBuilder builder;
+	PipelineBuilder builder{ graphics_api };
 	builder.LoadShaders(
 		shaders_path / "msdf_text.vert",
 		shaders_path / "msdf_text.frag");
