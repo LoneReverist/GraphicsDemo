@@ -83,7 +83,7 @@ std::optional<GraphicsPipeline> RainbowTextPipeline::CreateGraphicsPipeline(
 	builder.SetCullMode(CullMode::BACK);
 
 	builder.SetPerObjectConstantsCallback(
-		[&font_atlas](GraphicsPipeline const & pipeline, RenderObject const & obj)
+		[](GraphicsPipeline const & pipeline, RenderObject const & obj)
 		{
 			auto const * data = static_cast<ObjectData const *>(obj.GetObjectData());
 			if (!data)
