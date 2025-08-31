@@ -42,14 +42,10 @@ add_custom_target(VulkanShaders ALL
 )
 add_dependencies(VulkanDemo VulkanShaders)
 
-file(GLOB MODULE_FILES CONFIGURE_DEPENDS
-    "${CMAKE_CURRENT_SOURCE_DIR}/*.ixx"
-    "${DEMO_SHARED_DIR}/*.ixx"
-)
-file(GLOB SOURCE_FILES CONFIGURE_DEPENDS
-    "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
-    "${DEMO_SHARED_DIR}/*.cpp"
-)
+file(GLOB MODULE_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.ixx")
+file(GLOB SOURCE_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
+file(GLOB SHARED_MODULE_FILES CONFIGURE_DEPENDS "${DEMO_SHARED_DIR}/*.ixx")
+file(GLOB SHARED_SOURCE_FILES CONFIGURE_DEPENDS "${DEMO_SHARED_DIR}/*.cpp")
 
 # Target Source Files
 target_sources(VulkanDemo
@@ -60,14 +56,17 @@ target_sources(VulkanDemo
 		${DEMO_SHARED_DIR}
 	FILES
 		${MODULE_FILES}
+		${SHARED_MODULE_FILES}
 
 	PRIVATE
 		${SOURCE_FILES}
+		${SHARED_SOURCE_FILES}
 
 	PRIVATE
 		${SHADER_FILES}
 )
-source_group("Shaders" FILES ${SHADER_FILES})
+source_group("DemoShared" FILES ${SHARED_MODULE_FILES} ${SHARED_SOURCE_FILES})
+source_group("DemoShared/Shaders" FILES ${SHADER_FILES})
 
 # Link dependencies (provided via vcpkg toolchain)
 target_link_libraries(VulkanDemo PRIVATE
