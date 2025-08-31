@@ -50,6 +50,7 @@ std::optional<GraphicsPipeline> SkyboxPipeline::CreateGraphicsPipeline(
 		shaders_path / "skybox.frag");
 	builder.SetVertexType<VertexT>();
 	builder.SetVSUniformTypes<ViewProjUniform>();
+	builder.SetTexture(skybox);
 	builder.SetDepthTestOptions(DepthTestOptions{
 		.m_enable_depth_test = true,
 		.m_enable_depth_write = false,
@@ -61,11 +62,6 @@ std::optional<GraphicsPipeline> SkyboxPipeline::CreateGraphicsPipeline(
 		[&camera](GraphicsPipeline const & pipeline)
 		{
 			pipeline.SetUniform(0 /*binding*/, camera.GetViewProjUniform());
-		});
-	builder.SetPerObjectConstantsCallback(
-		[&skybox](GraphicsPipeline const & pipeline, RenderObject const & obj)
-		{
-			skybox.Bind(1);
 		});
 
 	return builder.CreatePipeline();

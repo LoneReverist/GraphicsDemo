@@ -63,6 +63,7 @@ std::optional<GraphicsPipeline> TextPipeline::CreateGraphicsPipeline(
 		shaders_path / "msdf_text.frag");
 	builder.SetVertexType<VertexT>();
 	builder.SetObjectDataTypes<std::nullopt_t, ObjectDataFS>();
+	builder.SetTexture(font_atlas.GetTexture());
 	builder.SetDepthTestOptions(DepthTestOptions{
 		.m_enable_depth_test = false,
 		.m_enable_depth_write = false,
@@ -94,8 +95,6 @@ std::optional<GraphicsPipeline> TextPipeline::CreateGraphicsPipeline(
 					.bg_color = data->m_bg_color,
 					.text_color = data->m_text_color
 				});
-
-			font_atlas.GetTexture().Bind(0);
 		});
 
 	return builder.CreatePipeline();

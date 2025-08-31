@@ -69,6 +69,7 @@ std::optional<GraphicsPipeline> RainbowTextPipeline::CreateGraphicsPipeline(
 		shaders_path / "rainbow_text.frag");
 	builder.SetVertexType<VertexT>();
 	builder.SetObjectDataTypes<std::nullopt_t, ObjectDataFS>();
+	builder.SetTexture(font_atlas.GetTexture());
 	builder.SetDepthTestOptions(DepthTestOptions{
 		.m_enable_depth_test = false,
 		.m_enable_depth_write = false,
@@ -100,8 +101,6 @@ std::optional<GraphicsPipeline> RainbowTextPipeline::CreateGraphicsPipeline(
 					.rainbow_width = data->m_rainbow_width,
 					.slant_factor = data->m_slant_factor
 				});
-
-			font_atlas.GetTexture().Bind(0);
 		});
 
 	return builder.CreatePipeline();

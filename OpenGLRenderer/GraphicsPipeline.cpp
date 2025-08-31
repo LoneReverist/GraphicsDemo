@@ -47,12 +47,14 @@ GraphicsPipeline::GraphicsPipeline(
 	size_t fs_object_uniform_size,
 	std::vector<size_t> vs_uniform_sizes,
 	std::vector<size_t> fs_uniform_sizes,
+	Texture const * texture,
 	DepthTestOptions const & depth_options,
 	BlendOptions const & blend_options,
 	CullMode cull_mode,
 	PerFrameConstantsCallback per_frame_constants_callback,
 	PerObjectConstantsCallback per_object_constants_callback)
-	: m_depth_test_options(depth_options)
+	: m_texture(texture)
+	, m_depth_test_options(depth_options)
 	, m_blend_options(blend_options)
 	, m_cull_mode(cull_mode)
 	, m_per_frame_constants_callback(per_frame_constants_callback)
@@ -101,6 +103,7 @@ GraphicsPipeline::GraphicsPipeline(
 	}
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
+	m_texture_binding = uniform_sizes.size();
 }
 
 void GraphicsPipeline::Activate() const
@@ -143,6 +146,9 @@ void GraphicsPipeline::Activate() const
 	}
 
 	glUseProgram(m_program.GetId());
+
+	if (m_texture)
+		m_texture->Bind(m_texture_binding);
 }
 
 void GraphicsPipeline::UpdatePerFrameConstants() const

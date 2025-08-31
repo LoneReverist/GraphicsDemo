@@ -15,6 +15,7 @@ export module GraphicsPipeline;
 
 import Buffer;
 import RenderObject;
+import Texture;
 
 struct UniformBuffer
 {
@@ -112,6 +113,7 @@ public:
 		size_t fs_object_uniform_size,
 		std::vector<size_t> vs_uniform_sizes,
 		std::vector<size_t> fs_uniform_sizes,
+		Texture const * texture,
 		DepthTestOptions const & depth_options,
 		BlendOptions const & blend_options,
 		CullMode cull_mode,
@@ -143,6 +145,9 @@ private:
 	DescriptorSet m_descriptor_set;
 	UniformBuffer m_vs_object_uniform;
 	UniformBuffer m_fs_object_uniform;
+
+	Texture const * m_texture = nullptr;
+	unsigned int m_texture_binding = 0;
 
 	DepthTestOptions m_depth_test_options;
 	BlendOptions m_blend_options;

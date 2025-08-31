@@ -67,6 +67,7 @@ std::optional<GraphicsPipeline> ReflectionPipeline::CreateGraphicsPipeline(
 	builder.SetObjectDataTypes<ObjectDataVS, std::nullopt_t>();
 	builder.SetVSUniformTypes<ViewProjUniform>();
 	builder.SetFSUniformTypes<LightsUniform, CameraPosUniform>();
+	builder.SetTexture(texture);
 	builder.SetCullMode(CullMode::BACK);
 
 	builder.SetPerFrameConstantsCallback(
@@ -93,8 +94,6 @@ std::optional<GraphicsPipeline> ReflectionPipeline::CreateGraphicsPipeline(
 					.m_model = data->m_model
 				},
 				std::nullopt);
-
-			texture.Bind(3);
 		});
 
 	return builder.CreatePipeline();
