@@ -22,6 +22,7 @@ import PlatformUtils;
 import StbImage;
 import TextMesh;
 import Vertex;
+import AssimpLoader;
 
 std::unique_ptr<Texture> create_texture(
 	GraphicsApi const & graphics_api,
@@ -465,7 +466,7 @@ Scene::Scene(GraphicsApi const & graphics_api, std::string const & title)
 
 	m_arial_font = std::make_unique<FontAtlas>(m_graphics_api, fonts_path / "ArialAtlas.png", fonts_path / "ArialAtlas.json");
 
-	//ColorPipeline color_pipeline = create_color_pipeline(shaders_path);
+	ColorPipeline color_pipeline = create_color_pipeline();
 	TexturePipeline ground_pipeline = create_texture_pipeline(*m_ground_tex);
 	SkyboxPipeline skybox_pipeline = create_skybox_pipeline(*m_skybox_tex);
 	LightSourcePipeline light_source_pipeline = create_light_source_pipeline();
@@ -475,14 +476,56 @@ Scene::Scene(GraphicsApi const & graphics_api, std::string const & title)
 
 	AssetId<FileMesh::VertexT> sword_mesh_id = FileMesh::Create(m_graphics_api, m_renderer,
 		objects_path / "skullsword.obj");
+	init_sword_transform(0, m_sword0.m_model);
+	init_sword_transform(1, m_sword1.m_model);
+	m_render_objs.push_back(create_render_object(m_renderer, "sword0", sword_mesh_id, reflection_pipeline, m_sword0));
+	m_render_objs.push_back(create_render_object(m_renderer, "sword1", sword_mesh_id, reflection_pipeline, m_sword1));
+
 	AssetId<FileMesh::VertexT> red_gem_mesh_id = FileMesh::Create(m_graphics_api, m_renderer,
 		objects_path / "redgem.obj");
 	AssetId<FileMesh::VertexT> green_gem_mesh_id = FileMesh::Create(m_graphics_api, m_renderer,
 		objects_path / "greengem.obj");
 	AssetId<FileMesh::VertexT> blue_gem_mesh_id = FileMesh::Create(m_graphics_api, m_renderer,
 		objects_path / "bluegem.obj");
+	m_red_gem.m_color = glm::vec3{ 1.0f, 0.0f, 0.0f };
+	m_green_gem.m_color = glm::vec3{ 0.0f, 1.0f, 0.0f };
+	m_blue_gem.m_color = glm::vec3{ 0.0f, 0.0f, 1.0f };
+	init_gem_transform(0, m_red_gem.m_model);
+	init_gem_transform(1, m_green_gem.m_model);
+	init_gem_transform(2, m_blue_gem.m_model);
+	m_render_objs.push_back(create_render_object(m_renderer, "red gem", red_gem_mesh_id, light_source_pipeline, m_red_gem));
+	m_render_objs.push_back(create_render_object(m_renderer, "green gem", green_gem_mesh_id, light_source_pipeline, m_green_gem));
+	m_render_objs.push_back(create_render_object(m_renderer, "blue gem", blue_gem_mesh_id, light_source_pipeline, m_blue_gem));
+
 	AssetId<GroundMesh::VertexT> ground_mesh_id = GroundMesh::Create(m_graphics_api, m_renderer);
+	m_render_objs.push_back(create_render_object(m_renderer, "ground", ground_mesh_id, ground_pipeline, m_ground));
+
 	AssetId<SkyboxMesh::VertexT> skybox_mesh_id = SkyboxMesh::Create(m_graphics_api, m_renderer);
+	m_render_objs.push_back(create_render_object(m_renderer, "skybox", skybox_mesh_id, skybox_pipeline));
+
+	AssetId<FileMesh::VertexT> tree_mesh_id = FileMesh::Create(m_graphics_api, m_renderer, objects_path / "tree.obj");
+	m_tree.m_color = glm::vec3{ 0.0f, 0.5f, 0.0f };
+	m_tree.m_model = glm::scale(m_tree.m_model, glm::vec3(3.281, 3.281, 3.281)); // meters to feet
+	m_tree.m_model = glm::translate(m_tree.m_model, glm::vec3(3.0f, 5.0f, 0.0f));
+	m_render_objs.push_back(create_render_object(m_renderer, "tree", tree_mesh_id, light_source_pipeline, m_tree));
+
+	std::vector<AssetId<ColorVertex>> tree_with_material_mesh_ids;
+	{
+		std::vector<Mesh> tree_meshes = AssimpLoader::LoadObjWithColorMaterial(m_graphics_api, objects_path / "tree_with_material.obj");
+		if (tree_meshes.empty())
+		{
+			std::cout << "Failed to load tree_with_material.obj with Assimp" << std::endl;
+		}
+		else
+		{
+			for (auto && mesh : tree_meshes)
+				tree_with_material_mesh_ids.push_back(AssetId<ColorVertex>{ m_renderer.AddMesh(std::move(mesh)) });
+		}
+	}
+	m_tree_with_material.m_model = glm::scale(m_tree_with_material.m_model, glm::vec3(3.281, 3.281, 3.281)); // meters to feet
+	m_tree_with_material.m_model = glm::translate(m_tree_with_material.m_model, glm::vec3(-3.0f, 5.0f, 0.0f));
+	for (auto const & id : tree_with_material_mesh_ids)
+		m_render_objs.push_back(create_render_object(m_renderer, "tree_with_material", id, color_pipeline, m_tree_with_material));
 
 	m_fps_mesh = std::make_unique<TextMesh>(TextMesh::Create(m_graphics_api, m_renderer,
 		"FPS: ", *m_arial_font, label_font_size, glm::vec2{ -0.9, -0.9 } /*origin*/,
@@ -492,6 +535,7 @@ Scene::Scene(GraphicsApi const & graphics_api, std::string const & title)
 		.m_bg_color = { 0.0f, 0.0f, 0.0f, 0.0f },
 		.m_text_color = { 1.0f, 1.0f, 0.0f, 1.0 },
 	};
+	m_render_objs.push_back(create_render_object(m_renderer, "fps label", m_fps_mesh->GetAssetId(), text_pipeline, m_fps_label));
 
 	m_title_mesh = std::make_unique<TextMesh>(TextMesh::Create(m_graphics_api, m_renderer,
 		m_title, *m_arial_font, title_font_size, glm::vec2{ -0.9, 0.8 } /*origin*/,
@@ -502,16 +546,7 @@ Scene::Scene(GraphicsApi const & graphics_api, std::string const & title)
 		.m_rainbow_width = 200.0f * m_dpi_scale,
 		.m_slant_factor = -1.0f
 	};
-
-	m_red_gem.m_color = glm::vec3{ 1.0f, 0.0f, 0.0f };
-	m_green_gem.m_color = glm::vec3{ 0.0f, 1.0f, 0.0f };
-	m_blue_gem.m_color = glm::vec3{ 0.0f, 0.0f, 1.0f };
-
-	init_sword_transform(0, m_sword0.m_model);
-	init_sword_transform(1, m_sword1.m_model);
-	init_gem_transform(0, m_red_gem.m_model);
-	init_gem_transform(1, m_green_gem.m_model);
-	init_gem_transform(2, m_blue_gem.m_model);
+	m_render_objs.push_back(create_render_object(m_renderer, "title", m_title_mesh->GetAssetId(), rainbow_text_pipeline, m_title_label));
 
 	m_lights.SetAmbientLight(AmbientLight{ glm::vec3{ 0.3, 0.3, 0.3 } });
 
@@ -526,18 +561,6 @@ Scene::Scene(GraphicsApi const & graphics_api, std::string const & title)
 	glm::vec3 camera_pos{ 0.0f, -10.0f, 5.0f };
 	glm::vec3 camera_dir = glm::normalize(glm::vec3{ 0.0f, 0.0f, 2.5f } - camera_pos);
 	m_camera.Init(camera_pos, camera_dir);
-
-	m_render_objs = {
-		create_render_object(m_renderer, "sword0", sword_mesh_id, reflection_pipeline, m_sword0),
-		create_render_object(m_renderer, "sword1", sword_mesh_id, reflection_pipeline, m_sword1),
-		create_render_object(m_renderer, "red gem", red_gem_mesh_id, light_source_pipeline, m_red_gem),
-		create_render_object(m_renderer, "green gem", green_gem_mesh_id, light_source_pipeline, m_green_gem),
-		create_render_object(m_renderer, "blue gem", blue_gem_mesh_id, light_source_pipeline, m_blue_gem),
-		create_render_object(m_renderer, "ground", ground_mesh_id, ground_pipeline, m_ground),
-		create_render_object(m_renderer, "skybox", skybox_mesh_id, skybox_pipeline),
-		create_render_object(m_renderer, "text", m_fps_mesh->GetAssetId(), text_pipeline, m_fps_label),
-		create_render_object(m_renderer, "title", m_title_mesh->GetAssetId(), rainbow_text_pipeline, m_title_label)
-	};
 }
 
 void Scene::OnViewportResized(int width, int height)

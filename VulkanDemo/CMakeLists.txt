@@ -74,6 +74,7 @@ target_link_libraries(VulkanDemo PRIVATE
 	glfw
 	glm::glm
 	nlohmann_json::nlohmann_json
+	assimp::assimp
 )
 
 # Copy resources into output folder

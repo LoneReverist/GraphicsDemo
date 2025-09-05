@@ -12,12 +12,19 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+if (MSVC)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+else() # GCC/Clang
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libstdc++ -static-libgcc")
+endif()
+
 find_package(glm CONFIG REQUIRED)
 
 if (BUILD_DEMOS)
     find_package(glfw3 CONFIG REQUIRED)
     #find_package(stb CONFIG REQUIRED) # not needed, stb headers are globally available when vcpkg toolchain is set
     find_package(nlohmann_json CONFIG REQUIRED)
+    find_package(assimp CONFIG REQUIRED)
 
     set(nlohmann-json_IMPLICIT_CONVERSIONS OFF)
 endif()

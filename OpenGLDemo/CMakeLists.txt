@@ -49,6 +49,7 @@ target_link_libraries(OpenGLDemo PRIVATE
 	glfw
 	glm::glm
 	nlohmann_json::nlohmann_json
+	assimp::assimp
 )
 
 # Copy resources into output folder

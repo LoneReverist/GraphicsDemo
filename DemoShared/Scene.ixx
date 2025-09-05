@@ -69,6 +69,8 @@ private:
 	TexturePipeline::ObjectData m_ground;
 	TextPipeline::ObjectData m_fps_label;
 	RainbowTextPipeline::ObjectData m_title_label;
+	LightSourcePipeline::ObjectData m_tree;
+	ColorPipeline::ObjectData m_tree_with_material;
 
 	LightsManager m_lights;
 

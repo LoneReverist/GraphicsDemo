@@ -49,7 +49,8 @@ RUN /opt/vcpkg/vcpkg install \
 #    vulkan-validationlayers:x64-linux \
     glad:x64-linux \
     stb:x64-linux \
-    nlohmann-json:x64-linux
+    nlohmann-json:x64-linux \
+    assimp:x64-linux
 
 WORKDIR /graphicsdemo
 COPY . .
