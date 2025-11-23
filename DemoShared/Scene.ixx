@@ -3,8 +3,11 @@
 module;
 
 #include <filesystem>
+#include <iostream>
 #include <memory>
 #include <vector>
+
+#include <glm/glm.hpp>
 
 export module Scene;
 
@@ -15,6 +18,7 @@ import GraphicsApi;
 import Input;
 import LightsManager;
 import LightSourcePipeline;
+import MeshAsset;
 import RainbowTextPipeline;
 import ReflectionPipeline;
 import Renderer;
@@ -24,6 +28,7 @@ import TextMesh;
 import TextPipeline;
 import Texture;
 import TexturePipeline;
+import Vertex;
 
 export class Scene
 {
@@ -43,6 +48,20 @@ private:
 	ReflectionPipeline create_reflection_pipeline(Texture const & texture);
 	TextPipeline create_text_pipeline(FontAtlas const & font_atlas);
 	RainbowTextPipeline create_rainbow_text_pipeline(FontAtlas const & font_atlas);
+
+	template<IsVertex VertexT, typename... Args>
+	MeshAsset<VertexT> create_mesh(Args &&... args);
+
+	MeshAsset<PositionVertex> create_skybox_mesh();
+	MeshAsset<TextureVertex> create_ground_mesh();
+	std::vector<MeshAsset<ColorVertex>> create_tree_with_material_meshes();
+	std::unique_ptr<TextMesh> create_text_mesh(
+		std::string const & text,
+		FontAtlas const & font_atlas,
+		float font_size,
+		glm::vec2 origin,
+		int viewport_width,
+		int viewport_height);
 
 private:
 	GraphicsApi const & m_graphics_api;
@@ -80,3 +99,16 @@ private:
 
 	float m_dpi_scale = 1.0f;
 };
+
+template<IsVertex VertexT, typename... Args>
+MeshAsset<VertexT> Scene::create_mesh(Args &&... args)
+{
+	std::optional<Mesh> mesh = MeshAsset<VertexT>::Create(m_graphics_api, std::forward<Args>(args)...);
+	if (!mesh.has_value())
+	{
+		std::cout << "Failed to create MeshAsset<" << typeid(VertexT).name() << ">" << std::endl;
+		return MeshAsset<VertexT>{};
+	}
+	AssetId asset_id{ m_renderer.AddMesh(std::move(mesh.value())) };
+	return MeshAsset<VertexT>{ asset_id };
+}

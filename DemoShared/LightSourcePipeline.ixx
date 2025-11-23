@@ -22,7 +22,6 @@ export class LightSourcePipeline
 {
 public:
 	using VertexT = NormalVertex;
-	using AssetIdT = AssetId<VertexT>;
 
 	struct ObjectData
 	{
@@ -36,12 +35,12 @@ public:
 		Camera const & camera);
 
 	LightSourcePipeline() = default;
-	LightSourcePipeline(AssetIdT asset_id) : m_asset_id(asset_id) {}
+	LightSourcePipeline(AssetId asset_id) : m_asset_id(asset_id) {}
 
-	AssetIdT GetAssetId() const { return m_asset_id; }
+	AssetId GetAssetId() const { return m_asset_id; }
 
 private:
-	AssetIdT m_asset_id;
+	AssetId m_asset_id;
 };
 
 std::optional<GraphicsPipeline> LightSourcePipeline::CreateGraphicsPipeline(

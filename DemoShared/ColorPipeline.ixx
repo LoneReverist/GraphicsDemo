@@ -23,7 +23,6 @@ export class ColorPipeline
 {
 public:
 	using VertexT = ColorVertex;
-	using AssetIdT = AssetId<VertexT>;
 
 	struct ObjectData
 	{
@@ -37,12 +36,12 @@ public:
 		LightsManager const & lights);
 
 	ColorPipeline() = default;
-	ColorPipeline(AssetIdT asset_id) : m_asset_id(asset_id) {}
+	ColorPipeline(AssetId asset_id) : m_asset_id(asset_id) {}
 
-	AssetIdT GetAssetId() const { return m_asset_id; }
+	AssetId GetAssetId() const { return m_asset_id; }
 
 private:
-	AssetIdT m_asset_id;
+	AssetId m_asset_id;
 };
 
 std::optional<GraphicsPipeline> ColorPipeline::CreateGraphicsPipeline(

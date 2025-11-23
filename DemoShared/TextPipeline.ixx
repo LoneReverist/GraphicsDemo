@@ -22,7 +22,6 @@ export class TextPipeline
 {
 public:
 	using VertexT = Texture2dVertex;
-	using AssetIdT = AssetId<VertexT>;
 
 	struct ObjectData
 	{
@@ -37,12 +36,12 @@ public:
 		FontAtlas const & font_atlas);
 
 	TextPipeline() = default;
-	TextPipeline(AssetIdT asset_id) : m_asset_id(asset_id) {}
+	TextPipeline(AssetId asset_id) : m_asset_id(asset_id) {}
 
-	AssetIdT GetAssetId() const { return m_asset_id; }
+	AssetId GetAssetId() const { return m_asset_id; }
 
 private:
-	AssetIdT m_asset_id;
+	AssetId m_asset_id;
 };
 
 std::optional<GraphicsPipeline> TextPipeline::CreateGraphicsPipeline(

@@ -22,7 +22,6 @@ export class RainbowTextPipeline
 {
 public:
 	using VertexT = Texture2dVertex;
-	using AssetIdT = AssetId<VertexT>;
 
 	struct ObjectData
 	{
@@ -41,12 +40,12 @@ public:
 		FontAtlas const & font_atlas);
 
 	RainbowTextPipeline() = default;
-	RainbowTextPipeline(AssetIdT asset_id) : m_asset_id(asset_id) {}
+	RainbowTextPipeline(AssetId asset_id) : m_asset_id(asset_id) {}
 
-	AssetIdT GetAssetId() const { return m_asset_id; }
+	AssetId GetAssetId() const { return m_asset_id; }
 
 private:
-	AssetIdT m_asset_id;
+	AssetId m_asset_id;
 };
 
 std::optional<GraphicsPipeline> RainbowTextPipeline::CreateGraphicsPipeline(
