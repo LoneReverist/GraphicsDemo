@@ -24,7 +24,7 @@ public:
 
 	using UpdateMeshCallbackT = std::function<void(AssetId, Mesh &&)>;
 
-	TextMesh(
+	explicit TextMesh(
 		GraphicsApi const & graphics_api,
 		std::string const & text,
 		FontAtlas const & font_atlas,

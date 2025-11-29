@@ -26,7 +26,7 @@ export struct CameraPosUniform
 export class Camera
 {
 public:
-	Camera(bool flip_proj_y = false) : m_flip_proj_y(flip_proj_y) {}
+	explicit Camera(bool flip_proj_y = false) : m_flip_proj_y(flip_proj_y) {}
 
 	void Init(glm::vec3 const & pos, glm::vec3 const & dir);
 	void OnViewportResized(int width, int height);

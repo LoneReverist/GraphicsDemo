@@ -9,9 +9,6 @@ module;
 
 #include <glad/glad.h>
 
-#include <glm/ext/matrix_float4x4.hpp>
-#include <glm/gtc/type_ptr.hpp>
-
 export module GraphicsPipeline;
 
 import Buffer;
@@ -107,7 +104,7 @@ public:
 	using PerFrameConstantsCallback = std::function<void(GraphicsPipeline const & pipeline)>;
 	using PerObjectConstantsCallback = std::function<void(GraphicsPipeline const & pipeline, RenderObject const &)>;
 
-	GraphicsPipeline(
+	explicit GraphicsPipeline(
 		unsigned int vert_shader_id,
 		unsigned int frag_shader_id,
 		size_t vs_object_uniform_size,

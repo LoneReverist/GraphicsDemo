@@ -37,7 +37,7 @@ public:
 		FontAtlas const & font_atlas);
 
 	TextPipeline() = default;
-	TextPipeline(AssetId asset_id) : m_asset_id(asset_id) {}
+	explicit TextPipeline(AssetId asset_id) : m_asset_id(asset_id) {}
 
 	AssetId GetAssetId() const { return m_asset_id; }
 

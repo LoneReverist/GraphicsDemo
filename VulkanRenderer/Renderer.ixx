@@ -6,8 +6,6 @@ module;
 #include <string>
 #include <vector>
 
-#include <vulkan/vulkan.h>
-
 #include <glm/vec3.hpp>
 
 export module Renderer;

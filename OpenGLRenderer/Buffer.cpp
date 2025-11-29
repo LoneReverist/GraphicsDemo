@@ -3,7 +3,6 @@
 module;
 
 #include <iostream>
-#include <cstdint>
 
 #include <glad/glad.h>
 

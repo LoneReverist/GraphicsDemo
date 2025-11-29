@@ -23,7 +23,7 @@ export struct WindowSize
 export class VulkanApp
 {
 public:
-	VulkanApp(WindowSize window_size, std::string const & title);
+	explicit VulkanApp(WindowSize window_size, std::string const & title);
 	~VulkanApp();
 
 	void Run();

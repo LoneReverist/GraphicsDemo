@@ -41,7 +41,7 @@ public:
 		FontAtlas const & font_atlas);
 
 	RainbowTextPipeline() = default;
-	RainbowTextPipeline(AssetId asset_id) : m_asset_id(asset_id) {}
+	explicit RainbowTextPipeline(AssetId asset_id) : m_asset_id(asset_id) {}
 
 	AssetId GetAssetId() const { return m_asset_id; }
 

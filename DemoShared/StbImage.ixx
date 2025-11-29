@@ -15,7 +15,7 @@ export class StbImage
 {
 public:
 	StbImage() = default;
-	StbImage(std::filesystem::path const & filepath, int req_comp)
+	explicit StbImage(std::filesystem::path const & filepath, int req_comp)
 	{
 		LoadImage(filepath, req_comp);
 	}

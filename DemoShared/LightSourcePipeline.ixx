@@ -36,7 +36,7 @@ public:
 		Camera const & camera);
 
 	LightSourcePipeline() = default;
-	LightSourcePipeline(AssetId asset_id) : m_asset_id(asset_id) {}
+	explicit LightSourcePipeline(AssetId asset_id) : m_asset_id(asset_id) {}
 
 	AssetId GetAssetId() const { return m_asset_id; }
 

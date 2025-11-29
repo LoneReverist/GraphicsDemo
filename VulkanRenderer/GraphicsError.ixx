@@ -11,7 +11,7 @@ export module GraphicsError;
 export class GraphicsError
 {
 public:
-	GraphicsError(
+	explicit GraphicsError(
 		std::string message,
 		std::source_location const loc = std::source_location::current(),
 		std::stacktrace const trace = std::stacktrace::current());

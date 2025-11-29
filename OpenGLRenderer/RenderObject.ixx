@@ -4,15 +4,12 @@ module;
 
 #include <string>
 
-#include <glm/vec3.hpp>
-#include <glm/ext/matrix_float4x4.hpp>
-
 export module RenderObject;
 
 export class RenderObject
 {
 public:
-	RenderObject(std::string name, int mesh_id, int pipeline_id)
+	explicit RenderObject(std::string name, int mesh_id, int pipeline_id)
 		: m_name(name)
 		, m_mesh_id(mesh_id)
 		, m_pipeline_id(pipeline_id)

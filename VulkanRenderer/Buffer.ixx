@@ -11,7 +11,7 @@ import GraphicsApi;
 export class Buffer
 {
 public:
-	Buffer(GraphicsApi const & graphics_api);
+	explicit Buffer(GraphicsApi const & graphics_api);
 	~Buffer();
 
 	Buffer(Buffer && other) noexcept;

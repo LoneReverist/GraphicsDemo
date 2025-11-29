@@ -14,8 +14,6 @@ module;
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
-#include <glm/ext/matrix_float4x4.hpp>
-
 export module GraphicsApi;
 
 struct QueueFamilyIndices
@@ -50,7 +48,7 @@ public:
 	constexpr static std::uint32_t m_max_frames_in_flight = 2;
 
 public:
-	GraphicsApi(
+	explicit GraphicsApi(
 		GLFWwindow * window, // Reminder: Do not call any glfw functions that require being on the main thread
 		int width,
 		int height,

@@ -48,7 +48,7 @@ export struct CubeImageData
 class Image
 {
 public:
-	Image(GraphicsApi const & graphics_api) : m_graphics_api(graphics_api) {}
+	explicit Image(GraphicsApi const & graphics_api) : m_graphics_api(graphics_api) {}
 	~Image();
 
 	Image(Image && other);
@@ -78,7 +78,7 @@ private:
 class Sampler
 {
 public:
-	Sampler(GraphicsApi const & graphics_api) : m_graphics_api(graphics_api) {}
+	explicit Sampler(GraphicsApi const & graphics_api) : m_graphics_api(graphics_api) {}
 	~Sampler();
 
 	Sampler(Sampler && other);
@@ -103,8 +103,8 @@ private:
 export class Texture
 {
 public:
-	Texture(GraphicsApi const & graphics_api, ImageData const & image_data, bool use_mip_map = true);
-	Texture(GraphicsApi const & graphics_api, CubeImageData const & image_data);
+	explicit Texture(GraphicsApi const & graphics_api, ImageData const & image_data, bool use_mip_map = true);
+	explicit Texture(GraphicsApi const & graphics_api, CubeImageData const & image_data);
 	~Texture() = default;
 
 	Texture(Texture && other) = default;

@@ -39,7 +39,7 @@ public:
 		Texture const & texture);
 
 	ReflectionPipeline() = default;
-	ReflectionPipeline(AssetId asset_id) : m_asset_id(asset_id) {}
+	explicit ReflectionPipeline(AssetId asset_id) : m_asset_id(asset_id) {}
 
 	AssetId GetAssetId() const { return m_asset_id; }
 

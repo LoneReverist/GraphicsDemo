@@ -2,7 +2,6 @@
 
 module;
 
-#include <algorithm>
 #include <cstdint>
 #include <iostream>
 #include <utility>
@@ -279,7 +278,7 @@ void DescriptorSets::Create(
 		m_descriptor_sets[frame].m_uniform_buffers.reserve(uniform_sizes.size());
 		for (int binding = 0; binding < uniform_sizes.size(); ++binding)
 		{
-			UniformBuffer & uniform = m_descriptor_sets[frame].m_uniform_buffers.emplace_back(m_graphics_api);
+			UniformBuffer & uniform = m_descriptor_sets[frame].m_uniform_buffers.emplace_back(Buffer{ m_graphics_api });
 			create_uniform_buffer(m_graphics_api, uniform_sizes[binding], uniform);
 			uniform_buffers[frame].push_back(uniform.m_buffer.Get());
 		}

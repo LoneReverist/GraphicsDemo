@@ -37,7 +37,7 @@ public:
 		LightsManager const & lights);
 
 	ColorPipeline() = default;
-	ColorPipeline(AssetId asset_id) : m_asset_id(asset_id) {}
+	explicit ColorPipeline(AssetId asset_id) : m_asset_id(asset_id) {}
 
 	AssetId GetAssetId() const { return m_asset_id; }
 

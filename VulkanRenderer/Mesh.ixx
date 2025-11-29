@@ -21,7 +21,7 @@ public:
 	using IndexT = std::uint16_t;
 
 	template <Vertex::VertexWithLayout VertexT>
-	Mesh(
+	explicit Mesh(
 		GraphicsApi const & graphics_api,
 		std::vector<VertexT> const & vertices,
 		std::vector<IndexT> const & indices);

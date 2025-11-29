@@ -10,7 +10,6 @@ module;
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
-#include <vector>
 
 #include <glm/glm.hpp>
 
@@ -34,7 +33,7 @@ public:
 	};
 
 public:
-	FontAtlas(GraphicsApi const & graphics_api, std::filesystem::path const & image_path, std::filesystem::path const & json_path)
+	explicit FontAtlas(GraphicsApi const & graphics_api, std::filesystem::path const & image_path, std::filesystem::path const & json_path)
 	{
 		init_texture(graphics_api, image_path);
 		init_glyphs(json_path);

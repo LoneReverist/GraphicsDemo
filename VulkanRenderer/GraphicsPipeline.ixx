@@ -32,7 +32,7 @@ struct DescriptorSet
 class DescriptorSets
 {
 public:
-	DescriptorSets(GraphicsApi const & graphics_api);
+	explicit DescriptorSets(GraphicsApi const & graphics_api);
 	~DescriptorSets();
 
 	DescriptorSets(DescriptorSets && other);
@@ -63,7 +63,7 @@ private:
 class PipelineLayout
 {
 public:
-	PipelineLayout(GraphicsApi const & graphics_api);
+	explicit PipelineLayout(GraphicsApi const & graphics_api);
 	~PipelineLayout();
 
 	PipelineLayout(PipelineLayout && other);
@@ -139,7 +139,7 @@ export struct BlendOptions
 class Pipeline
 {
 public:
-	Pipeline(GraphicsApi const & graphics_api);
+	explicit Pipeline(GraphicsApi const & graphics_api);
 	~Pipeline();
 
 	Pipeline(Pipeline && other);
@@ -174,7 +174,7 @@ public:
 	using PerFrameConstantsCallback = std::function<void(GraphicsPipeline const & pipeline)>;
 	using PerObjectConstantsCallback = std::function<void(GraphicsPipeline const & pipeline, RenderObject const &)>;
 
-	GraphicsPipeline(
+	explicit GraphicsPipeline(
 		GraphicsApi const & graphics_api,
 		VkShaderModule vert_shader_module,
 		VkShaderModule frag_shader_module,

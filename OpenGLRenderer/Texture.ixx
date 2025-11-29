@@ -66,8 +66,8 @@ private:
 export class Texture
 {
 public:
-	Texture(GraphicsApi const & graphics_api, ImageData const & image_data, bool use_mip_map = true);
-	Texture(GraphicsApi const & graphics_api, CubeImageData const & image_data);
+	explicit Texture(GraphicsApi const & graphics_api, ImageData const & image_data, bool use_mip_map = true);
+	explicit Texture(GraphicsApi const & graphics_api, CubeImageData const & image_data);
 	~Texture() = default;
 
 	Texture(Texture && other) = default;
