@@ -266,17 +266,24 @@ std::unique_ptr<TextMesh> Scene::create_text_mesh(
 	int viewport_height)
 {
 	auto text_mesh = std::make_unique<TextMesh>(m_graphics_api, text, font_atlas, font_size, origin, viewport_width, viewport_height);
-	text_mesh->SetUpdateMeshCallback([&renderer = m_renderer](AssetId id, Mesh && mesh)
+	text_mesh->SetUpdateMeshCallback([&renderer = m_renderer](AssetId id, Mesh mesh)
 		{
 			if (!id.IsValid())
 			{
-				std::cout << "TextMesh::Create() invalid AssetId for updating mesh" << std::endl;
+				std::cout << "Scene::create_text_mesh: Invalid AssetId for updating mesh" << std::endl;
 				return;
 			}
 			renderer.UpdateMesh(id.m_index, std::move(mesh));
 		});
 
-	AssetId asset_id{ m_renderer.AddMesh(text_mesh->CreateMesh()) };
+	std::expected<Mesh, GraphicsError> mesh = text_mesh->CreateMesh();
+	if (!mesh.has_value())
+	{
+		std::cout << "Scene::create_text_mesh: Failed to create TextMesh mesh. " << mesh.error().GetMessage() << std::endl;
+		return text_mesh;
+	}
+
+	AssetId asset_id{ m_renderer.AddMesh(std::move(mesh.value())) };
 	text_mesh->SetAssetId(asset_id);
 
 	return text_mesh;

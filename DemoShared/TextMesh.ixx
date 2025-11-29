@@ -2,7 +2,9 @@
 
 module;
 
+#include <expected>
 #include <functional>
+#include <iostream>
 #include <string>
 #include <vector>
 
@@ -13,6 +15,7 @@ export module TextMesh;
 import AssetId;
 import FontAtlas;
 import GraphicsApi;
+import GraphicsError;
 import Mesh;
 import Renderer;
 import Vertex;
@@ -22,7 +25,7 @@ export class TextMesh
 public:
 	using VertexT = Texture2dVertex;
 
-	using UpdateMeshCallbackT = std::function<void(AssetId, Mesh &&)>;
+	using UpdateMeshCallbackT = std::function<void(AssetId, Mesh)>;
 
 	explicit TextMesh(
 		GraphicsApi const & graphics_api,
@@ -33,7 +36,7 @@ public:
 		int viewport_width,
 		int viewport_height);
 
-	Mesh CreateMesh();
+	std::expected<Mesh, GraphicsError> CreateMesh() const;
 
 	void OnViewportResized(int width, int height);
 
@@ -80,13 +83,13 @@ TextMesh::TextMesh(
 {
 }
 
-Mesh TextMesh::CreateMesh()
+std::expected<Mesh, GraphicsError> TextMesh::CreateMesh() const
 {
+	if (m_viewport_width == 0 || m_viewport_height == 0 || m_text.empty())
+		return Mesh{ m_graphics_api }; // an empty mesh is an expected result here
+
 	std::vector<VertexT> verts;
 	std::vector<Mesh::IndexT> indices;
-
-	if (m_viewport_width == 0 || m_viewport_height == 0)
-		return Mesh{ m_graphics_api, verts, indices };
 
 	// convert font size to screen coordinates -1 to 1
 	float height_scale = m_font_size * (2.0f / m_viewport_height);
@@ -145,7 +148,12 @@ Mesh TextMesh::CreateMesh()
 			v.m_pos.y = -v.m_pos.y;
 	}
 
-	return Mesh{ m_graphics_api, verts, indices };
+	Mesh mesh{ m_graphics_api };
+	std::expected<void, GraphicsError> result = mesh.Create(verts, indices);
+	if (!result.has_value())
+		return std::unexpected{ result.error().AddToMessage(" TextMesh::CreateMesh: Failed to create mesh.") };
+
+	return mesh;
 }
 
 void TextMesh::OnViewportResized(int width, int height)
@@ -157,7 +165,16 @@ void TextMesh::OnViewportResized(int width, int height)
 	m_viewport_height = height;
 
 	if (m_update_mesh_callback)
-		m_update_mesh_callback(m_asset_id, CreateMesh());
+	{
+		std::expected<Mesh, GraphicsError> mesh = CreateMesh();
+		if (!mesh.has_value())
+		{
+			std::cout << "TextMesh::OnViewportResized: Failed to create mesh: " << mesh.error().GetMessage() << std::endl;
+			return;
+		}
+
+		m_update_mesh_callback(m_asset_id, std::move(mesh.value()));
+	}
 }
 
 void TextMesh::SetText(std::string const & text)
@@ -168,5 +185,14 @@ void TextMesh::SetText(std::string const & text)
 	m_text = text;
 
 	if (m_update_mesh_callback)
-		m_update_mesh_callback(m_asset_id, CreateMesh());
+	{
+		std::expected<Mesh, GraphicsError> mesh = CreateMesh();
+		if (!mesh.has_value())
+		{
+			std::cout << "TextMesh::SetText: Failed to create mesh: " << mesh.error().GetMessage() << std::endl;
+			return;
+		}
+
+		m_update_mesh_callback(m_asset_id, std::move(mesh.value()));
+	}
 }

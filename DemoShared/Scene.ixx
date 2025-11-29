@@ -2,6 +2,7 @@
 
 module;
 
+#include <expected>
 #include <filesystem>
 #include <iostream>
 #include <memory>
@@ -15,6 +16,7 @@ import Camera;
 import ColorPipeline;
 import FontAtlas;
 import GraphicsApi;
+import GraphicsError;
 import Input;
 import LightsManager;
 import LightSourcePipeline;
@@ -103,10 +105,10 @@ private:
 template<IsVertex VertexT, typename... Args>
 MeshAsset<VertexT> Scene::create_mesh(Args &&... args)
 {
-	std::optional<Mesh> mesh = MeshAsset<VertexT>::Create(m_graphics_api, std::forward<Args>(args)...);
+	std::expected<Mesh, GraphicsError> mesh = MeshAsset<VertexT>::Create(m_graphics_api, std::forward<Args>(args)...);
 	if (!mesh.has_value())
 	{
-		std::cout << "Failed to create MeshAsset<" << typeid(VertexT).name() << ">" << std::endl;
+		std::cout << "Scene::create_mesh: Failed to create MeshAsset<" << typeid(VertexT).name() << "> Error: " << mesh.error().GetMessage() << std::endl;
 		return MeshAsset<VertexT>{};
 	}
 	AssetId asset_id{ m_renderer.AddMesh(std::move(mesh.value())) };

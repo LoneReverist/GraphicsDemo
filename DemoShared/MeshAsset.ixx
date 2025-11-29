@@ -2,8 +2,8 @@
 
 module;
 
+#include <expected>
 #include <filesystem>
-#include <iostream>
 #include <optional>
 #include <vector>
 
@@ -11,6 +11,7 @@ export module MeshAsset;
 
 import AssetId;
 import GraphicsApi;
+import GraphicsError;
 import Mesh;
 import ObjLoader;
 import Vertex;
@@ -21,12 +22,12 @@ class MeshAsset
 public:
 	using VertexT = T;
 
-	static std::optional<Mesh> Create(
+	static std::expected<Mesh, GraphicsError> Create(
 		GraphicsApi const & graphics_api,
 		std::vector<VertexT> const & vertices,
 		std::vector<Mesh::IndexT> const & indices);
 
-	static std::optional<Mesh> Create(
+	static std::expected<Mesh, GraphicsError> Create(
 		GraphicsApi const & graphics_api,
 		std::filesystem::path const & file_path);
 
@@ -40,32 +41,31 @@ private:
 };
 
 template<IsVertex VertexT>
-std::optional<Mesh> MeshAsset<VertexT>::Create(
+std::expected<Mesh, GraphicsError> MeshAsset<VertexT>::Create(
 	GraphicsApi const & graphics_api,
 	std::vector<VertexT> const & vertices,
 	std::vector<Mesh::IndexT> const & indices)
 {
-	return Mesh{ graphics_api, vertices, indices };
+	Mesh mesh{ graphics_api };
+	std::expected<void, GraphicsError> result = mesh.Create(vertices, indices);
+	if (!result.has_value())
+		return std::unexpected{ result.error().AddToMessage(" MeshAsset::Create: Failed to create mesh.") };
+
+	return std::move(mesh);
 }
 
 template<IsVertex VertexT>
-std::optional<Mesh> MeshAsset<VertexT>::Create(
+std::expected<Mesh, GraphicsError> MeshAsset<VertexT>::Create(
 	GraphicsApi const & graphics_api,
 	std::filesystem::path const & file_path)
 {
 	if (!std::filesystem::exists(file_path))
-	{
-		std::cout << "NormalMesh::Create() file does not exist:" << file_path << std::endl;
-		return std::nullopt;
-	}
+		return std::unexpected{ GraphicsError{ " MeshAsset::Create: File does not exist: " + file_path.string() } };
 
 	std::vector<VertexT> verts;
 	std::vector<Mesh::IndexT> indices;
 	if (!ObjLoader::LoadObjFile(file_path, verts, indices))
-	{
-		std::cout << "create_mesh_from_file() error loading file:" << file_path << std::endl;
-		return std::nullopt;
-	}
+		return std::unexpected{ GraphicsError{ " MeshAsset::Create: Error loading file: " + file_path.string() } };
 
-	return Mesh{ graphics_api, verts, indices };
+	return Create(graphics_api, verts, indices);
 }

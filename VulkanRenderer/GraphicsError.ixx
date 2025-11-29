@@ -20,7 +20,7 @@ public:
 	std::source_location const & GetSourceLocation() const { return m_source_location; }
 	std::stacktrace const & GetStackTrace() const { return m_stack_trace; }
 
-	void AddToMessage(std::string message) { m_message = m_message + '\n' + message; }
+	GraphicsError & AddToMessage(std::string message) { m_message += message; return *this; }
 
 private:
 	std::string m_message;

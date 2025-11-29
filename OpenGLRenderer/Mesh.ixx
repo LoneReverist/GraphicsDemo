@@ -3,6 +3,7 @@
 module;
 
 #include <cstdint>
+#include <expected>
 #include <vector>
 
 #include <glad/glad.h>
@@ -11,6 +12,7 @@ export module Mesh;
 
 import Buffer;
 import GraphicsApi;
+import GraphicsError;
 import VertexLayout;
 
 class VertexArrayObject
@@ -38,11 +40,7 @@ export class Mesh
 public:
 	using IndexT = std::uint16_t;
 
-	template <Vertex::VertexWithLayout VertexT>
-	explicit Mesh(
-		GraphicsApi const & graphics_api,
-		std::vector<VertexT> const & vertices,
-		std::vector<IndexT> const & indices);
+	explicit Mesh(GraphicsApi const & graphics_api);
 	~Mesh() = default;
 
 	Mesh(Mesh && other) = default;
@@ -50,6 +48,11 @@ public:
 
 	Mesh(Mesh const &) = delete;
 	Mesh & operator=(Mesh const &) = delete;
+
+	template <Vertex::VertexWithLayout VertexT>
+	std::expected<void, GraphicsError> Create(
+		std::vector<VertexT> const & vertices,
+		std::vector<IndexT> const & indices);
 
 	bool IsInitialized() const;
 
@@ -65,15 +68,18 @@ private:
 	GLsizei m_index_count = 0;
 };
 
-template <Vertex::VertexWithLayout VertexT>
-Mesh::Mesh(
-	GraphicsApi const & graphics_api,
-	std::vector<VertexT> const & vertices,
-	std::vector<IndexT> const & indices)
+Mesh::Mesh(GraphicsApi const & graphics_api)
 	: m_graphics_api{ graphics_api }
 {
+}
+
+template <Vertex::VertexWithLayout VertexT>
+std::expected<void, GraphicsError> Mesh::Create(
+	std::vector<VertexT> const & vertices,
+	std::vector<IndexT> const & indices)
+{
 	if (vertices.empty() || indices.empty())
-		return;
+		return std::unexpected{ GraphicsError{ "Mesh::Create: invalid vertices or indicies." } };
 
 	m_vertex_buffer.Create();
 	m_element_buffer.Create();
@@ -95,4 +101,6 @@ Mesh::Mesh(
 	glBindVertexArray(0);
 
 	m_index_count = static_cast<GLsizei>(indices.size());
+
+	return {};
 }
