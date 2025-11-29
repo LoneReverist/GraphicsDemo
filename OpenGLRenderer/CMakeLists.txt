@@ -2,7 +2,7 @@ find_package(glad CONFIG REQUIRED)
 
 add_library(OpenGLRenderer STATIC)
 
-target_compile_features(OpenGLRenderer PRIVATE cxx_std_20)
+target_compile_features(OpenGLRenderer PRIVATE cxx_std_23)
 
 set_target_properties(OpenGLRenderer PROPERTIES CXX_SCAN_FOR_MODULES ON)
 

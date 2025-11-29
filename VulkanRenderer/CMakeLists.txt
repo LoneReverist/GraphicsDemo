@@ -7,7 +7,7 @@ find_package(Vulkan REQUIRED)
 
 add_library(VulkanRenderer STATIC)
 
-target_compile_features(VulkanRenderer PRIVATE cxx_std_20)
+target_compile_features(VulkanRenderer PRIVATE cxx_std_23)
 
 set_target_properties(VulkanRenderer PROPERTIES CXX_SCAN_FOR_MODULES ON)
 

@@ -2,15 +2,15 @@
 
 module;
 
+#include <expected>
 #include <filesystem>
-#include <iostream>
-#include <optional>
 
 export module SkyboxPipeline;
 
 import AssetId;
 import Camera;
 import GraphicsApi;
+import GraphicsError;
 import GraphicsPipeline;
 import PipelineBuilder;
 import RenderObject;
@@ -22,7 +22,7 @@ export class SkyboxPipeline
 public:
 	using VertexT = PositionVertex;
 
-	static std::optional<GraphicsPipeline> CreateGraphicsPipeline(
+	static std::expected<GraphicsPipeline, GraphicsError> CreateGraphicsPipeline(
 		GraphicsApi const & graphics_api,
 		std::filesystem::path const & shaders_path,
 		Camera const & camera,
@@ -37,7 +37,7 @@ private:
 	AssetId m_asset_id;
 };
 
-std::optional<GraphicsPipeline> SkyboxPipeline::CreateGraphicsPipeline(
+std::expected<GraphicsPipeline, GraphicsError> SkyboxPipeline::CreateGraphicsPipeline(
 	GraphicsApi const & graphics_api,
 	std::filesystem::path const & shaders_path,
 	Camera const & camera,

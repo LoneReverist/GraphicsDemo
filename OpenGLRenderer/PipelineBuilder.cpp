@@ -2,10 +2,10 @@
 
 module;
 
+#include <expected>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <optional>
 #include <vector>
 
 #include <glad/glad.h>
@@ -13,6 +13,7 @@ module;
 module PipelineBuilder;
 
 import GraphicsApi;
+import GraphicsError;
 
 namespace
 {
@@ -80,13 +81,14 @@ void PipelineBuilder::LoadShaders(std::filesystem::path const & vs_path, std::fi
 	m_frag_shader_id = load_shader(GL_FRAGMENT_SHADER, fs_path);
 }
 
-std::optional<GraphicsPipeline> PipelineBuilder::CreatePipeline() const
+std::expected<GraphicsPipeline, GraphicsError> PipelineBuilder::CreatePipeline() const
 {
-	if (m_vert_shader_id == 0 || m_frag_shader_id == 0)
-		return std::nullopt;
-
-	if (m_cull_mode == CullMode::NONE)
-		std::cout << "Warning: Building pipeline with cull mode is set to NONE, this may result in suboptimal performance." << std::endl;
+	if (m_vert_shader_id == 0)
+		return std::unexpected{ GraphicsError{ "Vertex shader not loaded" } };
+	if (m_frag_shader_id == 0)
+		return std::unexpected{ GraphicsError{ "Fragment shader not loaded" } };
+	if (!m_cull_mode.has_value())
+		return std::unexpected{ GraphicsError{ "Cull mode not set" } };
 
 	return GraphicsPipeline{
 		m_vert_shader_id,
@@ -98,7 +100,7 @@ std::optional<GraphicsPipeline> PipelineBuilder::CreatePipeline() const
 		m_texture,
 		m_depth_test_options,
 		m_blend_options,
-		m_cull_mode,
+		m_cull_mode.value(),
 		m_per_frame_constants_callback,
 		m_per_object_constants_callback
 	};

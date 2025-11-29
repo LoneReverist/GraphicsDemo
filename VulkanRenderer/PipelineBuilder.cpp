@@ -3,10 +3,10 @@
 module;
 
 #include <cstdint>
+#include <expected>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <optional>
 #include <vector>
 
 #include <vulkan/vulkan.h>
@@ -14,6 +14,7 @@ module;
 module PipelineBuilder;
 
 import GraphicsApi;
+import GraphicsError;
 
 namespace
 {
@@ -94,17 +95,16 @@ void PipelineBuilder::LoadShaders(std::filesystem::path const & vs_path, std::fi
 	m_frag_shader_module = load_shader(frag_spirv_path, device);
 }
 
-std::optional<GraphicsPipeline> PipelineBuilder::CreatePipeline() const
+std::expected<GraphicsPipeline, GraphicsError> PipelineBuilder::CreatePipeline() const
 {
-	if (m_vert_shader_module == VK_NULL_HANDLE
-		|| m_frag_shader_module == VK_NULL_HANDLE
-		|| m_vert_attrib_descs.empty())
-	{
-		return std::nullopt;
-	}
-
-	if (m_cull_mode == CullMode::NONE)
-		std::cout << "Warning: Building pipeline with cull mode is set to NONE, this may result in suboptimal performance." << std::endl;
+	if (m_vert_shader_module == VK_NULL_HANDLE)
+		return std::unexpected{ GraphicsError{ "Vertex shader not loaded" } };
+	if (m_frag_shader_module == VK_NULL_HANDLE)
+		return std::unexpected{ GraphicsError{ "Fragment shader not loaded" } };
+	if (m_vert_attrib_descs.empty())
+		return std::unexpected{ GraphicsError{ "Vertex input not set" } };
+	if (!m_cull_mode.has_value())
+		return std::unexpected{ GraphicsError{ "Cull mode not set" } };
 
 	return GraphicsPipeline{
 		m_graphics_api,
@@ -118,7 +118,7 @@ std::optional<GraphicsPipeline> PipelineBuilder::CreatePipeline() const
 		m_texture,
 		m_depth_test_options,
 		m_blend_options,
-		m_cull_mode,
+		m_cull_mode.value(),
 		m_per_frame_constants_callback,
 		m_per_object_constants_callback };
 }

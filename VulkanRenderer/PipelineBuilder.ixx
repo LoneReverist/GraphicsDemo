@@ -3,8 +3,8 @@
 module;
 
 #include <cstdint>
+#include <expected>
 #include <filesystem>
-#include <optional>
 #include <vector>
 
 #include <vulkan/vulkan.h>
@@ -12,6 +12,7 @@ module;
 export module PipelineBuilder;
 
 import GraphicsApi;
+import GraphicsError;
 import GraphicsPipeline;
 import RenderObject;
 import Texture;
@@ -48,7 +49,7 @@ public:
 	void SetPerFrameConstantsCallback(PerFrameConstantsCallback callback) { m_per_frame_constants_callback = callback; }
 	void SetPerObjectConstantsCallback(PerObjectConstantsCallback callback) { m_per_object_constants_callback = callback; }
 
-	std::optional<GraphicsPipeline> CreatePipeline() const;
+	std::expected<GraphicsPipeline, GraphicsError> CreatePipeline() const;
 
 private:
 	GraphicsApi const & m_graphics_api;
@@ -66,7 +67,10 @@ private:
 
 	DepthTestOptions m_depth_test_options;
 	BlendOptions m_blend_options;
-	CullMode m_cull_mode = CullMode::NONE; // Default to none to ensure objects always appear on screen when testing new pipelines.
+
+	// PipelineBuilder does not have a default state for the cull mode, a null optional here means "not set yet".
+	// PipelineBuilder requires the cull mode to be set explicitly because it is a common source of errors.
+	std::optional<CullMode> m_cull_mode;
 
 	PerFrameConstantsCallback m_per_frame_constants_callback;
 	PerObjectConstantsCallback m_per_object_constants_callback;

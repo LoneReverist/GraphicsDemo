@@ -2,9 +2,9 @@
 
 module;
 
+#include <expected>
 #include <filesystem>
 #include <iostream>
-#include <optional>
 
 #include <glm/vec4.hpp>
 
@@ -13,6 +13,7 @@ export module RainbowTextPipeline;
 import AssetId;
 import FontAtlas;
 import GraphicsApi;
+import GraphicsError;
 import GraphicsPipeline;
 import PipelineBuilder;
 import RenderObject;
@@ -34,7 +35,7 @@ public:
 		float m_slant_factor = -1.0f;
 	};
 
-	static std::optional<GraphicsPipeline> CreateGraphicsPipeline(
+	static std::expected<GraphicsPipeline, GraphicsError> CreateGraphicsPipeline(
 		GraphicsApi const & graphics_api,
 		std::filesystem::path const & shaders_path,
 		FontAtlas const & font_atlas);
@@ -48,7 +49,7 @@ private:
 	AssetId m_asset_id;
 };
 
-std::optional<GraphicsPipeline> RainbowTextPipeline::CreateGraphicsPipeline(
+std::expected<GraphicsPipeline, GraphicsError> RainbowTextPipeline::CreateGraphicsPipeline(
 	GraphicsApi const & graphics_api,
 	std::filesystem::path const & shaders_path,
 	FontAtlas const & font_atlas)

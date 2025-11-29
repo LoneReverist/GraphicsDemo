@@ -4,10 +4,10 @@ module;
 
 #include <algorithm>
 #include <array>
+#include <expected>
 #include <filesystem>
 #include <iostream>
 #include <numbers>
-#include <optional>
 #include <vector>
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -15,6 +15,7 @@ module;
 module Scene;
 
 import AssetId;
+import GraphicsError;
 import GraphicsPipeline;
 import Mesh;
 import PlatformUtils;
@@ -91,11 +92,11 @@ std::unique_ptr<Texture> create_cubemap_texture(
 ColorPipeline Scene::create_color_pipeline()
 {
 	std::filesystem::path shaders_path = m_resources_path / "shaders";
-	std::optional<GraphicsPipeline> pipeline = ColorPipeline::CreateGraphicsPipeline(
+	std::expected<GraphicsPipeline, GraphicsError> pipeline = ColorPipeline::CreateGraphicsPipeline(
 		m_graphics_api, shaders_path, m_camera, m_lights);
 	if (!pipeline.has_value())
 	{
-		std::cout << "Failed to create ColorPipeline" << std::endl;
+		std::cout << "Failed to create ColorPipeline:\n" << pipeline.error().GetMessage() << std::endl;
 		return ColorPipeline{};
 	}
 	AssetId asset_id{ m_renderer.AddPipeline(std::move(pipeline.value())) };
@@ -105,11 +106,11 @@ ColorPipeline Scene::create_color_pipeline()
 TexturePipeline Scene::create_texture_pipeline(Texture const & texture)
 {
 	std::filesystem::path shaders_path = m_resources_path / "shaders";
-	std::optional<GraphicsPipeline> pipeline = TexturePipeline::CreateGraphicsPipeline(
+	std::expected<GraphicsPipeline, GraphicsError> pipeline = TexturePipeline::CreateGraphicsPipeline(
 		m_graphics_api, shaders_path, m_camera, m_lights, texture);
 	if (!pipeline.has_value())
 	{
-		std::cout << "Failed to create TexturePipeline" << std::endl;
+		std::cout << "Failed to create TexturePipeline:\n" << pipeline.error().GetMessage() << std::endl;
 		return TexturePipeline{};
 	}
 	AssetId asset_id{ m_renderer.AddPipeline(std::move(pipeline.value())) };
@@ -119,11 +120,11 @@ TexturePipeline Scene::create_texture_pipeline(Texture const & texture)
 SkyboxPipeline Scene::create_skybox_pipeline(Texture const & texture)
 {
 	std::filesystem::path shaders_path = m_resources_path / "shaders";
-	std::optional<GraphicsPipeline> pipeline = SkyboxPipeline::CreateGraphicsPipeline(
+	std::expected<GraphicsPipeline, GraphicsError> pipeline = SkyboxPipeline::CreateGraphicsPipeline(
 		m_graphics_api, shaders_path, m_camera, texture);
 	if (!pipeline.has_value())
 	{
-		std::cout << "Failed to create SkyboxPipeline" << std::endl;
+		std::cout << "Failed to create SkyboxPipeline:\n" << pipeline.error().GetMessage() << std::endl;
 		return SkyboxPipeline{};
 	}
 	AssetId asset_id{ m_renderer.AddPipeline(std::move(pipeline.value())) };
@@ -133,11 +134,11 @@ SkyboxPipeline Scene::create_skybox_pipeline(Texture const & texture)
 LightSourcePipeline Scene::create_light_source_pipeline()
 {
 	std::filesystem::path shaders_path = m_resources_path / "shaders";
-	std::optional<GraphicsPipeline> pipeline = LightSourcePipeline::CreateGraphicsPipeline(
+	std::expected<GraphicsPipeline, GraphicsError> pipeline = LightSourcePipeline::CreateGraphicsPipeline(
 		m_graphics_api, shaders_path, m_camera);
 	if (!pipeline.has_value())
 	{
-		std::cout << "Failed to create LightSourcePipeline" << std::endl;
+		std::cout << "Failed to create LightSourcePipeline:\n" << pipeline.error().GetMessage() << std::endl;
 		return LightSourcePipeline{};
 	}
 	AssetId asset_id{ m_renderer.AddPipeline(std::move(pipeline.value())) };
@@ -147,11 +148,11 @@ LightSourcePipeline Scene::create_light_source_pipeline()
 ReflectionPipeline Scene::create_reflection_pipeline(Texture const & texture)
 {
 	std::filesystem::path shaders_path = m_resources_path / "shaders";
-	std::optional<GraphicsPipeline> pipeline = ReflectionPipeline::CreateGraphicsPipeline(
+	std::expected<GraphicsPipeline, GraphicsError> pipeline = ReflectionPipeline::CreateGraphicsPipeline(
 		m_graphics_api, shaders_path, m_camera, m_lights, texture);
 	if (!pipeline.has_value())
 	{
-		std::cout << "Failed to create ReflectionPipeline" << std::endl;
+		std::cout << "Failed to create ReflectionPipeline:\n" << pipeline.error().GetMessage() << std::endl;
 		return ReflectionPipeline{};
 	}
 	AssetId asset_id{ m_renderer.AddPipeline(std::move(pipeline.value())) };
@@ -161,11 +162,11 @@ ReflectionPipeline Scene::create_reflection_pipeline(Texture const & texture)
 TextPipeline Scene::create_text_pipeline(FontAtlas const & font_atlas)
 {
 	std::filesystem::path shaders_path = m_resources_path / "shaders";
-	std::optional<GraphicsPipeline> pipeline = TextPipeline::CreateGraphicsPipeline(
+	std::expected<GraphicsPipeline, GraphicsError> pipeline = TextPipeline::CreateGraphicsPipeline(
 		m_graphics_api, shaders_path, font_atlas);
 	if (!pipeline.has_value())
 	{
-		std::cout << "Failed to create TextPipeline" << std::endl;
+		std::cout << "Failed to create TextPipeline:\n" << pipeline.error().GetMessage() << std::endl;
 		return TextPipeline{};
 	}
 	AssetId asset_id{ m_renderer.AddPipeline(std::move(pipeline.value())) };
@@ -175,11 +176,11 @@ TextPipeline Scene::create_text_pipeline(FontAtlas const & font_atlas)
 RainbowTextPipeline Scene::create_rainbow_text_pipeline(FontAtlas const & font_atlas)
 {
 	std::filesystem::path shaders_path = m_resources_path / "shaders";
-	std::optional<GraphicsPipeline> pipeline = RainbowTextPipeline::CreateGraphicsPipeline(
+	std::expected<GraphicsPipeline, GraphicsError> pipeline = RainbowTextPipeline::CreateGraphicsPipeline(
 		m_graphics_api, shaders_path, font_atlas);
 	if (!pipeline.has_value())
 	{
-		std::cout << "Failed to create RainbowTextPipeline" << std::endl;
+		std::cout << "Failed to create RainbowTextPipeline:\n" << pipeline.error().GetMessage() << std::endl;
 		return RainbowTextPipeline{};
 	}
 	AssetId asset_id{ m_renderer.AddPipeline(std::move(pipeline.value())) };

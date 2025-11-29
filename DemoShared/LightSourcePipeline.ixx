@@ -2,9 +2,9 @@
 
 module;
 
+#include <expected>
 #include <filesystem>
 #include <iostream>
-#include <optional>
 
 #include <glm/mat4x4.hpp>
 
@@ -13,6 +13,7 @@ export module LightSourcePipeline;
 import AssetId;
 import Camera;
 import GraphicsApi;
+import GraphicsError;
 import GraphicsPipeline;
 import PipelineBuilder;
 import RenderObject;
@@ -29,7 +30,7 @@ public:
 		glm::vec3 m_color{ 0.0 };
 	};
 
-	static std::optional<GraphicsPipeline> CreateGraphicsPipeline(
+	static std::expected<GraphicsPipeline, GraphicsError> CreateGraphicsPipeline(
 		GraphicsApi const & graphics_api,
 		std::filesystem::path const & shaders_path,
 		Camera const & camera);
@@ -43,7 +44,7 @@ private:
 	AssetId m_asset_id;
 };
 
-std::optional<GraphicsPipeline> LightSourcePipeline::CreateGraphicsPipeline(
+std::expected<GraphicsPipeline, GraphicsError> LightSourcePipeline::CreateGraphicsPipeline(
 	GraphicsApi const & graphics_api,
 	std::filesystem::path const & shaders_path,
 	Camera const & camera)

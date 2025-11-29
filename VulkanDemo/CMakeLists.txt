@@ -1,6 +1,6 @@
 add_executable(VulkanDemo)
 
-target_compile_features(VulkanDemo PRIVATE cxx_std_20)
+target_compile_features(VulkanDemo PRIVATE cxx_std_23)
 
 set_target_properties(VulkanDemo PROPERTIES CXX_SCAN_FOR_MODULES ON)
 

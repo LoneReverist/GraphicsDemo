@@ -2,9 +2,9 @@
 
 module;
 
+#include <expected>
 #include <filesystem>
 #include <iostream>
-#include <optional>
 
 #include <glm/mat4x4.hpp>
 
@@ -13,6 +13,7 @@ export module ReflectionPipeline;
 import AssetId;
 import Camera;
 import GraphicsApi;
+import GraphicsError;
 import GraphicsPipeline;
 import LightsManager;
 import PipelineBuilder;
@@ -30,7 +31,7 @@ public:
 		glm::mat4 m_model{ 1.0 };
 	};
 
-	static std::optional<GraphicsPipeline> CreateGraphicsPipeline(
+	static std::expected<GraphicsPipeline, GraphicsError> CreateGraphicsPipeline(
 		GraphicsApi const & graphics_api,
 		std::filesystem::path const & shaders_path,
 		Camera const & camera,
@@ -46,7 +47,7 @@ private:
 	AssetId m_asset_id;
 };
 
-std::optional<GraphicsPipeline> ReflectionPipeline::CreateGraphicsPipeline(
+std::expected<GraphicsPipeline, GraphicsError> ReflectionPipeline::CreateGraphicsPipeline(
 	GraphicsApi const & graphics_api,
 	std::filesystem::path const & shaders_path,
 	Camera const & camera,

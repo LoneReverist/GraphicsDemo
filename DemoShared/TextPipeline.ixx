@@ -2,9 +2,9 @@
 
 module;
 
+#include <expected>
 #include <filesystem>
 #include <iostream>
-#include <optional>
 
 #include <glm/vec4.hpp>
 
@@ -13,6 +13,7 @@ export module TextPipeline;
 import AssetId;
 import FontAtlas;
 import GraphicsApi;
+import GraphicsError;
 import GraphicsPipeline;
 import PipelineBuilder;
 import RenderObject;
@@ -30,7 +31,7 @@ public:
 		glm::vec4 m_text_color = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f);
 	};
 
-	static std::optional<GraphicsPipeline> CreateGraphicsPipeline(
+	static std::expected<GraphicsPipeline, GraphicsError> CreateGraphicsPipeline(
 		GraphicsApi const & graphics_api,
 		std::filesystem::path const & shaders_path,
 		FontAtlas const & font_atlas);
@@ -44,7 +45,7 @@ private:
 	AssetId m_asset_id;
 };
 
-std::optional<GraphicsPipeline> TextPipeline::CreateGraphicsPipeline(
+std::expected<GraphicsPipeline, GraphicsError> TextPipeline::CreateGraphicsPipeline(
 	GraphicsApi const & graphics_api,
 	std::filesystem::path const & shaders_path,
 	FontAtlas const & font_atlas)
