@@ -3,8 +3,9 @@
 module;
 
 #include <cstdint>
-#include <iostream>
+#include <expected>
 #include <memory>
+#include <string>
 
 #include <vulkan/vulkan.h>
 
@@ -15,7 +16,7 @@ Renderer::Renderer(GraphicsApi const & graphics_api)
 {
 }
 
-void Renderer::Render() const
+std::expected<void, GraphicsError> Renderer::Render() const
 {
 	VkCommandBuffer command_buffer = m_graphics_api.GetCurCommandBuffer();
 	VkExtent2D sc_extent = m_graphics_api.GetSwapChainExtent();
@@ -28,7 +29,7 @@ void Renderer::Render() const
 
 	VkResult result = vkBeginCommandBuffer(command_buffer, &begin_info);
 	if (result != VK_SUCCESS)
-		throw std::runtime_error("failed to begin recording command buffer!");
+		return std::unexpected{ GraphicsError{ "Renderer::Render: vkBeginCommandBuffer failed with code: " + std::to_string(result) } };
 
 	std::array<VkClearValue, 2> clear_values = {
 		VkClearValue{ .color{ m_clear_color.r, m_clear_color.g, m_clear_color.b, 1.0f } },
@@ -90,16 +91,15 @@ void Renderer::Render() const
 
 	result = vkEndCommandBuffer(command_buffer);
 	if (result != VK_SUCCESS)
-		throw std::runtime_error("failed to record command buffer!");
+		return std::unexpected{ GraphicsError{ "Renderer::Render: vkEndCommandBuffer failed with code: " + std::to_string(result) } };
+
+	return {};
 }
 
-int Renderer::AddPipeline(GraphicsPipeline && pipeline)
+std::expected<int, GraphicsError> Renderer::AddPipeline(GraphicsPipeline && pipeline)
 {
 	if (!pipeline.IsValid())
-	{
-		std::cout << "Renderer::AddGraphicsPipeline() invalid pipeline";
-		return -1;
-	}
+		return std::unexpected{ GraphicsError{ "Renderer::AddPipeline: Invalid pipeline" } };
 
 	m_pipeline_containers.emplace_back(PipelineContainer{
 		.m_pipeline{ std::move(pipeline) }
@@ -108,29 +108,28 @@ int Renderer::AddPipeline(GraphicsPipeline && pipeline)
 	return static_cast<int>(m_pipeline_containers.size() - 1);
 }
 
-int Renderer::AddMesh(Mesh && mesh)
+std::expected<int, GraphicsError> Renderer::AddMesh(Mesh && mesh)
 {
 	m_meshes.emplace_back(std::move(mesh));
 	return static_cast<int>(m_meshes.size() - 1);
 }
 
-void Renderer::UpdateMesh(int index, Mesh && mesh)
+std::expected<void, GraphicsError> Renderer::UpdateMesh(int index, Mesh && mesh)
 {
+	if (index < 0 || index >= static_cast<int>(m_meshes.size()))
+		return std::unexpected{ GraphicsError{ "Renderer::UpdateMesh: invalid mesh index: " + std::to_string(index) } };
+
 	m_meshes[index] = std::move(mesh);
+
+	return {};
 }
 
-std::shared_ptr<RenderObject> Renderer::CreateRenderObject(std::string const & name, int mesh_id, int pipeline_id)
+std::expected<std::shared_ptr<RenderObject>, GraphicsError> Renderer::CreateRenderObject(std::string const & name, int mesh_id, int pipeline_id)
 {
 	if (mesh_id < 0 || mesh_id >= static_cast<int>(m_meshes.size()))
-	{
-		std::cout << "Renderer::CreateRenderObject() invalid mesh id for object: " << name << std::endl;
-		return nullptr;
-	}
+		return std::unexpected{ GraphicsError{ "Renderer::CreateRenderObject: invalid mesh id for object: " + name } };
 	if (pipeline_id < 0 || pipeline_id >= static_cast<int>(m_pipeline_containers.size()))
-	{
-		std::cout << "Renderer::CreateRenderObject() invalid pipeline id for object: " << name << std::endl;
-		return nullptr;
-	}
+		return std::unexpected{ GraphicsError{ "Renderer::CreateRenderObject: invalid pipeline id for object: " + name } };
 
 	std::shared_ptr<RenderObject> obj = std::make_shared<RenderObject>(name, mesh_id, pipeline_id);
 	m_pipeline_containers[pipeline_id].m_render_objects.push_back(obj);

@@ -2,6 +2,7 @@
 
 module;
 
+#include <expected>
 #include <memory>
 #include <string>
 #include <vector>
@@ -11,6 +12,7 @@ module;
 export module Renderer;
 
 import GraphicsApi;
+import GraphicsError;
 import GraphicsPipeline;
 import Mesh;
 import RenderObject;
@@ -26,13 +28,13 @@ export class Renderer
 public:
 	explicit Renderer(GraphicsApi const & graphics_api);
 
-	void Render() const;
+	std::expected<void, GraphicsError> Render() const;
 
-	int AddPipeline(GraphicsPipeline && pipeline);
-	int AddMesh(Mesh && mesh);
-	void UpdateMesh(int index, Mesh && mesh);
+	std::expected<int, GraphicsError> AddPipeline(GraphicsPipeline && pipeline);
+	std::expected<int, GraphicsError> AddMesh(Mesh && mesh_var);
+	std::expected<void, GraphicsError> UpdateMesh(int index, Mesh && mesh);
 
-	std::shared_ptr<RenderObject> CreateRenderObject(std::string const & name, int mesh_id, int pipeline_id);
+	std::expected<std::shared_ptr<RenderObject>, GraphicsError> CreateRenderObject(std::string const & name, int mesh_id, int pipeline_id);
 
 	void SetClearColor(glm::vec3 const & color) { m_clear_color = color; }
 

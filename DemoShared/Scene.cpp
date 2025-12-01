@@ -89,104 +89,6 @@ std::unique_ptr<Texture> create_cubemap_texture(
 		});
 }
 
-ColorPipeline Scene::create_color_pipeline()
-{
-	std::filesystem::path shaders_path = m_resources_path / "shaders";
-	std::expected<GraphicsPipeline, GraphicsError> pipeline = ColorPipeline::CreateGraphicsPipeline(
-		m_graphics_api, shaders_path, m_camera, m_lights);
-	if (!pipeline.has_value())
-	{
-		std::cout << "Failed to create ColorPipeline:\n" << pipeline.error().GetMessage() << std::endl;
-		return ColorPipeline{};
-	}
-	AssetId asset_id{ m_renderer.AddPipeline(std::move(pipeline.value())) };
-	return ColorPipeline{ asset_id };
-}
-
-TexturePipeline Scene::create_texture_pipeline(Texture const & texture)
-{
-	std::filesystem::path shaders_path = m_resources_path / "shaders";
-	std::expected<GraphicsPipeline, GraphicsError> pipeline = TexturePipeline::CreateGraphicsPipeline(
-		m_graphics_api, shaders_path, m_camera, m_lights, texture);
-	if (!pipeline.has_value())
-	{
-		std::cout << "Failed to create TexturePipeline:\n" << pipeline.error().GetMessage() << std::endl;
-		return TexturePipeline{};
-	}
-	AssetId asset_id{ m_renderer.AddPipeline(std::move(pipeline.value())) };
-	return TexturePipeline{ asset_id };
-}
-
-SkyboxPipeline Scene::create_skybox_pipeline(Texture const & texture)
-{
-	std::filesystem::path shaders_path = m_resources_path / "shaders";
-	std::expected<GraphicsPipeline, GraphicsError> pipeline = SkyboxPipeline::CreateGraphicsPipeline(
-		m_graphics_api, shaders_path, m_camera, texture);
-	if (!pipeline.has_value())
-	{
-		std::cout << "Failed to create SkyboxPipeline:\n" << pipeline.error().GetMessage() << std::endl;
-		return SkyboxPipeline{};
-	}
-	AssetId asset_id{ m_renderer.AddPipeline(std::move(pipeline.value())) };
-	return SkyboxPipeline{ asset_id };
-}
-
-LightSourcePipeline Scene::create_light_source_pipeline()
-{
-	std::filesystem::path shaders_path = m_resources_path / "shaders";
-	std::expected<GraphicsPipeline, GraphicsError> pipeline = LightSourcePipeline::CreateGraphicsPipeline(
-		m_graphics_api, shaders_path, m_camera);
-	if (!pipeline.has_value())
-	{
-		std::cout << "Failed to create LightSourcePipeline:\n" << pipeline.error().GetMessage() << std::endl;
-		return LightSourcePipeline{};
-	}
-	AssetId asset_id{ m_renderer.AddPipeline(std::move(pipeline.value())) };
-	return LightSourcePipeline{ asset_id };
-}
-
-ReflectionPipeline Scene::create_reflection_pipeline(Texture const & texture)
-{
-	std::filesystem::path shaders_path = m_resources_path / "shaders";
-	std::expected<GraphicsPipeline, GraphicsError> pipeline = ReflectionPipeline::CreateGraphicsPipeline(
-		m_graphics_api, shaders_path, m_camera, m_lights, texture);
-	if (!pipeline.has_value())
-	{
-		std::cout << "Failed to create ReflectionPipeline:\n" << pipeline.error().GetMessage() << std::endl;
-		return ReflectionPipeline{};
-	}
-	AssetId asset_id{ m_renderer.AddPipeline(std::move(pipeline.value())) };
-	return ReflectionPipeline{ asset_id };
-}
-
-TextPipeline Scene::create_text_pipeline(FontAtlas const & font_atlas)
-{
-	std::filesystem::path shaders_path = m_resources_path / "shaders";
-	std::expected<GraphicsPipeline, GraphicsError> pipeline = TextPipeline::CreateGraphicsPipeline(
-		m_graphics_api, shaders_path, font_atlas);
-	if (!pipeline.has_value())
-	{
-		std::cout << "Failed to create TextPipeline:\n" << pipeline.error().GetMessage() << std::endl;
-		return TextPipeline{};
-	}
-	AssetId asset_id{ m_renderer.AddPipeline(std::move(pipeline.value())) };
-	return TextPipeline{ asset_id };
-}
-
-RainbowTextPipeline Scene::create_rainbow_text_pipeline(FontAtlas const & font_atlas)
-{
-	std::filesystem::path shaders_path = m_resources_path / "shaders";
-	std::expected<GraphicsPipeline, GraphicsError> pipeline = RainbowTextPipeline::CreateGraphicsPipeline(
-		m_graphics_api, shaders_path, font_atlas);
-	if (!pipeline.has_value())
-	{
-		std::cout << "Failed to create RainbowTextPipeline:\n" << pipeline.error().GetMessage() << std::endl;
-		return RainbowTextPipeline{};
-	}
-	AssetId asset_id{ m_renderer.AddPipeline(std::move(pipeline.value())) };
-	return RainbowTextPipeline{ asset_id };
-}
-
 MeshAsset<PositionVertex> Scene::create_skybox_mesh()
 {
 	std::vector<PositionVertex> verts{
@@ -249,10 +151,16 @@ std::vector<MeshAsset<ColorVertex>> Scene::create_tree_with_material_meshes()
 	}
 
 	std::vector<MeshAsset<ColorVertex>> tree_with_material_meshes;
-	for (auto && mesh : tree_meshes)
+	for (auto & mesh : tree_meshes)
 	{
-		AssetId asset_id{ m_renderer.AddMesh(std::move(mesh)) };
-		tree_with_material_meshes.push_back(MeshAsset<ColorVertex>{ asset_id });
+		std::expected<int, GraphicsError> mesh_id = m_renderer.AddMesh(std::move(mesh));
+		if (!mesh_id.has_value())
+		{
+			std::cout << "Failed to add tree_with_material mesh to renderer: " << mesh_id.error().GetMessage() << std::endl;
+			continue;
+		}
+
+		tree_with_material_meshes.push_back(MeshAsset<ColorVertex>{ AssetId{ mesh_id.value() } });
 	}
 	return tree_with_material_meshes;
 }
@@ -273,51 +181,31 @@ std::unique_ptr<TextMesh> Scene::create_text_mesh(
 				std::cout << "Scene::create_text_mesh: Invalid AssetId for updating mesh" << std::endl;
 				return;
 			}
-			renderer.UpdateMesh(id.m_index, std::move(mesh));
+
+			std::expected<void, GraphicsError> result = renderer.UpdateMesh(id.m_index, std::move(mesh));
+			if (!result.has_value())
+			{
+				std::cout << "Scene::create_text_mesh: Failed to update mesh with id: "
+					<< id.m_index << " Error: " << result.error().GetMessage();
+			}
 		});
 
-	std::expected<Mesh, GraphicsError> mesh = text_mesh->CreateMesh();
-	if (!mesh.has_value())
+	std::expected<int, GraphicsError> mesh_id
+		= text_mesh->CreateMesh()
+		.and_then([&renderer = m_renderer](Mesh mesh) -> std::expected<int, GraphicsError>
+			{
+				return renderer.AddMesh(std::move(mesh));
+			});
+
+	if (!mesh_id.has_value())
 	{
-		std::cout << "Scene::create_text_mesh: Failed to create TextMesh mesh. " << mesh.error().GetMessage() << std::endl;
+		std::cout << "Scene::create_text_mesh: Failed to create mesh. Error: "
+			<< mesh_id.error().GetMessage() << std::endl;
 		return text_mesh;
 	}
 
-	AssetId asset_id{ m_renderer.AddMesh(std::move(mesh.value())) };
-	text_mesh->SetAssetId(asset_id);
-
+	text_mesh->SetAssetId(AssetId{ mesh_id.value() });
 	return text_mesh;
-}
-
-template <typename Mesh, typename Pipeline>
-concept MeshIsCompatibleWithPipeline = std::same_as<typename Mesh::VertexT, typename Pipeline::VertexT>;
-
-template <typename ObjectData, typename Pipeline>
-concept ObjectDataIsCompatibleWithPipeline = std::same_as<ObjectData, typename Pipeline::ObjectData>;
-
-template <typename Mesh, typename Pipeline, typename ObjectData>
-	requires MeshIsCompatibleWithPipeline<Mesh, Pipeline> && ObjectDataIsCompatibleWithPipeline<ObjectData, Pipeline>
-std::shared_ptr<RenderObject> create_render_object(
-	Renderer & renderer,
-	std::string const & name,
-	Mesh const & mesh,
-	Pipeline const & pipeline,
-	ObjectData const & object_data)
-{
-	std::shared_ptr<RenderObject> obj = renderer.CreateRenderObject(name, mesh.GetAssetId().m_index, pipeline.GetAssetId().m_index);
-	obj->SetObjectData(&object_data);
-	return obj;
-}
-
-template <typename Mesh, typename Pipeline>
-	requires MeshIsCompatibleWithPipeline<Mesh, Pipeline>
-std::shared_ptr<RenderObject> create_render_object(
-	Renderer & renderer,
-	std::string const & name,
-	Mesh const & mesh,
-	Pipeline pipeline)
-{
-	return renderer.CreateRenderObject(name, mesh.GetAssetId().m_index, pipeline.GetAssetId().m_index);
 }
 
 void init_sword_transform(int index, glm::mat4 & transform)
@@ -399,19 +287,19 @@ Scene::Scene(GraphicsApi const & graphics_api, std::string const & title)
 
 	m_arial_font = std::make_unique<FontAtlas>(m_graphics_api, fonts_path / "ArialAtlas.png", fonts_path / "ArialAtlas.json");
 
-	ColorPipeline color_pipeline = create_color_pipeline();
-	TexturePipeline ground_pipeline = create_texture_pipeline(*m_ground_tex);
-	SkyboxPipeline skybox_pipeline = create_skybox_pipeline(*m_skybox_tex);
-	LightSourcePipeline light_source_pipeline = create_light_source_pipeline();
-	ReflectionPipeline reflection_pipeline = create_reflection_pipeline(*m_skybox_tex);
-	TextPipeline text_pipeline = create_text_pipeline(*m_arial_font);
-	RainbowTextPipeline rainbow_text_pipeline = create_rainbow_text_pipeline(*m_arial_font);
+	ColorPipeline color_pipeline = create_pipeline<ColorPipeline>(m_camera, m_lights);
+	TexturePipeline ground_pipeline = create_pipeline<TexturePipeline>(m_camera, m_lights, *m_ground_tex);
+	SkyboxPipeline skybox_pipeline = create_pipeline<SkyboxPipeline>(m_camera, *m_skybox_tex);
+	LightSourcePipeline light_source_pipeline = create_pipeline<LightSourcePipeline>(m_camera);
+	ReflectionPipeline reflection_pipeline = create_pipeline<ReflectionPipeline>(m_camera, m_lights, *m_skybox_tex);
+	TextPipeline text_pipeline = create_pipeline<TextPipeline>(*m_arial_font);
+	RainbowTextPipeline rainbow_text_pipeline = create_pipeline<RainbowTextPipeline>(*m_arial_font);
 
 	MeshAsset<NormalVertex> sword_mesh = create_mesh<NormalVertex>(objects_path / "skullsword.obj");
 	init_sword_transform(0, m_sword0.m_model);
 	init_sword_transform(1, m_sword1.m_model);
-	m_render_objs.push_back(create_render_object(m_renderer, "sword0", sword_mesh, reflection_pipeline, m_sword0));
-	m_render_objs.push_back(create_render_object(m_renderer, "sword1", sword_mesh, reflection_pipeline, m_sword1));
+	create_render_object("sword0", sword_mesh, reflection_pipeline, m_sword0);
+	create_render_object("sword1", sword_mesh, reflection_pipeline, m_sword1);
 
 	MeshAsset<NormalVertex> red_gem_mesh = create_mesh<NormalVertex>(objects_path / "redgem.obj");
 	MeshAsset<NormalVertex> green_gem_mesh = create_mesh<NormalVertex>(objects_path / "greengem.obj");
@@ -422,27 +310,27 @@ Scene::Scene(GraphicsApi const & graphics_api, std::string const & title)
 	init_gem_transform(0, m_red_gem.m_model);
 	init_gem_transform(1, m_green_gem.m_model);
 	init_gem_transform(2, m_blue_gem.m_model);
-	m_render_objs.push_back(create_render_object(m_renderer, "red gem", red_gem_mesh, light_source_pipeline, m_red_gem));
-	m_render_objs.push_back(create_render_object(m_renderer, "green gem", green_gem_mesh, light_source_pipeline, m_green_gem));
-	m_render_objs.push_back(create_render_object(m_renderer, "blue gem", blue_gem_mesh, light_source_pipeline, m_blue_gem));
+	create_render_object("red gem", red_gem_mesh, light_source_pipeline, m_red_gem);
+	create_render_object("green gem", green_gem_mesh, light_source_pipeline, m_green_gem);
+	create_render_object("blue gem", blue_gem_mesh, light_source_pipeline, m_blue_gem);
 
 	MeshAsset<TextureVertex> ground_mesh = create_ground_mesh();
-	m_render_objs.push_back(create_render_object(m_renderer, "ground", ground_mesh, ground_pipeline, m_ground));
+	create_render_object("ground", ground_mesh, ground_pipeline, m_ground);
 
 	MeshAsset<PositionVertex> skybox_mesh = create_skybox_mesh();
-	m_render_objs.push_back(create_render_object(m_renderer, "skybox", skybox_mesh, skybox_pipeline));
+	create_render_object("skybox", skybox_mesh, skybox_pipeline);
 
 	MeshAsset<NormalVertex> tree_mesh = create_mesh<NormalVertex>(objects_path / "tree.obj");
 	m_tree.m_color = glm::vec3{ 0.0f, 0.5f, 0.0f };
 	m_tree.m_model = glm::scale(m_tree.m_model, glm::vec3(3.281, 3.281, 3.281)); // meters to feet
 	m_tree.m_model = glm::translate(m_tree.m_model, glm::vec3(3.0f, 5.0f, 0.0f));
-	m_render_objs.push_back(create_render_object(m_renderer, "tree", tree_mesh, light_source_pipeline, m_tree));
+	create_render_object("tree", tree_mesh, light_source_pipeline, m_tree);
 
 	std::vector<MeshAsset<ColorVertex>> tree_with_material_meshes = create_tree_with_material_meshes();
 	m_tree_with_material.m_model = glm::scale(m_tree_with_material.m_model, glm::vec3(3.281, 3.281, 3.281)); // meters to feet
 	m_tree_with_material.m_model = glm::translate(m_tree_with_material.m_model, glm::vec3(-3.0f, 5.0f, 0.0f));
 	for (auto const & mesh : tree_with_material_meshes)
-		m_render_objs.push_back(create_render_object(m_renderer, "tree_with_material", mesh, color_pipeline, m_tree_with_material));
+		create_render_object("tree_with_material", mesh, color_pipeline, m_tree_with_material);
 
 	m_fps_mesh = create_text_mesh("FPS: ", *m_arial_font, label_font_size, glm::vec2{ -0.9, -0.9 } /*origin*/,
 		0 /*viewport_width*/, 0 /*viewport_height*/);
@@ -451,7 +339,7 @@ Scene::Scene(GraphicsApi const & graphics_api, std::string const & title)
 		.m_bg_color = { 0.0f, 0.0f, 0.0f, 0.0f },
 		.m_text_color = { 1.0f, 1.0f, 0.0f, 1.0 },
 	};
-	m_render_objs.push_back(create_render_object(m_renderer, "fps label", *m_fps_mesh, text_pipeline, m_fps_label));
+	create_render_object("fps label", *m_fps_mesh, text_pipeline, m_fps_label);
 
 	m_title_mesh = create_text_mesh(m_title, *m_arial_font, title_font_size, glm::vec2{ -0.9, 0.8 } /*origin*/,
 		0 /*viewport_width*/, 0 /*viewport_height*/);
@@ -461,7 +349,7 @@ Scene::Scene(GraphicsApi const & graphics_api, std::string const & title)
 		.m_rainbow_width = 200.0f * m_dpi_scale,
 		.m_slant_factor = -1.0f
 	};
-	m_render_objs.push_back(create_render_object(m_renderer, "title", *m_title_mesh, rainbow_text_pipeline, m_title_label));
+	create_render_object("title", *m_title_mesh, rainbow_text_pipeline, m_title_label);
 
 	m_lights.SetAmbientLight(AmbientLight{ glm::vec3{ 0.3, 0.3, 0.3 } });
 
@@ -542,5 +430,10 @@ void Scene::Update(double delta_time, Input const & input)
 
 void Scene::Render() const
 {
-	m_renderer.Render();
+	std::expected<void, GraphicsError> result = m_renderer.Render();
+	if (!result.has_value())
+	{
+		std::cout << "Scene::Render: Failed to render scene. Error: "
+			<< result.error().GetMessage() << std::endl;
+	}
 }

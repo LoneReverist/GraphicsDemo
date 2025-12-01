@@ -5,6 +5,7 @@ module;
 #include <cstdint>
 #include <cstring>
 #include <expected>
+#include <string>
 #include <vector>
 
 #include <vulkan/vulkan.h>
@@ -72,7 +73,7 @@ std::expected<void, GraphicsError> create_buffer(
 		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
 	);
 	if (result != VK_SUCCESS)
-		return std::unexpected{ GraphicsError{ "Mesh::create_buffer: Failed to create staging buffer." } };
+		return std::unexpected{ GraphicsError{ "Mesh::create_buffer: Failed to create staging buffer. code: " + std::to_string(result) } };
 
 	void * data;
 	vkMapMemory(device, staging_buffer.GetMemory(), 0, buffer_size, 0, &data);
@@ -84,7 +85,7 @@ std::expected<void, GraphicsError> create_buffer(
 		VK_BUFFER_USAGE_TRANSFER_DST_BIT | buffer_usage,
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	if (result != VK_SUCCESS)
-		return std::unexpected{ GraphicsError{ "Mesh::create_buffer: Failed to create device local buffer." } };
+		return std::unexpected{ GraphicsError{ "Mesh::create_buffer: Failed to create device local buffer. code: " + std::to_string(result) }};
 
 	graphics_api.CopyBuffer(staging_buffer.Get(), out_buffer.Get(), buffer_size);
 

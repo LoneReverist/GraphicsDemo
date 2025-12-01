@@ -43,16 +43,21 @@ public:
 	void Render() const;
 
 private:
-	ColorPipeline create_color_pipeline();
-	TexturePipeline create_texture_pipeline(Texture const & texture);
-	SkyboxPipeline create_skybox_pipeline(Texture const & texture);
-	LightSourcePipeline create_light_source_pipeline();
-	ReflectionPipeline create_reflection_pipeline(Texture const & texture);
-	TextPipeline create_text_pipeline(FontAtlas const & font_atlas);
-	RainbowTextPipeline create_rainbow_text_pipeline(FontAtlas const & font_atlas);
-
-	template<IsVertex VertexT, typename... Args>
+	template <IsVertex VertexT, typename... Args>
 	MeshAsset<VertexT> create_mesh(Args &&... args);
+
+	template <typename PipelineT, typename... Args>
+	PipelineT create_pipeline(Args &&... args);
+
+	template <typename Mesh, typename Pipeline, typename ObjectData = std::nullopt_t>
+		requires MeshIsCompatibleWithPipeline<Mesh, Pipeline>
+			&& (ObjectDataIsCompatibleWithPipeline<ObjectData, Pipeline>
+			|| std::same_as<ObjectData, std::nullopt_t>)
+	void create_render_object(
+		std::string const & name,
+		Mesh const & mesh,
+		Pipeline const & pipeline,
+		ObjectData const & object_data = std::nullopt);
 
 	MeshAsset<PositionVertex> create_skybox_mesh();
 	MeshAsset<TextureVertex> create_ground_mesh();
@@ -105,12 +110,71 @@ private:
 template<IsVertex VertexT, typename... Args>
 MeshAsset<VertexT> Scene::create_mesh(Args &&... args)
 {
-	std::expected<Mesh, GraphicsError> mesh = MeshAsset<VertexT>::Create(m_graphics_api, std::forward<Args>(args)...);
-	if (!mesh.has_value())
+	std::expected<int, GraphicsError> mesh_id
+		= MeshAsset<VertexT>::Create(m_graphics_api, std::forward<Args>(args)...)
+		.and_then([&renderer = m_renderer](Mesh mesh)-> std::expected<int, GraphicsError>
+			{
+				return renderer.AddMesh(std::move(mesh));
+			});
+
+	if (!mesh_id.has_value())
 	{
-		std::cout << "Scene::create_mesh: Failed to create MeshAsset<" << typeid(VertexT).name() << "> Error: " << mesh.error().GetMessage() << std::endl;
+		std::cout << "Failed to create MeshAsset<" << typeid(VertexT).name()
+			<< "> Error: " << mesh_id.error().GetMessage() << std::endl;
 		return MeshAsset<VertexT>{};
 	}
-	AssetId asset_id{ m_renderer.AddMesh(std::move(mesh.value())) };
-	return MeshAsset<VertexT>{ asset_id };
+
+	return MeshAsset<VertexT>{ AssetId{ mesh_id.value() } };
+}
+
+template <typename PipelineT, typename... Args>
+PipelineT Scene::create_pipeline(Args &&... args)
+{
+	std::filesystem::path shaders_path = m_resources_path / "shaders";
+
+	std::expected<int, GraphicsError> pipeline_id
+		= PipelineT::CreateGraphicsPipeline(m_graphics_api, shaders_path, std::forward<Args>(args)...)
+		.and_then([&renderer = m_renderer](GraphicsPipeline pipeline)-> std::expected<int, GraphicsError>
+			{
+				return renderer.AddPipeline(std::move(pipeline));
+			});
+
+	if (!pipeline_id.has_value())
+	{
+		std::cout << "Failed to create " << typeid(PipelineT).name()
+			<< " Error: " << pipeline_id.error().GetMessage() << std::endl;
+		return PipelineT{};
+	}
+
+	return PipelineT{ AssetId{ pipeline_id.value() } };
+}
+
+template <typename Mesh, typename Pipeline>
+concept MeshIsCompatibleWithPipeline = std::same_as<typename Mesh::VertexT, typename Pipeline::VertexT>;
+
+template <typename ObjectData, typename Pipeline>
+concept ObjectDataIsCompatibleWithPipeline = std::same_as<ObjectData, typename Pipeline::ObjectData>;
+
+template <typename Mesh, typename Pipeline, typename ObjectData /*= std::nullopt_t*/>
+	requires MeshIsCompatibleWithPipeline<Mesh, Pipeline>
+		&& (ObjectDataIsCompatibleWithPipeline<ObjectData, Pipeline>
+		|| std::same_as<ObjectData, std::nullopt_t>)
+void Scene::create_render_object(
+	std::string const & name,
+	Mesh const & mesh,
+	Pipeline const & pipeline,
+	ObjectData const & object_data /*= std::nullopt*/)
+{
+	std::expected<std::shared_ptr<RenderObject>, GraphicsError> obj
+		= m_renderer.CreateRenderObject(name, mesh.GetAssetId().m_index, pipeline.GetAssetId().m_index);
+	if (!obj.has_value())
+	{
+		std::cout << "create_render_object: Failed to create obj. Error: " << obj.error().GetMessage();
+		return;
+	}
+
+	if constexpr (!std::same_as<ObjectData, std::nullopt_t>)
+		obj.value()->SetObjectData(&object_data);
+
+	m_render_objs.push_back(obj.value());
 }
