@@ -67,13 +67,13 @@ std::expected<void, GraphicsError> create_buffer(
 
 	VkDeviceSize buffer_size = sizeof(objects[0]) * objects.size();
 	Buffer staging_buffer(graphics_api);
-	VkResult result = staging_buffer.Create(
+	std::expected<void, GraphicsError> result = staging_buffer.Create(
 		buffer_size,
 		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
 	);
-	if (result != VK_SUCCESS)
-		return std::unexpected{ GraphicsError{ "Mesh::create_buffer: Failed to create staging buffer. code: " + std::to_string(result) } };
+	if (!result.has_value())
+		return std::unexpected{ result.error().AddToMessage(" Mesh::create_buffer: Failed to create staging buffer.") };
 
 	void * data;
 	vkMapMemory(device, staging_buffer.GetMemory(), 0, buffer_size, 0, &data);
@@ -84,8 +84,8 @@ std::expected<void, GraphicsError> create_buffer(
 		buffer_size,
 		VK_BUFFER_USAGE_TRANSFER_DST_BIT | buffer_usage,
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-	if (result != VK_SUCCESS)
-		return std::unexpected{ GraphicsError{ "Mesh::create_buffer: Failed to create device local buffer. code: " + std::to_string(result) }};
+	if (!result.has_value())
+		return std::unexpected{ result.error().AddToMessage(" Mesh::create_buffer: Failed to create device local buffer.") };
 
 	graphics_api.CopyBuffer(staging_buffer.Get(), out_buffer.Get(), buffer_size);
 

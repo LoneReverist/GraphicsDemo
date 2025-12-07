@@ -240,10 +240,12 @@ std::expected<void, GraphicsError> create_uniform_buffer(
 	VkDeviceSize buffer_size,
 	UniformBuffer & out_uniform_buffer)
 {
-	out_uniform_buffer.m_buffer.Create(
+	std::expected<void, GraphicsError> buffer_result = out_uniform_buffer.m_buffer.Create(
 		buffer_size,
 		VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	if (!buffer_result.has_value())
+		return std::unexpected{ buffer_result.error() };
 
 	VkResult result = vkMapMemory(
 		graphics_api.GetDevice(),

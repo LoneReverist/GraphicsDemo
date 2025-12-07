@@ -2,14 +2,16 @@
 
 module;
 
-#include <iostream>
 #include <cstdint>
+#include <expected>
+#include <string>
 
 #include <vulkan/vulkan.h>
 
 module Buffer;
 
 import GraphicsApi;
+import GraphicsError;
 
 Buffer::Buffer(GraphicsApi const & graphics_api)
 	: m_graphics_api(graphics_api)
@@ -39,7 +41,7 @@ Buffer & Buffer::operator=(Buffer && other) noexcept
 	return *this;
 }
 
-VkResult Buffer::Create(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties)
+std::expected<void, GraphicsError> Buffer::Create(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties)
 {
 	Destroy();
 
@@ -54,10 +56,7 @@ VkResult Buffer::Create(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPro
 
 	VkResult result = vkCreateBuffer(device, &buffer_info, nullptr, &m_buffer);
 	if (result != VK_SUCCESS)
-	{
-		std::cout << "Failed to create buffer" << std::endl;
-		return result;
-	}
+		return std::unexpected{ GraphicsError{ "vkCreateBuffer failed. code: " + std::to_string(result) } };
 
 	VkMemoryRequirements mem_requirements;
 	vkGetBufferMemoryRequirements(device, m_buffer, &mem_requirements);
@@ -72,13 +71,11 @@ VkResult Buffer::Create(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPro
 
 	result = vkAllocateMemory(device, &alloc_info, nullptr, &m_memory);
 	if (result != VK_SUCCESS)
-	{
-		std::cout << "Failed to allocate buffer memory" << std::endl;
-		return result;
-	}
+		return std::unexpected{ GraphicsError{ "vkAllocateMemory failed. code: " + std::to_string(result) } };
 
 	vkBindBufferMemory(device, m_buffer, m_memory, 0);
-	return VK_SUCCESS;
+
+	return {};
 }
 
 void Buffer::Destroy()

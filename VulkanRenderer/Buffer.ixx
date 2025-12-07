@@ -2,11 +2,14 @@
 
 module;
 
+#include <expected>
+
 #include <vulkan/vulkan.h>
 
 export module Buffer;
 
 import GraphicsApi;
+import GraphicsError;
 
 export class Buffer
 {
@@ -20,7 +23,7 @@ public:
 	Buffer(Buffer const &) = delete;
 	Buffer & operator=(Buffer const &) = delete;
 
-	VkResult Create(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
+	std::expected<void, GraphicsError> Create(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
 	void Destroy();
 
 	VkBuffer Get() const { return m_buffer; }

@@ -91,7 +91,7 @@ void Image::destroy()
 	m_image_memory = VK_NULL_HANDLE;
 }
 
-VkResult load_image_into_buffer(
+std::expected<void, GraphicsError> load_image_into_buffer(
 	GraphicsApi const & graphics_api,
 	ImageData const & image_data,
 	Buffer & out_buffer)
@@ -118,12 +118,12 @@ VkResult load_image_into_buffer(
 		buffer_size = pixel_count * 4;
 	}
 
-	VkResult result = out_buffer.Create(
+	std::expected<void, GraphicsError> result = out_buffer.Create(
 		buffer_size,
 		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-	if (result != VK_SUCCESS)
-		return result;
+	if (!result.has_value())
+		return std::unexpected{ result.error() };
 
 	VkDevice device = graphics_api.GetDevice();
 
@@ -132,7 +132,7 @@ VkResult load_image_into_buffer(
 	std::memcpy(buffer_data, data_ptr, buffer_size);
 	vkUnmapMemory(device, out_buffer.GetMemory());
 
-	return VK_SUCCESS;
+	return {};
 }
 
 std::expected<void, GraphicsError> Image::Create2dImage(ImageData const & image_data)
@@ -143,15 +143,15 @@ std::expected<void, GraphicsError> Image::Create2dImage(ImageData const & image_
 	VkDevice device = m_graphics_api.GetDevice();
 
 	Buffer staging_buffer{ m_graphics_api };
-	VkResult result = load_image_into_buffer(m_graphics_api, image_data, staging_buffer);
-	if (result != VK_SUCCESS)
-		return std::unexpected{ GraphicsError{ "Image::Create2dImage Failed to create staging buffer. code: " + std::to_string(result) } };
+	std::expected<void, GraphicsError> buffer_result = load_image_into_buffer(m_graphics_api, image_data, staging_buffer);
+	if (!buffer_result.has_value())
+		return std::unexpected{ buffer_result.error().AddToMessage(" Image::Create2dImage Failed to create staging buffer.") };
 
 	VkFormat format = to_vk_format(image_data.m_format);
 	if (format == VK_FORMAT_UNDEFINED)
 		return std::unexpected{ GraphicsError{ "Image::Create2dImage Unsupported pixel format: " + std::to_string(format) } };;
 
-	result = m_graphics_api.Create2dImage(
+	VkResult result = m_graphics_api.Create2dImage(
 		image_data.m_width,
 		image_data.m_height,
 		1 /*layers*/,
@@ -197,7 +197,7 @@ std::expected<void, GraphicsError> Image::Create2dImage(ImageData const & image_
 	return {};
 }
 
-VkResult load_cube_image_into_buffer(
+std::expected<void, GraphicsError> load_cube_image_into_buffer(
 	GraphicsApi const & graphics_api,
 	CubeImageData const & image_data,
 	Buffer & out_buffer)
@@ -205,12 +205,12 @@ VkResult load_cube_image_into_buffer(
 	std::uint64_t image_size = image_data.GetSize();
 	std::uint64_t buffer_size = image_size * image_data.m_data.size();
 
-	VkResult result = out_buffer.Create(
+	std::expected<void, GraphicsError> result = out_buffer.Create(
 		buffer_size,
 		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-	if (result != VK_SUCCESS)
-		return result;
+	if (!result.has_value())
+		return std::unexpected{ result.error() };
 
 	VkDevice device = graphics_api.GetDevice();
 
@@ -222,7 +222,8 @@ VkResult load_cube_image_into_buffer(
 		buffer_data = static_cast<std::uint8_t *>(buffer_data) + image_size;
 	}
 	vkUnmapMemory(device, out_buffer.GetMemory());
-	return VK_SUCCESS;
+
+	return {};
 }
 
 std::expected<void, GraphicsError> Image::CreateCubeImage(CubeImageData const & image_data)
@@ -233,15 +234,15 @@ std::expected<void, GraphicsError> Image::CreateCubeImage(CubeImageData const & 
 	VkDevice device = m_graphics_api.GetDevice();
 
 	Buffer staging_buffer{ m_graphics_api };
-	VkResult result = load_cube_image_into_buffer(m_graphics_api, image_data, staging_buffer);
-	if (result != VK_SUCCESS)
-		return std::unexpected{ GraphicsError{ "Image::CreateCubeImage Failed to create staging buffer. code: " + std::to_string(result) } };
+	std::expected<void, GraphicsError> buffer_result = load_cube_image_into_buffer(m_graphics_api, image_data, staging_buffer);
+	if (!buffer_result.has_value())
+		return std::unexpected{ buffer_result.error().AddToMessage(" Image::CreateCubeImage Failed to create staging buffer.") };
 
 	VkFormat format = to_vk_format(image_data.m_format);
 	if (format == VK_FORMAT_UNDEFINED)
 		return std::unexpected{ GraphicsError{ "Image::Create2dImage Unsupported pixel format: " + std::to_string(format) } };
 
-	result = m_graphics_api.Create2dImage(
+	VkResult result = m_graphics_api.Create2dImage(
 		image_data.m_width,
 		image_data.m_height,
 		6 /*layers*/,
