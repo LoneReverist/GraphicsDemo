@@ -4,7 +4,6 @@ module;
 
 #include <algorithm>
 #include <array>
-#include <filesystem>
 
 #include <glad/glad.h>
 
@@ -12,31 +11,39 @@ module Texture;
 
 GLenum to_gl_internal_format(PixelFormat format)
 {
-	if (format == PixelFormat::RGBA_UNORM)
+	switch (format)
+	{
+	case PixelFormat::RGBA_UNORM:
 		return GL_RGBA8;
-	if (format == PixelFormat::RGB_UNORM)
+	case PixelFormat::RGB_UNORM:
 		return GL_RGB8;
-	if (format == PixelFormat::RGBA_SRGB)
+	case PixelFormat::RGBA_SRGB:
 		return GL_SRGB8_ALPHA8;
-	if (format == PixelFormat::RGB_SRGB)
+	case PixelFormat::RGB_SRGB:
 		return GL_SRGB8;
-	throw std::runtime_error("to_gl_internal_format: Unexpected format");
-	return 0;
+	default:
+		return 0;
+	}
 }
 
 GLenum to_gl_format(PixelFormat format)
 {
-	if (format == PixelFormat::RGBA_UNORM || format == PixelFormat::RGBA_SRGB)
+	switch (format)
+	{
+	case PixelFormat::RGBA_UNORM:
+	case PixelFormat::RGBA_SRGB:
 		return GL_RGBA;
-	if (format == PixelFormat::RGB_UNORM || format == PixelFormat::RGB_SRGB)
+	case PixelFormat::RGB_UNORM:
+	case PixelFormat::RGB_SRGB:
 		return GL_RGB;
-	throw std::runtime_error("to_gl_format: Unexpected format");
-	return 0;
+	default:
+		return 0;
+	}
 }
 
 bool ImageData::IsValid() const
 {
-	return m_data != nullptr && m_width > 0 && m_height > 0;
+	return GetSize() > 0 && m_data != nullptr;
 }
 
 std::uint64_t ImageData::GetSize() const
@@ -46,7 +53,8 @@ std::uint64_t ImageData::GetSize() const
 
 bool CubeImageData::IsValid() const
 {
-	return std::ranges::all_of(m_data, [](std::uint8_t  const * data) { return data != nullptr; }) && m_width > 0 && m_height > 0;
+	return GetSize() > 0
+		&& std::ranges::all_of(m_data, [](std::uint8_t  const * data) { return data != nullptr; });
 }
 
 std::uint64_t CubeImageData::GetSize() const
@@ -82,11 +90,15 @@ void Image::Create()
 	glGenTextures(1, &m_id);
 }
 
-Texture::Texture(GraphicsApi const & graphics_api, ImageData const & image_data, bool use_mip_map /*= true*/)
+Texture::Texture(GraphicsApi const & graphics_api)
 	: m_graphics_api(graphics_api)
 {
+}
+
+std::expected<void, GraphicsError> Texture::Create(ImageData const & image_data, bool use_mip_map /*= true*/)
+{
 	if (!image_data.IsValid())
-		throw std::runtime_error("Texture() image_data not valid");
+		return std::unexpected{ GraphicsError{ "Texture() image_data not valid" } };
 
 	m_type = GL_TEXTURE_2D;
 	m_image.Create();
@@ -99,6 +111,9 @@ Texture::Texture(GraphicsApi const & graphics_api, ImageData const & image_data,
 
 	GLenum internal_format = to_gl_internal_format(image_data.m_format);
 	GLenum format = to_gl_format(image_data.m_format);
+	if (internal_format == 0 || format == 0)
+		return std::unexpected{ GraphicsError{ "Texture() Unsupported pixel format" } };
+
 	glTexImage2D(
 		m_type,
 		0 /*level*/,
@@ -112,13 +127,14 @@ Texture::Texture(GraphicsApi const & graphics_api, ImageData const & image_data,
 
 	if (use_mip_map)
 		glGenerateMipmap(m_type);
+
+	return {};
 }
 
-Texture::Texture(GraphicsApi const & graphics_api, CubeImageData const & image_data)
-	: m_graphics_api(graphics_api)
+std::expected<void, GraphicsError> Texture::Create(CubeImageData const & image_data)
 {
 	if (!image_data.IsValid())
-		throw std::runtime_error("Texture() image_data not valid");
+		return std::unexpected{ GraphicsError{ "Texture() image_data not valid" } };
 
 	m_type = GL_TEXTURE_CUBE_MAP;
 	m_image.Create();
@@ -132,6 +148,9 @@ Texture::Texture(GraphicsApi const & graphics_api, CubeImageData const & image_d
 
 	GLenum internal_format = to_gl_internal_format(image_data.m_format);
 	GLenum format = to_gl_format(image_data.m_format);
+	if (internal_format == 0 || format == 0)
+		return std::unexpected{ GraphicsError{ "Texture() Unsupported pixel format" } };
+
 	for (unsigned int i = 0; i < image_data.m_data.size(); i++)
 	{
 		glTexImage2D(
@@ -145,6 +164,8 @@ Texture::Texture(GraphicsApi const & graphics_api, CubeImageData const & image_d
 			GL_UNSIGNED_BYTE,
 			image_data.m_data[i]);
 	}
+
+	return {};
 }
 
 bool Texture::IsValid() const
@@ -154,6 +175,9 @@ bool Texture::IsValid() const
 
 void Texture::Bind(unsigned int binding) const
 {
+	if (!IsValid())
+		return;
+
 	glActiveTexture(GL_TEXTURE0 + binding);
 	glBindTexture(m_type, m_image.GetId());
 }

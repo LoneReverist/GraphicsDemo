@@ -27,29 +27,36 @@ std::unique_ptr<Texture> create_texture(
 	GraphicsApi const & graphics_api,
 	std::filesystem::path const & filepath)
 {
+	auto texture = std::make_unique<Texture>(graphics_api);
+
 	PixelFormat format = PixelFormat::RGBA_SRGB;
 
 	StbImage image(filepath, GetPixelSize(format) /*STBI_rgb_alpha*/);
 	if (!image.IsValid())
 	{
 		std::cout << "Failed to load image: " << filepath << std::endl;
-		return nullptr;
+		return texture;
 	}
 
-	return std::make_unique<Texture>(
-		graphics_api,
+	std::expected<void, GraphicsError> result = texture->Create(
 		ImageData{
 			.m_data = image.GetData(),
 			.m_format = format,
 			.m_width = static_cast<std::uint32_t>(image.GetWidth()),
 			.m_height = static_cast<std::uint32_t>(image.GetHeight())
 		});
+	if (!result.has_value())
+		std::cout << "Failed to create texture from image: " << filepath << std::endl;
+
+	return texture;
 }
 
 std::unique_ptr<Texture> create_cubemap_texture(
 	GraphicsApi const & graphics_api,
 	std::array<std::filesystem::path, 6> const & filepaths)
 {
+	auto texture = std::make_unique<Texture>(graphics_api);
+
 	PixelFormat format = PixelFormat::RGBA_SRGB;
 
 	int width = 0, height = 0;
@@ -60,7 +67,7 @@ std::unique_ptr<Texture> create_cubemap_texture(
 		if (!images[i].IsValid())
 		{
 			std::cout << "Failed to load cubemap image: " << filepaths[i] << std::endl;
-			return nullptr;
+			return texture;
 		}
 
 		if (i == 0)
@@ -71,7 +78,7 @@ std::unique_ptr<Texture> create_cubemap_texture(
 		else if (images[i].GetWidth() != width || images[i].GetHeight() != height)
 		{
 			std::cout << "Cubemap images must have the same dimensions." << std::endl;
-			return nullptr;
+			return texture;
 		}
 	}
 
@@ -79,14 +86,17 @@ std::unique_ptr<Texture> create_cubemap_texture(
 	std::ranges::transform(images, data.begin(),
 		[](StbImage const & img) { return img.GetData(); });
 
-	return std::make_unique<Texture>(
-		graphics_api,
+	std::expected<void, GraphicsError> result = texture->Create(
 		CubeImageData{
 			.m_data = data,
 			.m_format = format,
 			.m_width = static_cast<std::uint32_t>(width),
 			.m_height = static_cast<std::uint32_t>(height)
 		});
+	if (!result.has_value())
+		std::cout << "Failed to create cubemap texture." << std::endl;
+
+	return texture;
 }
 
 MeshAsset<PositionVertex> Scene::create_skybox_mesh()

@@ -6,8 +6,7 @@ module;
 #include <array>
 #include <cstdint>
 #include <cstring>
-#include <filesystem>
-#include <iostream>
+#include <expected>
 #include <vector>
 
 #include <vulkan/vulkan.h>
@@ -15,24 +14,28 @@ module;
 module Texture;
 
 import Buffer;
+import GraphicsError;
 
 VkFormat to_vk_format(PixelFormat format)
 {
-	if (format == PixelFormat::RGBA_UNORM)
+	switch (format)
+	{
+	case PixelFormat::RGBA_UNORM:
 		return VK_FORMAT_R8G8B8A8_UNORM;
-	if (format == PixelFormat::RGB_UNORM)
-		return VK_FORMAT_R8G8B8A8_UNORM; //VK_FORMAT_R8G8B8_UNORM; getting a crash with this one, not well supported by drivers?
-	if (format == PixelFormat::RGBA_SRGB)
+	case PixelFormat::RGB_UNORM:
+		return VK_FORMAT_R8G8B8A8_UNORM; //VK_FORMAT_R8G8B8_UNORM;
+	case PixelFormat::RGBA_SRGB:
 		return VK_FORMAT_R8G8B8A8_SRGB;
-	if (format == PixelFormat::RGB_SRGB)
+	case PixelFormat::RGB_SRGB:
 		return VK_FORMAT_R8G8B8_SRGB;
-	throw std::runtime_error("to_vk_format: Unexpected format");
-	return VK_FORMAT_UNDEFINED;
+	default:
+		return VK_FORMAT_UNDEFINED;
+	}
 }
 
 bool ImageData::IsValid() const
 {
-	return m_data != nullptr && m_width > 0 && m_height > 0;
+	return GetSize() > 0 && m_data != nullptr;
 }
 
 std::uint64_t ImageData::GetSize() const
@@ -42,7 +45,8 @@ std::uint64_t ImageData::GetSize() const
 
 bool CubeImageData::IsValid() const
 {
-	return std::ranges::all_of(m_data, [](std::uint8_t  const * data) { return data != nullptr; }) && m_width > 0 && m_height > 0;
+	return GetSize() > 0
+		&& std::ranges::all_of(m_data, [](std::uint8_t  const * data) { return data != nullptr; });
 }
 
 std::uint64_t CubeImageData::GetSize() const
@@ -127,22 +131,24 @@ VkResult load_image_into_buffer(
 	std::memcpy(buffer_data, data_ptr, buffer_size);
 	vkUnmapMemory(device, out_buffer.GetMemory());
 
-	return VK_SUCCESS; // image goes out of scope and frees memory
+	return VK_SUCCESS;
 }
 
-VkResult Image::Create2dImage(ImageData const & image_data)
+std::expected<void, GraphicsError> Image::Create2dImage(ImageData const & image_data)
 {
 	if (!image_data.IsValid())
-		throw std::runtime_error("Image::Create2dImage image_data not valid");
+		return std::unexpected{ GraphicsError{ "Image::Create2dImage image_data not valid" } };
 
 	VkDevice device = m_graphics_api.GetDevice();
 
 	Buffer staging_buffer{ m_graphics_api };
 	VkResult result = load_image_into_buffer(m_graphics_api, image_data, staging_buffer);
 	if (result != VK_SUCCESS)
-		throw std::runtime_error("Image::Create2dImage Failed to create staging buffer");
+		return std::unexpected{ GraphicsError{ "Image::Create2dImage Failed to create staging buffer" } };
 
 	VkFormat format = to_vk_format(image_data.m_format);
+	if (format == VK_FORMAT_UNDEFINED)
+		return std::unexpected{ GraphicsError{ "Image::Create2dImage Unsupported pixel format" } };;
 
 	result = m_graphics_api.Create2dImage(
 		image_data.m_width,
@@ -156,7 +162,7 @@ VkResult Image::Create2dImage(ImageData const & image_data)
 		m_image,
 		m_image_memory);
 	if (result != VK_SUCCESS)
-		throw std::runtime_error("Image::Create2dImage Failed to create image");
+		return std::unexpected{ GraphicsError{ "Image::Create2dImage Failed to create image" } };
 
 	m_graphics_api.TransitionImageLayout(
 		m_image,
@@ -185,9 +191,9 @@ VkResult Image::Create2dImage(ImageData const & image_data)
 		1 /*layers*/,
 		m_image_view);
 	if (result != VK_SUCCESS)
-		throw std::runtime_error("Image::Create2dImage Failed to create vulkan image view for texture");
+		return std::unexpected{ GraphicsError{ "Image::Create2dImage Failed to create vulkan image view for texture" } };
 
-	return result;
+	return {};
 }
 
 VkResult load_cube_image_into_buffer(
@@ -218,19 +224,21 @@ VkResult load_cube_image_into_buffer(
 	return VK_SUCCESS;
 }
 
-VkResult Image::CreateCubeImage(CubeImageData const & image_data)
+std::expected<void, GraphicsError> Image::CreateCubeImage(CubeImageData const & image_data)
 {
 	if (!image_data.IsValid())
-		throw std::runtime_error("Image::CreateCubeImage image_data not valid");
+		return std::unexpected{ GraphicsError{ "Image::CreateCubeImage image_data not valid" } };
 
 	VkDevice device = m_graphics_api.GetDevice();
 
 	Buffer staging_buffer{ m_graphics_api };
 	VkResult result = load_cube_image_into_buffer(m_graphics_api, image_data, staging_buffer);
 	if (result != VK_SUCCESS)
-		throw std::runtime_error("Image::CreateCubeImage Failed to create staging buffer");
+		return std::unexpected{ GraphicsError{ "Image::CreateCubeImage Failed to create staging buffer" } };
 
 	VkFormat format = to_vk_format(image_data.m_format);
+	if (format == VK_FORMAT_UNDEFINED)
+		return std::unexpected{ GraphicsError{ "Image::Create2dImage Unsupported pixel format" } };
 
 	result = m_graphics_api.Create2dImage(
 		image_data.m_width,
@@ -244,7 +252,7 @@ VkResult Image::CreateCubeImage(CubeImageData const & image_data)
 		m_image,
 		m_image_memory);
 	if (result != VK_SUCCESS)
-		throw std::runtime_error("Image::CreateCubeImage Failed to create cubemap");
+		return std::unexpected{ GraphicsError{ "Image::CreateCubeImage Failed to create cubemap" } };
 
 	m_graphics_api.TransitionImageLayout(
 		m_image,
@@ -275,9 +283,9 @@ VkResult Image::CreateCubeImage(CubeImageData const & image_data)
 		6 /*layers*/,
 		m_image_view);
 	if (result != VK_SUCCESS)
-		throw std::runtime_error("Image::CreateCubeImage Failed to create vulkan image view for texture");
+		return std::unexpected{ GraphicsError{ "Image::CreateCubeImage Failed to create vulkan image view for texture" } };
 
-	return result;
+	return {};
 }
 
 Sampler::~Sampler()
@@ -310,7 +318,7 @@ void Sampler::destroy()
 	m_sampler = VK_NULL_HANDLE;
 }
 
-VkResult Sampler::Create()
+std::expected<void, GraphicsError> Sampler::Create()
 {
 	VkPhysicalDeviceProperties const & props = m_graphics_api.GetPhysicalDeviceInfo().properties;
 
@@ -335,38 +343,42 @@ VkResult Sampler::Create()
 
 	VkResult result = vkCreateSampler(m_graphics_api.GetDevice(), &sampler_info, nullptr, &m_sampler);
 	if (result != VK_SUCCESS)
-		std::cout << "Failed to create vulkan sampler for texture" << std::endl;
+		return std::unexpected{ GraphicsError{ "Failed to create vulkan sampler for texture" } };
 
-	return result;
+	return {};
 }
 
-// not using mip maps for now
-Texture::Texture(GraphicsApi const & graphics_api, ImageData const & image_data, bool /*use_mip_map*/ /*= true*/)
+Texture::Texture(GraphicsApi const & graphics_api)
 	: m_graphics_api(graphics_api)
 	, m_image(graphics_api)
 	, m_sampler(graphics_api)
 {
-	VkResult result = m_image.Create2dImage(image_data);
-	if (result != VK_SUCCESS)
-		throw std::runtime_error("Failed to create vulkan image for texture");
-
-	result = m_sampler.Create();
-	if (result != VK_SUCCESS)
-		throw std::runtime_error("Failed to create vulkan sampler for texture");
 }
 
-Texture::Texture(GraphicsApi const & graphics_api, CubeImageData const & image_data)
-	: m_graphics_api(graphics_api)
-	, m_image(graphics_api)
-	, m_sampler(graphics_api)
+std::expected<void, GraphicsError> Texture::Create(ImageData const & image_data, bool use_mip_map /*= true*/)
 {
-	VkResult result = m_image.CreateCubeImage(image_data);
-	if (result != VK_SUCCESS)
-		throw std::runtime_error("Failed to create vulkan cube image for texture");
+	std::expected<void, GraphicsError> image_result = m_image.Create2dImage(image_data);
+	if (!image_result.has_value())
+		return image_result;
 
-	result = m_sampler.Create();
-	if (result != VK_SUCCESS)
-		throw std::runtime_error("Failed to create vulkan sampler for texture");
+	std::expected<void, GraphicsError> sampler_result = m_sampler.Create();
+	if (!sampler_result.has_value())
+		return sampler_result;
+
+	return {};
+}
+
+std::expected<void, GraphicsError> Texture::Create(CubeImageData const & image_data)
+{
+	std::expected<void, GraphicsError> image_result = m_image.CreateCubeImage(image_data);
+	if (!image_result.has_value())
+		return image_result;
+
+	std::expected<void, GraphicsError> sampler_result = m_sampler.Create();
+	if (!sampler_result.has_value())
+		return sampler_result;
+
+	return {};
 }
 
 bool Texture::IsValid() const

@@ -178,7 +178,7 @@ std::array<VkDescriptorSet, count> create_descriptor_sets(
 				});
 		}
 
-		if (texture != nullptr)
+		if (texture != nullptr && texture->IsValid())
 		{
 			image_infos.emplace_back(VkDescriptorImageInfo{
 				.sampler = texture->GetSampler(),
@@ -206,7 +206,7 @@ std::array<VkDescriptorSet, count> create_descriptor_sets(
 				});
 		}
 	}
-	if (texture != nullptr)
+	if (texture != nullptr && texture->IsValid())
 	{
 		for (size_t frame = 0; frame < count; ++frame)
 		{
@@ -258,11 +258,12 @@ void DescriptorSets::Create(
 	Texture const * texture)
 {
 	VkDevice device = m_graphics_api.GetDevice();
+	bool has_texture = texture != nullptr && texture->IsValid();
 
 	m_descriptor_set_layout = create_descriptor_set_layout(device,
 		static_cast<std::uint32_t>(vs_uniform_sizes.size()),
 		static_cast<std::uint32_t>(fs_uniform_sizes.size()),
-		texture != nullptr);
+		has_texture);
 
 	std::vector<VkDeviceSize> uniform_sizes{ vs_uniform_sizes };
 	uniform_sizes.insert(uniform_sizes.end(), fs_uniform_sizes.begin(), fs_uniform_sizes.end());
@@ -270,7 +271,7 @@ void DescriptorSets::Create(
 	m_descriptor_pool = create_descriptor_pool(device,
 		static_cast<std::uint32_t>(uniform_sizes.size()) /*descriptor_count*/,
 		GraphicsApi::m_max_frames_in_flight /*descriptor_set_count*/,
-		texture != nullptr);
+		has_texture);
 
 	std::array<std::vector<VkBuffer>, GraphicsApi::m_max_frames_in_flight> uniform_buffers;
 	for (size_t frame = 0; frame < GraphicsApi::m_max_frames_in_flight; ++frame)

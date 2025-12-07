@@ -65,14 +65,17 @@ private:
 		m_width = static_cast<std::uint32_t>(image.GetWidth());
 		m_height = static_cast<std::uint32_t>(image.GetHeight());
 
-		m_texture = std::make_unique<Texture>(
-			graphics_api,
+		m_texture = std::make_unique<Texture>(graphics_api);
+		std::expected<void, GraphicsError> result = m_texture->Create(
 			ImageData{
 				.m_data = image.GetData(),
 				.m_format = format,
 				.m_width = m_width,
 				.m_height = m_height
-			}, false /*use_mip_map*/);
+			},
+			false /*use_mip_map*/);
+		if (!result.has_value())
+			throw std::runtime_error("Failed to create texture for font atlas: " + result.error().GetMessage());
 	}
 
 	void init_glyphs(std::filesystem::path const & json_path)
