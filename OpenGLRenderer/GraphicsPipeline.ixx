@@ -2,6 +2,7 @@
 
 module;
 
+#include <expected>
 #include <filesystem>
 #include <functional>
 #include <iostream>
@@ -12,6 +13,7 @@ module;
 export module GraphicsPipeline;
 
 import Buffer;
+import GraphicsError;
 import RenderObject;
 import Texture;
 
@@ -105,16 +107,6 @@ public:
 	using PerObjectConstantsCallback = std::function<void(GraphicsPipeline const & pipeline, RenderObject const &)>;
 
 	explicit GraphicsPipeline(
-		unsigned int vert_shader_id,
-		unsigned int frag_shader_id,
-		size_t vs_object_uniform_size,
-		size_t fs_object_uniform_size,
-		std::vector<size_t> vs_uniform_sizes,
-		std::vector<size_t> fs_uniform_sizes,
-		Texture const * texture,
-		DepthTestOptions const & depth_options,
-		BlendOptions const & blend_options,
-		CullMode cull_mode,
 		PerFrameConstantsCallback per_frame_constants_callback,
 		PerObjectConstantsCallback per_object_constants_callback);
 	~GraphicsPipeline() = default;
@@ -124,6 +116,18 @@ public:
 
 	GraphicsPipeline(GraphicsPipeline const &) = delete;
 	GraphicsPipeline & operator=(GraphicsPipeline const &) = delete;
+
+	std::expected<void, GraphicsError> Create(
+		unsigned int vert_shader_id,
+		unsigned int frag_shader_id,
+		size_t vs_object_uniform_size,
+		size_t fs_object_uniform_size,
+		std::vector<size_t> vs_uniform_sizes,
+		std::vector<size_t> fs_uniform_sizes,
+		Texture const * texture,
+		DepthTestOptions const & depth_options,
+		BlendOptions const & blend_options,
+		CullMode cull_mode);
 
 	bool IsValid() const { return m_program.GetId() != 0; }
 

@@ -2,6 +2,7 @@
 
 module;
 
+#include <expected>
 #include <fstream>
 #include <iostream>
 #include <vector>
@@ -9,6 +10,8 @@ module;
 #include <glad/glad.h>
 
 module GraphicsPipeline;
+
+import GraphicsError;
 
 Program::~Program()
 {
@@ -41,6 +44,14 @@ void Program::Create()
 }
 
 GraphicsPipeline::GraphicsPipeline(
+	PerFrameConstantsCallback per_frame_constants_callback,
+	PerObjectConstantsCallback per_object_constants_callback)
+	: m_per_frame_constants_callback(per_frame_constants_callback)
+	, m_per_object_constants_callback(per_object_constants_callback)
+{
+}
+
+std::expected<void, GraphicsError> GraphicsPipeline::Create(
 	unsigned int vert_shader_id,
 	unsigned int frag_shader_id,
 	size_t vs_object_uniform_size,
@@ -50,16 +61,13 @@ GraphicsPipeline::GraphicsPipeline(
 	Texture const * texture,
 	DepthTestOptions const & depth_options,
 	BlendOptions const & blend_options,
-	CullMode cull_mode,
-	PerFrameConstantsCallback per_frame_constants_callback,
-	PerObjectConstantsCallback per_object_constants_callback)
-	: m_texture(texture)
-	, m_depth_test_options(depth_options)
-	, m_blend_options(blend_options)
-	, m_cull_mode(cull_mode)
-	, m_per_frame_constants_callback(per_frame_constants_callback)
-	, m_per_object_constants_callback(per_object_constants_callback)
+	CullMode cull_mode)
 {
+	m_texture = texture;
+	m_depth_test_options = depth_options;
+	m_blend_options = blend_options;
+	m_cull_mode = cull_mode;
+
 	m_program.Create();
 	glAttachShader(m_program.GetId(), vert_shader_id);
 	glAttachShader(m_program.GetId(), frag_shader_id);
@@ -71,7 +79,7 @@ GraphicsPipeline::GraphicsPipeline(
 	{
 		char info_log[512];
 		glGetProgramInfoLog(m_program.GetId(), 512, nullptr, info_log);
-		std::cout << "Failed to link shader program:\n" << info_log << std::endl;
+		return std::unexpected{ GraphicsError{ "Failed to link shader program. Info: " + std::string(info_log) } };
 	}
 
 	if (vs_object_uniform_size > 0)
@@ -104,15 +112,14 @@ GraphicsPipeline::GraphicsPipeline(
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 	m_texture_binding = uniform_sizes.size();
+
+	return {};
 }
 
 void GraphicsPipeline::Activate() const
 {
 	if (m_program.GetId() == 0)
-	{
-		std::cout << "Activating invalid shader program" << std::endl;
 		return;
-	}
 
 	if (m_depth_test_options.m_enable_depth_test)
 	{

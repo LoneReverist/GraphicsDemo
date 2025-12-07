@@ -95,7 +95,12 @@ std::expected<GraphicsPipeline, GraphicsError> PipelineBuilder::CreatePipeline()
 	if (!m_cull_mode.has_value())
 		return std::unexpected{ GraphicsError{ "Cull mode not set" } };
 
-	return GraphicsPipeline{
+	GraphicsPipeline pipeline{
+		m_per_frame_constants_callback,
+		m_per_object_constants_callback
+	};
+
+	std::expected<void, GraphicsError> result = pipeline.Create(
 		m_vert_shader_id,
 		m_frag_shader_id,
 		m_vs_object_uniform_size,
@@ -105,8 +110,9 @@ std::expected<GraphicsPipeline, GraphicsError> PipelineBuilder::CreatePipeline()
 		m_texture,
 		m_depth_test_options,
 		m_blend_options,
-		m_cull_mode.value(),
-		m_per_frame_constants_callback,
-		m_per_object_constants_callback
-	};
+		m_cull_mode.value());
+	if (!result.has_value())
+		return std::unexpected{ result.error() };
+
+	return pipeline;
 }

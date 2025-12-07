@@ -5,6 +5,7 @@ module;
 #include <array>
 #include <cstdint>
 #include <cstring>
+#include <expected>
 #include <functional>
 #include <optional>
 
@@ -14,6 +15,7 @@ export module GraphicsPipeline;
 
 import Buffer;
 import GraphicsApi;
+import GraphicsError;
 import RenderObject;
 import Texture;
 
@@ -41,7 +43,7 @@ public:
 	DescriptorSets(DescriptorSets &) = delete;
 	DescriptorSets & operator=(DescriptorSets &) = delete;
 
-	void Create(
+	std::expected<void, GraphicsError> Create(
 		std::vector<VkDeviceSize> const & vs_uniform_sizes,
 		std::vector<VkDeviceSize> const & fs_uniform_sizes,
 		Texture const * texture);
@@ -176,6 +178,17 @@ public:
 
 	explicit GraphicsPipeline(
 		GraphicsApi const & graphics_api,
+		PerFrameConstantsCallback per_frame_constants_callback,
+		PerObjectConstantsCallback per_object_constants_callback);
+	~GraphicsPipeline() = default;
+
+	GraphicsPipeline(GraphicsPipeline && other) = default;
+	GraphicsPipeline & operator=(GraphicsPipeline && other) = default;
+
+	GraphicsPipeline(GraphicsPipeline &) = delete;
+	GraphicsPipeline & operator=(GraphicsPipeline &) = delete;
+
+	std::expected<void, GraphicsError> Create(
 		VkShaderModule vert_shader_module,
 		VkShaderModule frag_shader_module,
 		VkVertexInputBindingDescription const & binding_desc,
@@ -186,16 +199,7 @@ public:
 		Texture const * texture,
 		DepthTestOptions const & depth_options,
 		BlendOptions const & blend_options,
-		CullMode cull_mode,
-		PerFrameConstantsCallback per_frame_constants_callback,
-		PerObjectConstantsCallback per_object_constants_callback);
-	~GraphicsPipeline() = default;
-
-	GraphicsPipeline(GraphicsPipeline && other) = default;
-	GraphicsPipeline & operator=(GraphicsPipeline && other) = default;
-
-	GraphicsPipeline(GraphicsPipeline &) = delete;
-	GraphicsPipeline & operator=(GraphicsPipeline &) = delete;
+		CullMode cull_mode);
 
 	bool IsValid() const { return m_pipeline.Get() != VK_NULL_HANDLE; }
 

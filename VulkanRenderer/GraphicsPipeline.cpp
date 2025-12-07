@@ -3,7 +3,8 @@
 module;
 
 #include <cstdint>
-#include <iostream>
+#include <expected>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -12,6 +13,7 @@ module;
 module GraphicsPipeline;
 
 import GraphicsApi;
+import GraphicsError;
 
 DescriptorSets::DescriptorSets(GraphicsApi const & graphics_api)
 	: m_graphics_api(graphics_api)
@@ -45,7 +47,7 @@ DescriptorSets & DescriptorSets::operator=(DescriptorSets && other)
 	return *this;
 }
 
-VkDescriptorSetLayout create_descriptor_set_layout(
+std::expected<VkDescriptorSetLayout, GraphicsError> create_descriptor_set_layout(
 	VkDevice device,
 	std::uint32_t vs_descriptor_set_count,
 	std::uint32_t fs_descriptor_set_count,
@@ -98,12 +100,12 @@ VkDescriptorSetLayout create_descriptor_set_layout(
 	VkDescriptorSetLayout descriptor_set_layout = VK_NULL_HANDLE;
 	VkResult result = vkCreateDescriptorSetLayout(device, &layout_info, nullptr, &descriptor_set_layout);
 	if (result != VK_SUCCESS)
-		std::cout << "Failed to create ubo descriptor set layout";
+		return std::unexpected{ GraphicsError{ "vkCreateDescriptorSetLayout failed. code: " + std::to_string(result) } };
 
 	return descriptor_set_layout;
 }
 
-VkDescriptorPool create_descriptor_pool(VkDevice device,
+std::expected<VkDescriptorPool, GraphicsError> create_descriptor_pool(VkDevice device,
 	std::uint32_t uniform_count, std::uint32_t descriptor_set_count, bool has_texture)
 {
 	std::vector<VkDescriptorPoolSize> pool_sizes;
@@ -136,13 +138,13 @@ VkDescriptorPool create_descriptor_pool(VkDevice device,
 	VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;
 	VkResult result = vkCreateDescriptorPool(device, &pool_info, nullptr, &descriptor_pool);
 	if (result != VK_SUCCESS)
-		throw std::runtime_error("failed to create descriptor pool!");
+		return std::unexpected{ GraphicsError{ "vkCreateDescriptorPool failed. code: " + std::to_string(result) } };
 
 	return descriptor_pool;
 }
 
 template <std::uint32_t count>
-std::array<VkDescriptorSet, count> create_descriptor_sets(
+std::expected<std::array<VkDescriptorSet, count>, GraphicsError> create_descriptor_sets(
 	VkDevice device,
 	VkDescriptorSetLayout layout,
 	VkDescriptorPool pool,
@@ -163,7 +165,7 @@ std::array<VkDescriptorSet, count> create_descriptor_sets(
 	std::array<VkDescriptorSet, count> descriptor_sets;
 	VkResult result = vkAllocateDescriptorSets(device, &alloc_info, descriptor_sets.data());
 	if (result != VK_SUCCESS)
-		throw std::runtime_error("failed to allocate descriptor sets!");
+		return std::unexpected{ GraphicsError{ "vkAllocateDescriptorSets failed. code: " + std::to_string(result) } };
 
 	std::vector<VkDescriptorBufferInfo> buffer_infos;
 	std::vector<VkDescriptorImageInfo> image_infos;
@@ -233,7 +235,7 @@ std::array<VkDescriptorSet, count> create_descriptor_sets(
 	return descriptor_sets;
 }
 
-void create_uniform_buffer(
+std::expected<void, GraphicsError> create_uniform_buffer(
 	GraphicsApi const & graphics_api,
 	VkDeviceSize buffer_size,
 	UniformBuffer & out_uniform_buffer)
@@ -243,16 +245,20 @@ void create_uniform_buffer(
 		VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-	vkMapMemory(
+	VkResult result = vkMapMemory(
 		graphics_api.GetDevice(),
 		out_uniform_buffer.m_buffer.GetMemory(),
 		0 /*offset*/,
 		buffer_size,
 		0 /*flags*/,
 		&out_uniform_buffer.m_mapping);
+	if (result != VK_SUCCESS)
+		return std::unexpected{ GraphicsError{ "vkMapMemory failed. code: " + std::to_string(result) } };
+
+	return {};
 }
 
-void DescriptorSets::Create(
+std::expected<void, GraphicsError> DescriptorSets::Create(
 	std::vector<VkDeviceSize> const & vs_uniform_sizes,
 	std::vector<VkDeviceSize> const & fs_uniform_sizes,
 	Texture const * texture)
@@ -260,18 +266,26 @@ void DescriptorSets::Create(
 	VkDevice device = m_graphics_api.GetDevice();
 	bool has_texture = texture != nullptr && texture->IsValid();
 
-	m_descriptor_set_layout = create_descriptor_set_layout(device,
+	auto layout_result = create_descriptor_set_layout(device,
 		static_cast<std::uint32_t>(vs_uniform_sizes.size()),
 		static_cast<std::uint32_t>(fs_uniform_sizes.size()),
 		has_texture);
+	if (!layout_result.has_value())
+		return std::unexpected{ layout_result.error() };
+
+	m_descriptor_set_layout = layout_result.value();
 
 	std::vector<VkDeviceSize> uniform_sizes{ vs_uniform_sizes };
 	uniform_sizes.insert(uniform_sizes.end(), fs_uniform_sizes.begin(), fs_uniform_sizes.end());
 
-	m_descriptor_pool = create_descriptor_pool(device,
+	auto pool_result = create_descriptor_pool(device,
 		static_cast<std::uint32_t>(uniform_sizes.size()) /*descriptor_count*/,
 		GraphicsApi::m_max_frames_in_flight /*descriptor_set_count*/,
 		has_texture);
+	if (!pool_result.has_value())
+		return std::unexpected{ pool_result.error() };
+
+	m_descriptor_pool = pool_result.value();
 
 	std::array<std::vector<VkBuffer>, GraphicsApi::m_max_frames_in_flight> uniform_buffers;
 	for (size_t frame = 0; frame < GraphicsApi::m_max_frames_in_flight; ++frame)
@@ -280,17 +294,26 @@ void DescriptorSets::Create(
 		for (int binding = 0; binding < uniform_sizes.size(); ++binding)
 		{
 			UniformBuffer & uniform = m_descriptor_sets[frame].m_uniform_buffers.emplace_back(Buffer{ m_graphics_api });
-			create_uniform_buffer(m_graphics_api, uniform_sizes[binding], uniform);
+			auto ub_result = create_uniform_buffer(m_graphics_api, uniform_sizes[binding], uniform);
+			if (!ub_result.has_value())
+				return std::unexpected{ ub_result.error() };
 			uniform_buffers[frame].push_back(uniform.m_buffer.Get());
 		}
 	}
 
-	std::array<VkDescriptorSet, GraphicsApi::m_max_frames_in_flight> descriptor_sets
+	using descriptor_sets_t = std::array<VkDescriptorSet, GraphicsApi::m_max_frames_in_flight>;
+	std::expected<descriptor_sets_t, GraphicsError> ds_result
 		= create_descriptor_sets<GraphicsApi::m_max_frames_in_flight>(device,
 			m_descriptor_set_layout, m_descriptor_pool, uniform_buffers, uniform_sizes, texture);
+	if (!ds_result.has_value())
+		return std::unexpected{ ds_result.error() };
+
+	descriptor_sets_t & descriptor_sets = ds_result.value();
 
 	for (size_t frame = 0; frame < GraphicsApi::m_max_frames_in_flight; ++frame)
 		m_descriptor_sets[frame].m_descriptor_set = descriptor_sets[frame];
+
+	return {};
 }
 
 void DescriptorSets::Destroy()
@@ -506,6 +529,18 @@ void Pipeline::Destroy()
 }
 
 GraphicsPipeline::GraphicsPipeline(GraphicsApi const & graphics_api,
+	PerFrameConstantsCallback per_frame_constants_callback,
+	PerObjectConstantsCallback per_object_constants_callback)
+	: m_graphics_api(graphics_api)
+	, m_pipeline_layout(graphics_api)
+	, m_pipeline(graphics_api)
+	, m_descriptor_sets(graphics_api)
+	, m_per_frame_constants_callback(per_frame_constants_callback)
+	, m_per_object_constants_callback(per_object_constants_callback)
+{
+}
+
+std::expected<void, GraphicsError> GraphicsPipeline::Create(
 	VkShaderModule vert_shader_module,
 	VkShaderModule frag_shader_module,
 	VkVertexInputBindingDescription const & binding_desc,
@@ -516,31 +551,22 @@ GraphicsPipeline::GraphicsPipeline(GraphicsApi const & graphics_api,
 	Texture const * texture,
 	DepthTestOptions const & depth_options,
 	BlendOptions const & blend_options,
-	CullMode cull_mode,
-	PerFrameConstantsCallback per_frame_constants_callback,
-	PerObjectConstantsCallback per_object_constants_callback)
-	: m_graphics_api(graphics_api)
-	, m_pipeline_layout(graphics_api)
-	, m_pipeline(graphics_api)
-	, m_descriptor_sets(graphics_api)
-	, m_per_frame_constants_callback(per_frame_constants_callback)
-	, m_per_object_constants_callback(per_object_constants_callback)
+	CullMode cull_mode)
 {
 	VkDevice device = m_graphics_api.get().GetDevice();
 
-	m_descriptor_sets.Create(
+	std::expected<void, GraphicsError> ds_result = m_descriptor_sets.Create(
 		vs_uniform_sizes,
 		fs_uniform_sizes,
 		texture);
+	if (!ds_result.has_value())
+		return std::unexpected{ ds_result.error() };
 
 	VkResult result = m_pipeline_layout.Create(
 		m_descriptor_sets.GetLayout(),
 		push_constants_ranges);
 	if (result != VK_SUCCESS)
-	{
-		std::cout << "Failed to create pipeline layout" << std::endl;
-		return;
-	}
+		return std::unexpected{ GraphicsError{ "Failed to create pipeline layout. code: " + std::to_string(result) } };
 
 	VkPipelineShaderStageCreateInfo vert_shader_stage_info{
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
@@ -572,16 +598,15 @@ GraphicsPipeline::GraphicsPipeline(GraphicsApi const & graphics_api,
 		blend_options,
 		cull_mode);
 	if (result != VK_SUCCESS)
-		std::cout << "Failed to create graphics pipeline" << std::endl;
+		return std::unexpected{ GraphicsError{ "Failed to create graphics pipeline. code: " + std::to_string(result) } };
+
+	return {};
 }
 
 void GraphicsPipeline::Activate() const
 {
 	if (!IsValid())
-	{
-		std::cout << "Activating invalid graphics pipeline" << std::endl;
 		return;
-	}
 
 	VkCommandBuffer command_buffer = m_graphics_api.get().GetCurCommandBuffer();
 
