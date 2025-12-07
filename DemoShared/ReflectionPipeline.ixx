@@ -60,9 +60,13 @@ std::expected<GraphicsPipeline, GraphicsError> ReflectionPipeline::CreateGraphic
 	};
 
 	PipelineBuilder builder{ graphics_api };
-	builder.LoadShaders(
+
+	std::expected<void, GraphicsError> load_shaders_result = builder.LoadShaders(
 		shaders_path / "reflection.vert",
 		shaders_path / "reflection.frag");
+	if (!load_shaders_result.has_value())
+		return std::unexpected{ load_shaders_result.error() };
+
 	builder.SetVertexType<VertexT>();
 	builder.SetObjectDataTypes<ObjectDataVS, std::nullopt_t>();
 	builder.SetVSUniformTypes<ViewProjUniform>();

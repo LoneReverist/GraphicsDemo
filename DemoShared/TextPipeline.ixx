@@ -58,9 +58,13 @@ std::expected<GraphicsPipeline, GraphicsError> TextPipeline::CreateGraphicsPipel
 	};
 
 	PipelineBuilder builder{ graphics_api };
-	builder.LoadShaders(
+
+	std::expected<void, GraphicsError> load_shaders_result = builder.LoadShaders(
 		shaders_path / "msdf_text.vert",
 		shaders_path / "msdf_text.frag");
+	if (!load_shaders_result.has_value())
+		return std::unexpected{ load_shaders_result.error() };
+
 	builder.SetVertexType<VertexT>();
 	builder.SetObjectDataTypes<std::nullopt_t, ObjectDataFS>();
 	builder.SetTexture(font_atlas.GetTexture());

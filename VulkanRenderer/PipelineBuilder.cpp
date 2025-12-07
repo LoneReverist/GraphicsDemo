@@ -16,56 +16,48 @@ module PipelineBuilder;
 import GraphicsApi;
 import GraphicsError;
 
-namespace
+std::expected<std::vector<char>, GraphicsError> read_file(std::filesystem::path const & path)
 {
-	std::vector<char> read_file(std::filesystem::path const & path)
-	{
-		std::ifstream file(path.string(), std::ios::ate | std::ios::binary);
-		if (!file.is_open())
-		{
-			std::cout << "Failed to open file for reading: " << path << std::endl;
-			return std::vector<char>{};
-		}
+	std::ifstream file(path.string(), std::ios::ate | std::ios::binary);
+	if (!file.is_open())
+		return std::unexpected{ GraphicsError{ "Failed to open file for reading: " + path.string() } };
 
-		size_t file_size = static_cast<size_t>(file.tellg());
-		std::vector<char> buffer(file_size);
+	size_t file_size = static_cast<size_t>(file.tellg());
+	std::vector<char> buffer(file_size);
 
-		file.seekg(0);
-		file.read(buffer.data(), file_size);
-		file.close();
+	file.seekg(0);
+	file.read(buffer.data(), file_size);
+	file.close();
 
-		return buffer;
-	}
+	return buffer;
+}
 
-	VkShaderModule load_shader(
-		std::filesystem::path const & shader_path,
-		VkDevice device)
-	{
-		std::vector<char> file_data = read_file(shader_path);
-		if (file_data.empty())
-		{
-			std::cout << "File was empty: " << shader_path << std::endl;
-			return VK_NULL_HANDLE;
-		}
-		if (file_data.size() % sizeof(std::uint32_t) != 0) // SPIR-V files should be 32-bit
-		{
-			std::cout << "File is not 32-bit: " << shader_path << std::endl;
-			return VK_NULL_HANDLE;
-		}
+std::expected<VkShaderModule, GraphicsError> load_shader(
+	std::filesystem::path const & shader_path,
+	VkDevice device)
+{
+	std::expected<std::vector<char>, GraphicsError> read_result = read_file(shader_path);
+	if (!read_result.has_value())
+		return std::unexpected{ read_result.error() };
 
-		VkShaderModuleCreateInfo create_info{
-			.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-			.codeSize = file_data.size(),
-			.pCode = reinterpret_cast<const std::uint32_t *>(file_data.data())
-		};
+	std::vector<char> & file_data = read_result.value();
+	if (file_data.empty())
+		return std::unexpected{ GraphicsError{ "Shader file was empty: " + shader_path.string() } };
+	if (file_data.size() % sizeof(std::uint32_t) != 0) // SPIR-V files should be 32-bit
+		return std::unexpected{ GraphicsError{ "Shader file size is not a multiple of 4 bytes: " + shader_path.string() } };
 
-		VkShaderModule shader_module = VK_NULL_HANDLE;
-		VkResult result = vkCreateShaderModule(device, &create_info, nullptr, &shader_module);
-		if (result != VK_SUCCESS)
-			std::cout << "Failed to create shader module: " << shader_path << std::endl;
+	VkShaderModuleCreateInfo create_info{
+		.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+		.codeSize = file_data.size(),
+		.pCode = reinterpret_cast<const std::uint32_t *>(file_data.data())
+	};
 
-		return shader_module;
-	}
+	VkShaderModule shader_module = VK_NULL_HANDLE;
+	VkResult result = vkCreateShaderModule(device, &create_info, nullptr, &shader_module);
+	if (result != VK_SUCCESS)
+		return std::unexpected{ GraphicsError{ "Failed to create shader module for file: " + shader_path.string() } };
+
+	return shader_module;
 }
 
 PipelineBuilder::PipelineBuilder(GraphicsApi const & graphics_api)
@@ -81,18 +73,27 @@ PipelineBuilder::~PipelineBuilder()
 	vkDestroyShaderModule(device, m_vert_shader_module, nullptr);
 }
 
-void PipelineBuilder::LoadShaders(std::filesystem::path const & vs_path, std::filesystem::path const & fs_path)
+std::expected<void, GraphicsError> PipelineBuilder::LoadShaders(std::filesystem::path const & vs_path, std::filesystem::path const & fs_path)
 {
 	VkDevice device = m_graphics_api.GetDevice();
 
 	// In Vulkan, the shaders are precompiled to SPIR-V
 	std::filesystem::path vert_spirv_path = vs_path;
 	vert_spirv_path.replace_extension(".vert.spv");
-	m_vert_shader_module = load_shader(vert_spirv_path, device);
+	std::expected<VkShaderModule, GraphicsError> vert_shader_result = load_shader(vert_spirv_path, device);
+	if (!vert_shader_result.has_value())
+		return std::unexpected{ vert_shader_result.error() };
 
 	std::filesystem::path frag_spirv_path = fs_path;
 	frag_spirv_path.replace_extension(".frag.spv");
-	m_frag_shader_module = load_shader(frag_spirv_path, device);
+	std::expected<VkShaderModule, GraphicsError> frag_shader_result = load_shader(frag_spirv_path, device);
+	if (!frag_shader_result.has_value())
+		return std::unexpected{ frag_shader_result.error() };
+
+	m_vert_shader_module = vert_shader_result.value();
+	m_frag_shader_module = frag_shader_result.value();
+
+	return {};
 }
 
 std::expected<GraphicsPipeline, GraphicsError> PipelineBuilder::CreatePipeline() const

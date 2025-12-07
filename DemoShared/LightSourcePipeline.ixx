@@ -59,9 +59,13 @@ std::expected<GraphicsPipeline, GraphicsError> LightSourcePipeline::CreateGraphi
 	};
 
 	PipelineBuilder builder{ graphics_api };
-	builder.LoadShaders(
+
+	std::expected<void, GraphicsError> load_shaders_result = builder.LoadShaders(
 		shaders_path / "light_source.vert",
 		shaders_path / "light_source.frag");
+	if (!load_shaders_result.has_value())
+		return std::unexpected{ load_shaders_result.error() };
+
 	builder.SetVertexType<VertexT>();
 	builder.SetObjectDataTypes<ObjectDataVS, ObjectDataFS>();
 	builder.SetVSUniformTypes<ViewProjUniform>();

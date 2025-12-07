@@ -44,9 +44,13 @@ std::expected<GraphicsPipeline, GraphicsError> SkyboxPipeline::CreateGraphicsPip
 	Texture const & skybox)
 {
 	PipelineBuilder builder{ graphics_api };
-	builder.LoadShaders(
+
+	std::expected<void, GraphicsError> load_shaders_result = builder.LoadShaders(
 		shaders_path / "skybox.vert",
 		shaders_path / "skybox.frag");
+	if (!load_shaders_result.has_value())
+		return std::unexpected{ load_shaders_result.error() };
+
 	builder.SetVertexType<VertexT>();
 	builder.SetVSUniformTypes<ViewProjUniform>();
 	builder.SetTexture(skybox);

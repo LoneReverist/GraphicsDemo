@@ -24,7 +24,7 @@ public:
 	explicit PipelineBuilder(GraphicsApi const & /*graphics_api*/) {}
 	~PipelineBuilder();
 
-	void LoadShaders(std::filesystem::path const & vs_path, std::filesystem::path const & fs_path);
+	std::expected<void, GraphicsError> LoadShaders(std::filesystem::path const & vs_path, std::filesystem::path const & fs_path);
 
 	template <Vertex::VertexWithLayout VertexT>
 	void SetVertexType();
