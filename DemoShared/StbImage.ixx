@@ -4,7 +4,6 @@ module;
 
 #include <concepts>
 #include <filesystem>
-#include <iostream>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -65,8 +64,6 @@ void StbImage::LoadImage(std::filesystem::path const & filepath, int req_comp, b
 	stbi_set_flip_vertically_on_load(flip_vertically);
 
 	m_data = stbi_load(filepath.string().c_str(), &m_width, &m_height, &m_channels, req_comp);
-	if (!IsValid())
-		std::cout << "ImageData::LoadImage() failed to load image: " << filepath << std::endl;
 }
 
 void StbImage::free_image()

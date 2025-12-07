@@ -7,6 +7,7 @@ module;
 #include <cstdint>
 #include <cstring>
 #include <expected>
+#include <string>
 #include <vector>
 
 #include <vulkan/vulkan.h>
@@ -144,11 +145,11 @@ std::expected<void, GraphicsError> Image::Create2dImage(ImageData const & image_
 	Buffer staging_buffer{ m_graphics_api };
 	VkResult result = load_image_into_buffer(m_graphics_api, image_data, staging_buffer);
 	if (result != VK_SUCCESS)
-		return std::unexpected{ GraphicsError{ "Image::Create2dImage Failed to create staging buffer" } };
+		return std::unexpected{ GraphicsError{ "Image::Create2dImage Failed to create staging buffer. code: " + std::to_string(result) } };
 
 	VkFormat format = to_vk_format(image_data.m_format);
 	if (format == VK_FORMAT_UNDEFINED)
-		return std::unexpected{ GraphicsError{ "Image::Create2dImage Unsupported pixel format" } };;
+		return std::unexpected{ GraphicsError{ "Image::Create2dImage Unsupported pixel format: " + std::to_string(format) } };;
 
 	result = m_graphics_api.Create2dImage(
 		image_data.m_width,
@@ -162,7 +163,7 @@ std::expected<void, GraphicsError> Image::Create2dImage(ImageData const & image_
 		m_image,
 		m_image_memory);
 	if (result != VK_SUCCESS)
-		return std::unexpected{ GraphicsError{ "Image::Create2dImage Failed to create image" } };
+		return std::unexpected{ GraphicsError{ "Image::Create2dImage Failed to create image. code: " + std::to_string(result) } };
 
 	m_graphics_api.TransitionImageLayout(
 		m_image,
@@ -191,7 +192,7 @@ std::expected<void, GraphicsError> Image::Create2dImage(ImageData const & image_
 		1 /*layers*/,
 		m_image_view);
 	if (result != VK_SUCCESS)
-		return std::unexpected{ GraphicsError{ "Image::Create2dImage Failed to create vulkan image view for texture" } };
+		return std::unexpected{ GraphicsError{ "Image::Create2dImage Failed to create vulkan image view for texture. code: " + std::to_string(result) } };
 
 	return {};
 }
@@ -234,11 +235,11 @@ std::expected<void, GraphicsError> Image::CreateCubeImage(CubeImageData const & 
 	Buffer staging_buffer{ m_graphics_api };
 	VkResult result = load_cube_image_into_buffer(m_graphics_api, image_data, staging_buffer);
 	if (result != VK_SUCCESS)
-		return std::unexpected{ GraphicsError{ "Image::CreateCubeImage Failed to create staging buffer" } };
+		return std::unexpected{ GraphicsError{ "Image::CreateCubeImage Failed to create staging buffer. code: " + std::to_string(result) } };
 
 	VkFormat format = to_vk_format(image_data.m_format);
 	if (format == VK_FORMAT_UNDEFINED)
-		return std::unexpected{ GraphicsError{ "Image::Create2dImage Unsupported pixel format" } };
+		return std::unexpected{ GraphicsError{ "Image::Create2dImage Unsupported pixel format: " + std::to_string(format) } };
 
 	result = m_graphics_api.Create2dImage(
 		image_data.m_width,
@@ -252,7 +253,7 @@ std::expected<void, GraphicsError> Image::CreateCubeImage(CubeImageData const & 
 		m_image,
 		m_image_memory);
 	if (result != VK_SUCCESS)
-		return std::unexpected{ GraphicsError{ "Image::CreateCubeImage Failed to create cubemap" } };
+		return std::unexpected{ GraphicsError{ "Image::CreateCubeImage Failed to create cubemap. code: " + std::to_string(result) } };
 
 	m_graphics_api.TransitionImageLayout(
 		m_image,
@@ -283,7 +284,7 @@ std::expected<void, GraphicsError> Image::CreateCubeImage(CubeImageData const & 
 		6 /*layers*/,
 		m_image_view);
 	if (result != VK_SUCCESS)
-		return std::unexpected{ GraphicsError{ "Image::CreateCubeImage Failed to create vulkan image view for texture" } };
+		return std::unexpected{ GraphicsError{ "Image::CreateCubeImage Failed to create vulkan image view for texture. code: " + std::to_string(result) } };
 
 	return {};
 }
@@ -343,7 +344,7 @@ std::expected<void, GraphicsError> Sampler::Create()
 
 	VkResult result = vkCreateSampler(m_graphics_api.GetDevice(), &sampler_info, nullptr, &m_sampler);
 	if (result != VK_SUCCESS)
-		return std::unexpected{ GraphicsError{ "Failed to create vulkan sampler for texture" } };
+		return std::unexpected{ GraphicsError{ "Failed to create vulkan sampler for texture. code: " + std::to_string(result) } };
 
 	return {};
 }

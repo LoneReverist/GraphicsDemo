@@ -4,6 +4,7 @@ module;
 
 #include <algorithm>
 #include <array>
+#include <string>
 
 #include <glad/glad.h>
 
@@ -112,7 +113,7 @@ std::expected<void, GraphicsError> Texture::Create(ImageData const & image_data,
 	GLenum internal_format = to_gl_internal_format(image_data.m_format);
 	GLenum format = to_gl_format(image_data.m_format);
 	if (internal_format == 0 || format == 0)
-		return std::unexpected{ GraphicsError{ "Texture() Unsupported pixel format" } };
+		return std::unexpected{ GraphicsError{ "Texture() Unsupported pixel format: " + std::to_string(format) } };
 
 	glTexImage2D(
 		m_type,
@@ -149,7 +150,7 @@ std::expected<void, GraphicsError> Texture::Create(CubeImageData const & image_d
 	GLenum internal_format = to_gl_internal_format(image_data.m_format);
 	GLenum format = to_gl_format(image_data.m_format);
 	if (internal_format == 0 || format == 0)
-		return std::unexpected{ GraphicsError{ "Texture() Unsupported pixel format" } };
+		return std::unexpected{ GraphicsError{ "Texture() Unsupported pixel format: " + std::to_string(format) } };
 
 	for (unsigned int i = 0; i < image_data.m_data.size(); i++)
 	{
