@@ -5,6 +5,7 @@ module;
 #include <cstdint>
 #include <expected>
 #include <filesystem>
+#include <optional>
 #include <vector>
 
 #include <vulkan/vulkan.h>

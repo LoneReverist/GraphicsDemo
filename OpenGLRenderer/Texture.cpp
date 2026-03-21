@@ -4,6 +4,8 @@ module;
 
 #include <algorithm>
 #include <array>
+#include <cstdint>
+#include <expected>
 #include <string>
 
 #include <glad/glad.h>

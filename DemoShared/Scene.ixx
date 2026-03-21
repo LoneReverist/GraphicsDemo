@@ -6,6 +6,7 @@ module;
 #include <filesystem>
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include <glm/glm.hpp>
@@ -34,6 +35,16 @@ import TextPipeline;
 import Texture;
 import TexturePipeline;
 import Vertex;
+
+template <typename Mesh, typename Pipeline>
+concept MeshIsCompatibleWithPipeline = std::same_as<typename Mesh::VertexT, typename Pipeline::VertexT>;
+
+template <typename Pipeline>
+concept PipelineHasObjectData = requires { typename Pipeline::ObjectData; };
+
+template <typename ObjectData, typename Pipeline>
+concept ObjectDataIsCompatibleWithPipeline = std::same_as<ObjectData, typename Pipeline::ObjectData>
+|| (!PipelineHasObjectData<Pipeline> && std::same_as<ObjectData, std::nullopt_t>);
 
 // Keeps track of which render objects are using the associated pipeline,
 // this allows the render objects to be grouped by pipeline for more efficient rendering
@@ -159,16 +170,6 @@ PipelineT Scene::create_pipeline(Args &&... args)
 
 	return PipelineT{ pipeline_id };
 }
-
-template <typename Mesh, typename Pipeline>
-concept MeshIsCompatibleWithPipeline = std::same_as<typename Mesh::VertexT, typename Pipeline::VertexT>;
-
-template <typename Pipeline>
-concept PipelineHasObjectData = requires { typename Pipeline::ObjectData; };
-
-template <typename ObjectData, typename Pipeline>
-concept ObjectDataIsCompatibleWithPipeline = std::same_as<ObjectData, typename Pipeline::ObjectData>
-|| (!PipelineHasObjectData<Pipeline> && std::same_as<ObjectData, std::nullopt_t>);
 
 template <typename Mesh, typename Pipeline, typename ObjectData /*= std::nullopt_t*/>
 	requires MeshIsCompatibleWithPipeline<Mesh, Pipeline> && ObjectDataIsCompatibleWithPipeline<ObjectData, Pipeline>

@@ -4,6 +4,7 @@ module;
 
 #include <expected>
 #include <filesystem>
+#include <optional>
 #include <vector>
 
 export module PipelineBuilder;

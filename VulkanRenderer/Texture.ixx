@@ -3,6 +3,7 @@
 module;
 
 #include <array>
+#include <cstdint>
 #include <expected>
 
 #include <vulkan/vulkan.h>

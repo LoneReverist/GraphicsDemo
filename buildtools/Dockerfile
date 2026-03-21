@@ -5,9 +5,9 @@ RUN apt-get update \
         ca-certificates \
         gnupg \
         curl \
-        clang-18 \
-        clang-tools-18 \
-        lld-18 \
+        clang-19 \
+        clang-tools-19 \
+        lld-19 \
         ninja-build \
         git \
         pkg-config \
@@ -35,9 +35,9 @@ RUN apt-get update \
         cmake \
     && rm -rf /var/lib/apt/lists/*
 
-# Set clang-18 as default compiler
-RUN update-alternatives --install /usr/bin/cc cc /usr/bin/clang-18 100 \
-    && update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++-18 100
+# Set clang-19 as default compiler
+RUN update-alternatives --install /usr/bin/cc cc /usr/bin/clang-19 100 \
+    && update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++-19 100
 
 RUN git clone https://github.com/microsoft/vcpkg.git /opt/vcpkg \
     && /opt/vcpkg/bootstrap-vcpkg.sh
@@ -58,10 +58,10 @@ COPY . .
 RUN mkdir -p build
 WORKDIR /graphicsdemo/build
 
-# building with clang-18 as it has better c++20 module support than gcc-14
+# building with clang-19 as it has better c++20 module support than gcc-14
 RUN cmake -B . -S .. --preset "x64-linux" \
-    -DCMAKE_C_COMPILER=clang-18 \
-    -DCMAKE_CXX_COMPILER=clang++-18 \
-    -DCMAKE_CXX_COMPILER_CLANG_SCAN_DEPS=/usr/lib/llvm-18/bin/clang-scan-deps \
-    -DCMAKE_CXX_COMPILER_CLANG_RESOURCE_DIR=/usr/lib/llvm-18/lib/clang/18
+    -DCMAKE_C_COMPILER=clang-19 \
+    -DCMAKE_CXX_COMPILER=clang++-19 \
+    -DCMAKE_CXX_COMPILER_CLANG_SCAN_DEPS=/usr/lib/llvm-19/bin/clang-scan-deps \
+    -DCMAKE_CXX_COMPILER_CLANG_RESOURCE_DIR=/usr/lib/llvm-19/lib/clang/19
 RUN cmake --build . --config Release

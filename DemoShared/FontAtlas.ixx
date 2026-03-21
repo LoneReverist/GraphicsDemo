@@ -3,6 +3,7 @@
 module;
 
 #include <cstdint>
+#include <expected>
 #include <filesystem>
 #include <fstream>
 #include <functional>
@@ -18,6 +19,7 @@ module;
 export module FontAtlas;
 
 import GraphicsApi;
+import GraphicsError;
 import StbImage;
 import Texture;
 

@@ -5,6 +5,7 @@ module;
 #include <expected>
 #include <filesystem>
 #include <iostream>
+#include <optional>
 
 #include <glm/mat4x4.hpp>
 
