@@ -12,7 +12,7 @@ module;
 
 export module TextMesh;
 
-import AssetId;
+import AssetPool;
 import FontAtlas;
 import GraphicsApi;
 import GraphicsError;

@@ -10,7 +10,7 @@ module;
 
 export module RainbowTextPipeline;
 
-import AssetId;
+import AssetPool;
 import FontAtlas;
 import GraphicsApi;
 import GraphicsError;
@@ -87,14 +87,15 @@ std::expected<GraphicsPipeline, GraphicsError> RainbowTextPipeline::CreateGraphi
 	builder.SetCullMode(CullMode::BACK);
 
 	builder.SetPerObjectConstantsCallback(
-		[](GraphicsPipeline const & pipeline, RenderObject const & obj)
+		[](GraphicsPipeline const & pipeline, void const * object_data)
 		{
-			auto const * data = static_cast<ObjectData const *>(obj.GetObjectData());
-			if (!data)
+			if (!object_data)
 			{
 				std::cout << "TextObjectData is null for RainbowTextPipeline" << std::endl;
 				return;
 			}
+
+			auto const * data = static_cast<ObjectData const *>(object_data);
 
 			pipeline.SetObjectData(
 				std::nullopt,
