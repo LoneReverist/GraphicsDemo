@@ -164,8 +164,8 @@ void GraphicsPipeline::UpdatePerFrameConstants() const
 		m_per_frame_constants_callback(*this);
 }
 
-void GraphicsPipeline::UpdatePerObjectConstants(RenderObject const & obj) const
+void GraphicsPipeline::UpdatePerObjectConstants(void const * object_data) const
 {
 	if (m_per_object_constants_callback)
-		m_per_object_constants_callback(*this, obj);
+		m_per_object_constants_callback(*this, object_data);
 }

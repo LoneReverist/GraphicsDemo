@@ -14,7 +14,6 @@ export module GraphicsPipeline;
 
 import Buffer;
 import GraphicsError;
-import RenderObject;
 import Texture;
 
 struct UniformBuffer
@@ -104,7 +103,7 @@ export class GraphicsPipeline
 {
 public:
 	using PerFrameConstantsCallback = std::function<void(GraphicsPipeline const & pipeline)>;
-	using PerObjectConstantsCallback = std::function<void(GraphicsPipeline const & pipeline, RenderObject const &)>;
+	using PerObjectConstantsCallback = std::function<void(GraphicsPipeline const & pipeline, void const * object_data)>;
 
 	explicit GraphicsPipeline(
 		PerFrameConstantsCallback per_frame_constants_callback,
@@ -133,7 +132,7 @@ public:
 
 	void Activate() const;
 	void UpdatePerFrameConstants() const;
-	void UpdatePerObjectConstants(RenderObject const & obj) const;
+	void UpdatePerObjectConstants(void const * object_data) const;
 
 	template <typename UniformData>
 	void SetUniform(std::uint32_t binding, UniformData const & data) const;

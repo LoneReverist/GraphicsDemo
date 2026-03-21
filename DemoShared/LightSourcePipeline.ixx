@@ -10,7 +10,7 @@ module;
 
 export module LightSourcePipeline;
 
-import AssetId;
+import AssetPool;
 import Camera;
 import GraphicsApi;
 import GraphicsError;
@@ -79,16 +79,17 @@ std::expected<GraphicsPipeline, GraphicsError> LightSourcePipeline::CreateGraphi
 			pipeline.SetUniform(1 /*binding*/, camera.GetPosUniform());
 		});
 	builder.SetPerObjectConstantsCallback(
-		[](GraphicsPipeline const & pipeline, RenderObject const & obj)
+		[](GraphicsPipeline const & pipeline, void const * object_data)
 		{
-			// For optimal performance, we assume that the object data is of the correct type.
-			// Use compile-time checks when creating render objects to ensure the data is compatible with the pipeline.
-			auto const * data = static_cast<ObjectData const *>(obj.GetObjectData());
-			if (!data)
+			if (!object_data)
 			{
 				std::cout << "ObjectData is null for LightSourcePipeline" << std::endl;
 				return;
 			}
+
+			// For optimal performance, we assume that the object data is of the correct type.
+			// Use compile-time checks when creating render objects to ensure the data is compatible with the pipeline.
+			auto const * data = static_cast<ObjectData const *>(object_data);
 
 			pipeline.SetObjectData(
 				ObjectDataVS{

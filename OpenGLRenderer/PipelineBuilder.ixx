@@ -11,7 +11,6 @@ export module PipelineBuilder;
 import GraphicsApi;
 import GraphicsError;
 import GraphicsPipeline;
-import RenderObject;
 import Texture;
 import VertexLayout;
 

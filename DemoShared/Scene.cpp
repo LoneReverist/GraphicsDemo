@@ -14,10 +14,6 @@ module;
 
 module Scene;
 
-import AssetId;
-import GraphicsError;
-import GraphicsPipeline;
-import Mesh;
 import PlatformUtils;
 import StbImage;
 import TextMesh;
@@ -163,14 +159,14 @@ std::vector<MeshAsset<ColorVertex>> Scene::create_tree_with_material_meshes()
 	std::vector<MeshAsset<ColorVertex>> tree_with_material_meshes;
 	for (auto & mesh : tree_meshes)
 	{
-		std::expected<int, GraphicsError> mesh_id = m_renderer.AddMesh(std::move(mesh));
-		if (!mesh_id.has_value())
+		AssetId mesh_id = m_mesh_pool.Add(std::move(mesh));
+		if (!mesh_id.IsValid())
 		{
-			std::cout << "Failed to add tree_with_material mesh to renderer: " << mesh_id.error().GetMessage() << std::endl;
+			std::cout << "Failed to add tree_with_material to pool." << std::endl;
 			continue;
 		}
 
-		tree_with_material_meshes.push_back(MeshAsset<ColorVertex>{ AssetId{ mesh_id.value() } });
+		tree_with_material_meshes.push_back(MeshAsset<ColorVertex>{ mesh_id });
 	}
 	return tree_with_material_meshes;
 }
@@ -184,7 +180,7 @@ std::unique_ptr<TextMesh> Scene::create_text_mesh(
 	int viewport_height)
 {
 	auto text_mesh = std::make_unique<TextMesh>(m_graphics_api, text, font_atlas, font_size, origin, viewport_width, viewport_height);
-	text_mesh->SetUpdateMeshCallback([&renderer = m_renderer](AssetId id, Mesh mesh)
+	text_mesh->SetUpdateMeshCallback([&mesh_pool = m_mesh_pool](AssetId id, Mesh new_mesh)
 		{
 			if (!id.IsValid())
 			{
@@ -192,29 +188,32 @@ std::unique_ptr<TextMesh> Scene::create_text_mesh(
 				return;
 			}
 
-			std::expected<void, GraphicsError> result = renderer.UpdateMesh(id.m_index, std::move(mesh));
-			if (!result.has_value())
+			Mesh * mesh = mesh_pool.Get(id);
+			if (!mesh)
 			{
-				std::cout << "Scene::create_text_mesh: Failed to update mesh with id: "
-					<< id.m_index << " Error: " << result.error().GetMessage();
+				std::cout << "Scene::create_text_mesh: No mesh found in pool for AssetId: " << id.GetIndex() << std::endl;
+				return;
 			}
+
+			*mesh = std::move(new_mesh);
 		});
 
-	std::expected<int, GraphicsError> mesh_id
-		= text_mesh->CreateMesh()
-		.and_then([&renderer = m_renderer](Mesh mesh) -> std::expected<int, GraphicsError>
-			{
-				return renderer.AddMesh(std::move(mesh));
-			});
-
-	if (!mesh_id.has_value())
+	std::expected<Mesh, GraphicsError> mesh = text_mesh->CreateMesh();
+	if (!mesh.has_value())
 	{
 		std::cout << "Scene::create_text_mesh: Failed to create mesh. Error: "
-			<< mesh_id.error().GetMessage() << std::endl;
+			<< mesh.error().GetMessage() << std::endl;
 		return text_mesh;
 	}
 
-	text_mesh->SetAssetId(AssetId{ mesh_id.value() });
+	AssetId mesh_id = m_mesh_pool.Add(std::move(mesh.value()));
+	if (!mesh_id.IsValid())
+	{
+		std::cout << "Failed to add mesh to pool." << std::endl;
+		return text_mesh;
+	}
+
+	text_mesh->SetAssetId(mesh_id);
 	return text_mesh;
 }
 
@@ -440,10 +439,52 @@ void Scene::Update(double delta_time, Input const & input)
 
 void Scene::Render() const
 {
-	std::expected<void, GraphicsError> result = m_renderer.Render();
+	std::expected<void, GraphicsError> result = m_renderer.BeginDraw();
 	if (!result.has_value())
 	{
-		std::cout << "Scene::Render: Failed to render scene. Error: "
+		std::cout << "Scene::Render: Failed to begin drawing. Error: "
 			<< result.error().GetMessage() << std::endl;
+		return;
+	}
+
+	for (PipelineRenderObjects const & pipeline_r_objs : m_active_render_objects)
+	{
+		GraphicsPipeline const * pipeline = m_pipeline_pool.Get(pipeline_r_objs.m_pipeline_id);
+		if (!pipeline)
+		{
+			std::cout << "Scene::Render: No pipeline found in pool for pipeline ID: " << pipeline_r_objs.m_pipeline_id.GetIndex() << std::endl;
+			continue;
+		}
+
+		pipeline->Activate();
+		pipeline->UpdatePerFrameConstants();
+
+		for (AssetId obj_id : pipeline_r_objs.m_render_object_ids)
+		{
+			RenderObject const * obj = m_render_object_pool.Get(obj_id);
+			if (!obj)
+			{
+				std::cout << "Scene::Render: No render object found in pool for AssetId: " << obj_id.GetIndex() << std::endl;
+				continue;
+			}
+
+			Mesh const * mesh = m_mesh_pool.Get(obj->GetMeshId());
+			if (!mesh)
+			{
+				std::cout << "Scene::Render: No mesh found in pool for AssetId: " << obj->GetMeshId().GetIndex() << std::endl;
+				continue;
+			}
+
+			pipeline->UpdatePerObjectConstants(obj->GetObjectData());
+			mesh->Render();
+		}
+	}
+
+	result = m_renderer.EndDraw();
+	if (!result.has_value())
+	{
+		std::cout << "Scene::Render: Failed to end drawing. Error: "
+			<< result.error().GetMessage() << std::endl;
+		return;
 	}
 }

@@ -4,12 +4,11 @@ module;
 
 #include <expected>
 #include <filesystem>
-#include <optional>
 #include <vector>
 
 export module MeshAsset;
 
-import AssetId;
+import AssetPool;
 import GraphicsApi;
 import GraphicsError;
 import Mesh;

@@ -7,7 +7,7 @@ module;
 
 export module SkyboxPipeline;
 
-import AssetId;
+import AssetPool;
 import Camera;
 import GraphicsApi;
 import GraphicsError;

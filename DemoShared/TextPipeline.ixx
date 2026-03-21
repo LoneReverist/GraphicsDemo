@@ -10,7 +10,7 @@ module;
 
 export module TextPipeline;
 
-import AssetId;
+import AssetPool;
 import FontAtlas;
 import GraphicsApi;
 import GraphicsError;
@@ -80,26 +80,27 @@ std::expected<GraphicsPipeline, GraphicsError> TextPipeline::CreateGraphicsPipel
 		});
 	builder.SetCullMode(CullMode::BACK);
 
-		builder.SetPerObjectConstantsCallback(
-			[](GraphicsPipeline const & pipeline, RenderObject const & obj)
+	builder.SetPerObjectConstantsCallback(
+		[](GraphicsPipeline const & pipeline, void const * object_data)
+		{
+			if (!object_data)
 			{
-				// For optimal performance, we assume that the object data is of the correct type.
-				// Use compile-time checks when creating render objects to ensure the data is compatible with the pipeline.
-				auto const * data = static_cast<ObjectData const *>(obj.GetObjectData());
-				if (!data)
-				{
-					std::cout << "TextObjectData is null for TextPipeline" << std::endl;
-					return;
-				}
+				std::cout << "TextObjectData is null for TextPipeline" << std::endl;
+				return;
+			}
 
-				pipeline.SetObjectData(
-					std::nullopt,
-					ObjectDataFS{
-						.screen_px_range = data->m_screen_px_range,
-						.bg_color = data->m_bg_color,
-						.text_color = data->m_text_color
-					});
-			});
+			// For optimal performance, we assume that the object data is of the correct type.
+			// Use compile-time checks when creating render objects to ensure the data is compatible with the pipeline.
+			auto const * data = static_cast<ObjectData const *>(object_data);
+
+			pipeline.SetObjectData(
+				std::nullopt,
+				ObjectDataFS{
+					.screen_px_range = data->m_screen_px_range,
+					.bg_color = data->m_bg_color,
+					.text_color = data->m_text_color
+				});
+		});
 
 	return builder.CreatePipeline();
 }
