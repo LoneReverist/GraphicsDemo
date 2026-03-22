@@ -79,6 +79,9 @@ private:
 		Pipeline const & pipeline,
 		ObjectData const & object_data = std::nullopt);
 
+	AssetId create_texture(std::filesystem::path const & filepath);
+	AssetId create_cubemap_texture(std::array<std::filesystem::path, 6> const & filepaths);
+
 	MeshAsset<PositionVertex> create_skybox_mesh();
 	MeshAsset<TextureVertex> create_ground_mesh();
 	std::vector<MeshAsset<ColorVertex>> create_tree_with_material_meshes();
@@ -97,15 +100,15 @@ private:
 
 	Renderer m_renderer;
 	Camera m_camera;
+	LightsManager m_lights;
 
 	AssetPool<Mesh> m_mesh_pool;
 	AssetPool<GraphicsPipeline> m_pipeline_pool;
 	AssetPool<RenderObject> m_render_object_pool;
+	AssetPool<Texture> m_texture_pool;
 
 	std::vector<PipelineRenderObjects> m_active_render_objects;
 
-	std::unique_ptr<Texture> m_ground_tex;
-	std::unique_ptr<Texture> m_skybox_tex;
 	std::unique_ptr<FontAtlas> m_arial_font;
 
 	std::unique_ptr<TextMesh> m_fps_mesh;
@@ -121,8 +124,6 @@ private:
 	RainbowTextPipeline::ObjectData m_title_label;
 	LightSourcePipeline::ObjectData m_tree;
 	ColorPipeline::ObjectData m_tree_with_material;
-
-	LightsManager m_lights;
 
 	float m_timer = 0.0f;
 	float m_frame_timer = 0.0f;

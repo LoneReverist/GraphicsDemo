@@ -39,8 +39,10 @@ struct AssetMeta
 	std::uint32_t not_used : 19 = 0; // padding to fill 32 bits
 };
 
-export template <typename AssetType>
-	requires std::is_move_constructible_v<AssetType> && std::is_move_assignable_v<AssetType>
+template <typename AssetType>
+concept ValidAssetType = std::is_move_constructible_v<AssetType> && std::is_move_assignable_v<AssetType>;
+
+export template <ValidAssetType AssetType>
 class AssetPool
 {
 public:
@@ -66,8 +68,7 @@ private:
 	std::vector<std::uint32_t> m_free_indices;
 };
 
-template <typename AssetType>
-	requires std::is_move_constructible_v<AssetType> && std::is_move_assignable_v<AssetType>
+template <ValidAssetType AssetType>
 AssetId AssetPool<AssetType>::Add(AssetType asset)
 {
 	std::uint32_t index;
@@ -93,8 +94,7 @@ AssetId AssetPool<AssetType>::Add(AssetType asset)
 	return AssetId{ index, m_meta[index].generation };
 }
 
-template <typename AssetType>
-	requires std::is_move_constructible_v<AssetType> && std::is_move_assignable_v<AssetType>
+template <ValidAssetType AssetType>
 void AssetPool<AssetType>::Remove(AssetId id)
 {
 	std::uint32_t index = id.GetIndex();
@@ -114,8 +114,7 @@ void AssetPool<AssetType>::Remove(AssetId id)
 		m_free_indices.push_back(index);
 }
 
-template <typename AssetType>
-	requires std::is_move_constructible_v<AssetType> && std::is_move_assignable_v<AssetType>
+template <ValidAssetType AssetType>
 AssetType const * AssetPool<AssetType>::Get(AssetId id) const
 {
 	std::uint32_t index = id.GetIndex();
@@ -130,8 +129,7 @@ AssetType const * AssetPool<AssetType>::Get(AssetId id) const
 	return &m_assets[index];
 }
 
-template <typename AssetType>
-	requires std::is_move_constructible_v<AssetType> && std::is_move_assignable_v<AssetType>
+template <ValidAssetType AssetType>
 AssetType * AssetPool<AssetType>::Get(AssetId id)
 {
 	std::uint32_t index = id.GetIndex();

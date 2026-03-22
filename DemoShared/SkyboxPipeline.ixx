@@ -26,7 +26,8 @@ public:
 		GraphicsApi const & graphics_api,
 		std::filesystem::path const & shaders_path,
 		Camera const & camera,
-		Texture const & skybox);
+		AssetPool<Texture> const & texture_pool,
+		AssetId texture_id);
 
 	SkyboxPipeline() = default;
 	explicit SkyboxPipeline(AssetId asset_id) : m_asset_id(asset_id) {}
@@ -41,8 +42,13 @@ std::expected<GraphicsPipeline, GraphicsError> SkyboxPipeline::CreateGraphicsPip
 	GraphicsApi const & graphics_api,
 	std::filesystem::path const & shaders_path,
 	Camera const & camera,
-	Texture const & skybox)
+	AssetPool<Texture> const & texture_pool,
+	AssetId texture_id)
 {
+	Texture const * texture = texture_pool.Get(texture_id);
+	if (!texture)
+		return std::unexpected{ GraphicsError{ "SkyboxPipeline::CreateGraphicsPipeline: invalid texture" } };
+
 	PipelineBuilder builder{ graphics_api };
 
 	std::expected<void, GraphicsError> load_shaders_result = builder.LoadShaders(
@@ -53,7 +59,7 @@ std::expected<GraphicsPipeline, GraphicsError> SkyboxPipeline::CreateGraphicsPip
 
 	builder.SetVertexType<VertexT>();
 	builder.SetVSUniformTypes<ViewProjUniform>();
-	builder.SetTexture(skybox);
+	builder.SetTexture(*texture);
 	builder.SetDepthTestOptions(DepthTestOptions{
 		.m_enable_depth_test = true,
 		.m_enable_depth_write = false,

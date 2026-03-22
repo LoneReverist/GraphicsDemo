@@ -37,7 +37,8 @@ public:
 		std::filesystem::path const & shaders_path,
 		Camera const & camera,
 		LightsManager const & lights,
-		Texture const & texture);
+		AssetPool<Texture> const & texture_pool,
+		AssetId texture_id);
 
 	ReflectionPipeline() = default;
 	explicit ReflectionPipeline(AssetId asset_id) : m_asset_id(asset_id) {}
@@ -53,12 +54,17 @@ std::expected<GraphicsPipeline, GraphicsError> ReflectionPipeline::CreateGraphic
 	std::filesystem::path const & shaders_path,
 	Camera const & camera,
 	LightsManager const & lights,
-	Texture const & texture)
+	AssetPool<Texture> const & texture_pool,
+	AssetId texture_id)
 {
 	struct ObjectDataVS
 	{
 		alignas(16) glm::mat4 m_model;
 	};
+
+	Texture const * texture = texture_pool.Get(texture_id);
+	if (!texture)
+		return std::unexpected{ GraphicsError{ "ReflectionPipeline::CreateGraphicsPipeline: invalid texture" } };
 
 	PipelineBuilder builder{ graphics_api };
 
@@ -72,7 +78,7 @@ std::expected<GraphicsPipeline, GraphicsError> ReflectionPipeline::CreateGraphic
 	builder.SetObjectDataTypes<ObjectDataVS, std::nullopt_t>();
 	builder.SetVSUniformTypes<ViewProjUniform>();
 	builder.SetFSUniformTypes<LightsUniform, CameraPosUniform>();
-	builder.SetTexture(texture);
+	builder.SetTexture(*texture);
 	builder.SetCullMode(CullMode::BACK);
 
 	builder.SetPerFrameConstantsCallback(

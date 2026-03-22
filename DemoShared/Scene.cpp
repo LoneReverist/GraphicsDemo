@@ -19,40 +19,51 @@ import StbImage;
 import TextMesh;
 import AssimpLoader;
 
-std::unique_ptr<Texture> create_texture(
+AssetId create_texture(
+	AssetPool<Texture> & texture_pool,
 	GraphicsApi const & graphics_api,
 	std::filesystem::path const & filepath)
 {
-	auto texture = std::make_unique<Texture>(graphics_api);
-
 	PixelFormat format = PixelFormat::RGBA_SRGB;
 
 	StbImage image(filepath, GetPixelSize(format) /*STBI_rgb_alpha*/);
 	if (!image.IsValid())
 	{
 		std::cout << "Failed to load image: " << filepath << std::endl;
-		return texture;
+		return AssetId{};
 	}
 
-	std::expected<void, GraphicsError> result = texture->Create(
+	Texture texture{ graphics_api };
+	std::expected<void, GraphicsError> result = texture.Create(
 		ImageData{
 			.m_data = image.GetData(),
 			.m_format = format,
 			.m_width = static_cast<std::uint32_t>(image.GetWidth()),
 			.m_height = static_cast<std::uint32_t>(image.GetHeight())
 		});
-	if (!result.has_value())
+	if (!result.has_value() || !texture.IsValid())
+	{
 		std::cout << "Failed to create texture from image: " << filepath << std::endl;
+		return AssetId{};
+	}
 
-	return texture;
+	AssetId texture_id = texture_pool.Add(std::move(texture));
+	if (!texture_id.IsValid())
+		std::cout << "Failed to add texture to pool." << std::endl;
+
+	return texture_id;
 }
 
-std::unique_ptr<Texture> create_cubemap_texture(
+AssetId Scene::create_texture(std::filesystem::path const & filepath)
+{
+	return ::create_texture(m_texture_pool, m_graphics_api, filepath);
+}
+
+AssetId create_cubemap_texture(
+	AssetPool<Texture> & texture_pool,
 	GraphicsApi const & graphics_api,
 	std::array<std::filesystem::path, 6> const & filepaths)
 {
-	auto texture = std::make_unique<Texture>(graphics_api);
-
 	PixelFormat format = PixelFormat::RGBA_SRGB;
 
 	int width = 0, height = 0;
@@ -63,7 +74,7 @@ std::unique_ptr<Texture> create_cubemap_texture(
 		if (!images[i].IsValid())
 		{
 			std::cout << "Failed to load cubemap image: " << filepaths[i] << std::endl;
-			return texture;
+			return AssetId{};
 		}
 
 		if (i == 0)
@@ -74,7 +85,7 @@ std::unique_ptr<Texture> create_cubemap_texture(
 		else if (images[i].GetWidth() != width || images[i].GetHeight() != height)
 		{
 			std::cout << "Cubemap images must have the same dimensions." << std::endl;
-			return texture;
+			return AssetId{};
 		}
 	}
 
@@ -82,17 +93,30 @@ std::unique_ptr<Texture> create_cubemap_texture(
 	std::ranges::transform(images, data.begin(),
 		[](StbImage const & img) { return img.GetData(); });
 
-	std::expected<void, GraphicsError> result = texture->Create(
+	Texture texture{ graphics_api };
+	std::expected<void, GraphicsError> result = texture.Create(
 		CubeImageData{
 			.m_data = data,
 			.m_format = format,
 			.m_width = static_cast<std::uint32_t>(width),
 			.m_height = static_cast<std::uint32_t>(height)
 		});
-	if (!result.has_value())
+	if (!result.has_value() || !texture.IsValid())
+	{
 		std::cout << "Failed to create cubemap texture." << std::endl;
+		return AssetId{};
+	}
 
-	return texture;
+	AssetId texture_id = texture_pool.Add(std::move(texture));
+	if (!texture_id.IsValid())
+		std::cout << "Failed to add cubemap texture to pool." << std::endl;
+
+	return texture_id;
+}
+
+AssetId Scene::create_cubemap_texture(std::array<std::filesystem::path, 6> const & filepaths)
+{
+	return ::create_cubemap_texture(m_texture_pool, m_graphics_api, filepaths);
 }
 
 MeshAsset<PositionVertex> Scene::create_skybox_mesh()
@@ -283,9 +307,8 @@ Scene::Scene(GraphicsApi const & graphics_api, std::string const & title)
 	const std::filesystem::path objects_path = m_resources_path / "objects";
 	const std::filesystem::path fonts_path = m_resources_path / "fonts";
 
-	m_ground_tex = create_texture(m_graphics_api,
-		textures_path / "skybox" / "top.jpg");
-	m_skybox_tex = create_cubemap_texture(m_graphics_api, std::array<std::filesystem::path, 6>{
+	AssetId ground_tex_id = create_texture(textures_path / "skybox" / "top.jpg");
+	AssetId skybox_tex_id = create_cubemap_texture(std::array<std::filesystem::path, 6>{
 		textures_path / "skybox" / "right.jpg",
 		textures_path / "skybox" / "left.jpg",
 		textures_path / "skybox" / "top.jpg",
@@ -297,10 +320,10 @@ Scene::Scene(GraphicsApi const & graphics_api, std::string const & title)
 	m_arial_font = std::make_unique<FontAtlas>(m_graphics_api, fonts_path / "ArialAtlas.png", fonts_path / "ArialAtlas.json");
 
 	ColorPipeline color_pipeline = create_pipeline<ColorPipeline>(m_camera, m_lights);
-	TexturePipeline ground_pipeline = create_pipeline<TexturePipeline>(m_camera, m_lights, *m_ground_tex);
-	SkyboxPipeline skybox_pipeline = create_pipeline<SkyboxPipeline>(m_camera, *m_skybox_tex);
+	TexturePipeline ground_pipeline = create_pipeline<TexturePipeline>(m_camera, m_lights, m_texture_pool, ground_tex_id);
+	SkyboxPipeline skybox_pipeline = create_pipeline<SkyboxPipeline>(m_camera, m_texture_pool, skybox_tex_id);
 	LightSourcePipeline light_source_pipeline = create_pipeline<LightSourcePipeline>(m_camera);
-	ReflectionPipeline reflection_pipeline = create_pipeline<ReflectionPipeline>(m_camera, m_lights, *m_skybox_tex);
+	ReflectionPipeline reflection_pipeline = create_pipeline<ReflectionPipeline>(m_camera, m_lights, m_texture_pool, skybox_tex_id);
 	TextPipeline text_pipeline = create_pipeline<TextPipeline>(*m_arial_font);
 	RainbowTextPipeline rainbow_text_pipeline = create_pipeline<RainbowTextPipeline>(*m_arial_font);
 
@@ -327,7 +350,7 @@ Scene::Scene(GraphicsApi const & graphics_api, std::string const & title)
 	create_render_object("ground", ground_mesh, ground_pipeline, m_ground);
 
 	MeshAsset<PositionVertex> skybox_mesh = create_skybox_mesh();
-	create_render_object("skybox", skybox_mesh, skybox_pipeline);
+	create_render_object("skybox", skybox_mesh, skybox_pipeline, std::nullopt); // don't have to provide nullopt here, but intellisense complains if we don't
 
 	MeshAsset<NormalVertex> tree_mesh = create_mesh<NormalVertex>(objects_path / "tree.obj");
 	m_tree.m_color = glm::vec3{ 0.0f, 0.5f, 0.0f };
