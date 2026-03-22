@@ -20,14 +20,14 @@ import Texture;
 
 struct UniformBuffer
 {
-	Buffer m_buffer;
-	void * m_mapping{ nullptr };
+	Buffer buffer;
+	void * mapping{ nullptr };
 };
 
 struct DescriptorSet
 {
-	VkDescriptorSet m_descriptor_set = VK_NULL_HANDLE; // Automatically cleaned up when m_descriptor_pool is destroyed
-	std::vector<UniformBuffer> m_uniform_buffers;
+	VkDescriptorSet descriptor_set = VK_NULL_HANDLE; // Automatically cleaned up when m_descriptor_pool is destroyed
+	std::vector<UniformBuffer> uniform_buffers;
 };
 
 class DescriptorSets
@@ -98,9 +98,9 @@ export enum class DepthCompareOp
 
 export struct DepthTestOptions
 {
-	bool m_enable_depth_test{ true };
-	bool m_enable_depth_write{ true };
-	DepthCompareOp m_depth_compare_op{ DepthCompareOp::LESS };
+	bool enable_depth_test{ true };
+	bool enable_depth_write{ true };
+	DepthCompareOp depth_compare_op{ DepthCompareOp::LESS };
 };
 
 // By default, front facing facets have counter-clockwise vertex windings.
@@ -132,9 +132,9 @@ export enum class BlendFactor
 
 export struct BlendOptions
 {
-	bool m_enable_blend = false;
-	BlendFactor m_src_factor = BlendFactor::SRC_ALPHA;
-	BlendFactor m_dst_factor = BlendFactor::ONE_MINUS_SRC_ALPHA;
+	bool enable_blend = false;
+	BlendFactor src_factor = BlendFactor::SRC_ALPHA;
+	BlendFactor dst_factor = BlendFactor::ONE_MINUS_SRC_ALPHA;
 };
 
 class Pipeline
@@ -227,8 +227,8 @@ private:
 template <typename UniformData>
 void GraphicsPipeline::SetUniform(std::uint32_t binding, UniformData const & data) const
 {
-	UniformBuffer const & buffer = m_descriptor_sets.GetCurrent().m_uniform_buffers[binding];
-	std::memcpy(buffer.m_mapping, &data, sizeof(data));
+	UniformBuffer const & buffer = m_descriptor_sets.GetCurrent().uniform_buffers[binding];
+	std::memcpy(buffer.mapping, &data, sizeof(data));
 }
 
 template <typename ObjectDataVS /*= std::nullopt_t*/, typename ObjectDataFS /*= std::nullopt_t*/>

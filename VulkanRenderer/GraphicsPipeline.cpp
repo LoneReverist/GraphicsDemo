@@ -240,7 +240,7 @@ std::expected<void, GraphicsError> create_uniform_buffer(
 	VkDeviceSize buffer_size,
 	UniformBuffer & out_uniform_buffer)
 {
-	std::expected<void, GraphicsError> buffer_result = out_uniform_buffer.m_buffer.Create(
+	std::expected<void, GraphicsError> buffer_result = out_uniform_buffer.buffer.Create(
 		buffer_size,
 		VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
@@ -249,11 +249,11 @@ std::expected<void, GraphicsError> create_uniform_buffer(
 
 	VkResult result = vkMapMemory(
 		graphics_api.GetDevice(),
-		out_uniform_buffer.m_buffer.GetMemory(),
+		out_uniform_buffer.buffer.GetMemory(),
 		0 /*offset*/,
 		buffer_size,
 		0 /*flags*/,
-		&out_uniform_buffer.m_mapping);
+		&out_uniform_buffer.mapping);
 	if (result != VK_SUCCESS)
 		return std::unexpected{ GraphicsError{ "vkMapMemory failed. code: " + std::to_string(result) } };
 
@@ -292,14 +292,14 @@ std::expected<void, GraphicsError> DescriptorSets::Create(
 	std::array<std::vector<VkBuffer>, GraphicsApi::m_max_frames_in_flight> uniform_buffers;
 	for (size_t frame = 0; frame < GraphicsApi::m_max_frames_in_flight; ++frame)
 	{
-		m_descriptor_sets[frame].m_uniform_buffers.reserve(uniform_sizes.size());
+		m_descriptor_sets[frame].uniform_buffers.reserve(uniform_sizes.size());
 		for (int binding = 0; binding < uniform_sizes.size(); ++binding)
 		{
-			UniformBuffer & uniform = m_descriptor_sets[frame].m_uniform_buffers.emplace_back(Buffer{ m_graphics_api });
+			UniformBuffer & uniform = m_descriptor_sets[frame].uniform_buffers.emplace_back(Buffer{ m_graphics_api });
 			auto ub_result = create_uniform_buffer(m_graphics_api, uniform_sizes[binding], uniform);
 			if (!ub_result.has_value())
 				return std::unexpected{ ub_result.error() };
-			uniform_buffers[frame].push_back(uniform.m_buffer.Get());
+			uniform_buffers[frame].push_back(uniform.buffer.Get());
 		}
 	}
 
@@ -313,7 +313,7 @@ std::expected<void, GraphicsError> DescriptorSets::Create(
 	descriptor_sets_t & descriptor_sets = ds_result.value();
 
 	for (size_t frame = 0; frame < GraphicsApi::m_max_frames_in_flight; ++frame)
-		m_descriptor_sets[frame].m_descriptor_set = descriptor_sets[frame];
+		m_descriptor_sets[frame].descriptor_set = descriptor_sets[frame];
 
 	return {};
 }
@@ -324,8 +324,8 @@ void DescriptorSets::Destroy()
 
 	for (DescriptorSet & descriptor_set : m_descriptor_sets)
 	{
-		descriptor_set.m_descriptor_set = VK_NULL_HANDLE;
-		descriptor_set.m_uniform_buffers.clear();
+		descriptor_set.descriptor_set = VK_NULL_HANDLE;
+		descriptor_set.uniform_buffers.clear();
 	}
 
 	vkDestroyDescriptorPool(device, m_descriptor_pool, nullptr);
@@ -474,12 +474,12 @@ VkResult Pipeline::Create(
 	};
 
 	VkPipelineColorBlendAttachmentState color_blend_attachment{
-		.blendEnable = blend_options.m_enable_blend ? VK_TRUE : VK_FALSE,
-		.srcColorBlendFactor = static_cast<VkBlendFactor>(blend_options.m_src_factor),
-		.dstColorBlendFactor = static_cast<VkBlendFactor>(blend_options.m_dst_factor),
+		.blendEnable = blend_options.enable_blend ? VK_TRUE : VK_FALSE,
+		.srcColorBlendFactor = static_cast<VkBlendFactor>(blend_options.src_factor),
+		.dstColorBlendFactor = static_cast<VkBlendFactor>(blend_options.dst_factor),
 		.colorBlendOp = VK_BLEND_OP_ADD,
-		.srcAlphaBlendFactor = static_cast<VkBlendFactor>(blend_options.m_src_factor),
-		.dstAlphaBlendFactor = static_cast<VkBlendFactor>(blend_options.m_dst_factor),
+		.srcAlphaBlendFactor = static_cast<VkBlendFactor>(blend_options.src_factor),
+		.dstAlphaBlendFactor = static_cast<VkBlendFactor>(blend_options.dst_factor),
 		.alphaBlendOp = VK_BLEND_OP_ADD,
 		.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT
 	};
@@ -495,9 +495,9 @@ VkResult Pipeline::Create(
 
 	VkPipelineDepthStencilStateCreateInfo depth_stencil{
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
-		.depthTestEnable = depth_options.m_enable_depth_test ? VK_TRUE : VK_FALSE,
-		.depthWriteEnable = depth_options.m_enable_depth_write ? VK_TRUE : VK_FALSE,
-		.depthCompareOp = static_cast<VkCompareOp>(depth_options.m_depth_compare_op),
+		.depthTestEnable = depth_options.enable_depth_test ? VK_TRUE : VK_FALSE,
+		.depthWriteEnable = depth_options.enable_depth_write ? VK_TRUE : VK_FALSE,
+		.depthCompareOp = static_cast<VkCompareOp>(depth_options.depth_compare_op),
 		.depthBoundsTestEnable = VK_FALSE,
 		.stencilTestEnable = VK_FALSE
 	};
@@ -619,7 +619,7 @@ void GraphicsPipeline::Activate() const
 		m_pipeline_layout.Get(),
 		0 /*firstSet*/,
 		1 /*descriptor_set_count*/,
-		&m_descriptor_sets.GetCurrent().m_descriptor_set,
+		&m_descriptor_sets.GetCurrent().descriptor_set,
 		0 /*dynamicOffsetCount*/,
 		nullptr);
 }

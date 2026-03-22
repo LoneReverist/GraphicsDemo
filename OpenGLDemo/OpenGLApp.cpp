@@ -31,7 +31,7 @@ OpenGLApp::OpenGLApp(WindowSize window_size, std::string const & title)
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	m_window = glfwCreateWindow(window_size.m_width, window_size.m_height, title.c_str(), nullptr, nullptr);
+	m_window = glfwCreateWindow(window_size.width, window_size.height, title.c_str(), nullptr, nullptr);
 	if (!m_window)
 		return;
 
@@ -70,7 +70,7 @@ void OpenGLApp::Run()
 			GraphicsApi graphics_api{ reinterpret_cast<GraphicsApi::LoadProcFn *>(glfwGetProcAddress) };
 
 			Scene scene{ graphics_api, m_title };
-			scene.OnViewportResized(size.m_width, size.m_height);
+			scene.OnViewportResized(size.width, size.height);
 
 			double last_update_time = glfwGetTime();
 
@@ -88,8 +88,8 @@ void OpenGLApp::Run()
 				WindowSize new_size = m_window_size.load();
 				if (new_size != size)
 				{
-					graphics_api.SetViewport(new_size.m_width, new_size.m_height);
-					scene.OnViewportResized(new_size.m_width, new_size.m_height);
+					graphics_api.SetViewport(new_size.width, new_size.height);
+					scene.OnViewportResized(new_size.width, new_size.height);
 					size = new_size;
 				}
 			}

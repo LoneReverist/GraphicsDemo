@@ -26,8 +26,8 @@ public:
 
 	struct ObjectData
 	{
-		glm::mat4 m_model{ 1.0 };
-		glm::vec3 m_color{ 0.0 };
+		glm::mat4 model{ 1.0 };
+		glm::vec3 color{ 0.0 };
 	};
 
 	static std::expected<GraphicsPipeline, GraphicsError> CreateGraphicsPipeline(
@@ -51,11 +51,11 @@ std::expected<GraphicsPipeline, GraphicsError> LightSourcePipeline::CreateGraphi
 {
 	struct ObjectDataVS
 	{
-		alignas(16) glm::mat4 m_model;
+		alignas(16) glm::mat4 model;
 	};
 	struct ObjectDataFS
 	{
-		alignas(16) glm::vec3 m_color;
+		alignas(16) glm::vec3 color;
 	};
 
 	PipelineBuilder builder{ graphics_api };
@@ -93,10 +93,10 @@ std::expected<GraphicsPipeline, GraphicsError> LightSourcePipeline::CreateGraphi
 
 			pipeline.SetObjectData(
 				ObjectDataVS{
-					.m_model = data->m_model
+					.model = data->model
 				},
 				ObjectDataFS{
-					.m_color = data->m_color,
+					.color = data->color,
 				});
 		});
 

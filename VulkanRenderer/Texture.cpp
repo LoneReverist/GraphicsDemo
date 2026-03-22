@@ -36,23 +36,23 @@ VkFormat to_vk_format(PixelFormat format)
 
 bool ImageData::IsValid() const
 {
-	return GetSize() > 0 && m_data != nullptr;
+	return GetSize() > 0 && data != nullptr;
 }
 
 std::uint64_t ImageData::GetSize() const
 {
-	return static_cast<std::uint64_t>(m_width * m_height * GetPixelSize(m_format));
+	return static_cast<std::uint64_t>(width * height * GetPixelSize(format));
 }
 
 bool CubeImageData::IsValid() const
 {
 	return GetSize() > 0
-		&& std::ranges::all_of(m_data, [](std::uint8_t  const * data) { return data != nullptr; });
+		&& std::ranges::all_of(data, [](std::uint8_t  const * data) { return data != nullptr; });
 }
 
 std::uint64_t CubeImageData::GetSize() const
 {
-	return static_cast<std::uint64_t>(m_width * m_height * GetPixelSize(m_format));
+	return static_cast<std::uint64_t>(width * height * GetPixelSize(format));
 }
 
 Image::~Image()
@@ -98,15 +98,15 @@ std::expected<void, GraphicsError> load_image_into_buffer(
 {
 	std::uint64_t input_size = image_data.GetSize();
 
-	const void * data_ptr = image_data.m_data;
+	const void * data_ptr = image_data.data;
 	std::uint64_t buffer_size = input_size;
 
 	std::vector<std::uint8_t> rgba_data;
-	if (image_data.m_format == PixelFormat::RGB_UNORM)
+	if (image_data.format == PixelFormat::RGB_UNORM)
 	{
 		// Convert RGB to RGBA
-		const std::uint8_t * src = image_data.m_data;
-		const std::size_t pixel_count = image_data.m_width * image_data.m_height;
+		const std::uint8_t * src = image_data.data;
+		const std::size_t pixel_count = image_data.width * image_data.height;
 		rgba_data.reserve(pixel_count * 4);
 		for (std::size_t i = 0; i < pixel_count; ++i) {
 			rgba_data.push_back(src[i * 3 + 0]);
@@ -147,13 +147,13 @@ std::expected<void, GraphicsError> Image::Create2dImage(ImageData const & image_
 	if (!buffer_result.has_value())
 		return std::unexpected{ buffer_result.error().AddToMessage(" Image::Create2dImage Failed to create staging buffer.") };
 
-	VkFormat format = to_vk_format(image_data.m_format);
+	VkFormat format = to_vk_format(image_data.format);
 	if (format == VK_FORMAT_UNDEFINED)
 		return std::unexpected{ GraphicsError{ "Image::Create2dImage Unsupported pixel format: " + std::to_string(format) } };;
 
 	VkResult result = m_graphics_api.Create2dImage(
-		image_data.m_width,
-		image_data.m_height,
+		image_data.width,
+		image_data.height,
 		1 /*layers*/,
 		format,
 		VK_IMAGE_TILING_OPTIMAL,
@@ -174,8 +174,8 @@ std::expected<void, GraphicsError> Image::Create2dImage(ImageData const & image_
 	m_graphics_api.CopyBufferToImage(
 		staging_buffer.Get(),
 		m_image,
-		image_data.m_width,
-		image_data.m_height,
+		image_data.width,
+		image_data.height,
 		1 /*layers*/);
 	m_graphics_api.TransitionImageLayout(
 		m_image,
@@ -203,7 +203,7 @@ std::expected<void, GraphicsError> load_cube_image_into_buffer(
 	Buffer & out_buffer)
 {
 	std::uint64_t image_size = image_data.GetSize();
-	std::uint64_t buffer_size = image_size * image_data.m_data.size();
+	std::uint64_t buffer_size = image_size * image_data.data.size();
 
 	std::expected<void, GraphicsError> result = out_buffer.Create(
 		buffer_size,
@@ -216,7 +216,7 @@ std::expected<void, GraphicsError> load_cube_image_into_buffer(
 
 	void * buffer_data = nullptr;
 	vkMapMemory(device, out_buffer.GetMemory(), 0, buffer_size, 0, &buffer_data);
-	for (std::uint8_t const * data : image_data.m_data)
+	for (std::uint8_t const * data : image_data.data)
 	{
 		std::memcpy(buffer_data, data, image_size);
 		buffer_data = static_cast<std::uint8_t *>(buffer_data) + image_size;
@@ -238,13 +238,13 @@ std::expected<void, GraphicsError> Image::CreateCubeImage(CubeImageData const & 
 	if (!buffer_result.has_value())
 		return std::unexpected{ buffer_result.error().AddToMessage(" Image::CreateCubeImage Failed to create staging buffer.") };
 
-	VkFormat format = to_vk_format(image_data.m_format);
+	VkFormat format = to_vk_format(image_data.format);
 	if (format == VK_FORMAT_UNDEFINED)
 		return std::unexpected{ GraphicsError{ "Image::Create2dImage Unsupported pixel format: " + std::to_string(format) } };
 
 	VkResult result = m_graphics_api.Create2dImage(
-		image_data.m_width,
-		image_data.m_height,
+		image_data.width,
+		image_data.height,
 		6 /*layers*/,
 		format,
 		VK_IMAGE_TILING_OPTIMAL,
@@ -266,8 +266,8 @@ std::expected<void, GraphicsError> Image::CreateCubeImage(CubeImageData const & 
 	m_graphics_api.CopyBufferToImage(
 		staging_buffer.Get(),
 		m_image,
-		image_data.m_width,
-		image_data.m_height,
+		image_data.width,
+		image_data.height,
 		6 /*layers*/);
 
 	m_graphics_api.TransitionImageLayout(

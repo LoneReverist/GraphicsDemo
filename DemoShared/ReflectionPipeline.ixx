@@ -29,7 +29,7 @@ public:
 
 	struct ObjectData
 	{
-		glm::mat4 m_model{ 1.0 };
+		glm::mat4 model{ 1.0 };
 	};
 
 	static std::expected<GraphicsPipeline, GraphicsError> CreateGraphicsPipeline(
@@ -59,7 +59,7 @@ std::expected<GraphicsPipeline, GraphicsError> ReflectionPipeline::CreateGraphic
 {
 	struct ObjectDataVS
 	{
-		alignas(16) glm::mat4 m_model;
+		alignas(16) glm::mat4 model;
 	};
 
 	Texture const * texture = texture_pool.Get(texture_id);
@@ -103,7 +103,7 @@ std::expected<GraphicsPipeline, GraphicsError> ReflectionPipeline::CreateGraphic
 
 			pipeline.SetObjectData(
 				ObjectDataVS{
-					.m_model = data->m_model
+					.model = data->model
 				},
 				std::nullopt);
 		});

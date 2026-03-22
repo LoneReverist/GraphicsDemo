@@ -36,10 +36,10 @@ AssetId create_texture(
 	Texture texture{ graphics_api };
 	std::expected<void, GraphicsError> result = texture.Create(
 		ImageData{
-			.m_data = image.GetData(),
-			.m_format = format,
-			.m_width = static_cast<std::uint32_t>(image.GetWidth()),
-			.m_height = static_cast<std::uint32_t>(image.GetHeight())
+			.data = image.GetData(),
+			.format = format,
+			.width = static_cast<std::uint32_t>(image.GetWidth()),
+			.height = static_cast<std::uint32_t>(image.GetHeight())
 		});
 	if (!result.has_value() || !texture.IsValid())
 	{
@@ -96,10 +96,10 @@ AssetId create_cubemap_texture(
 	Texture texture{ graphics_api };
 	std::expected<void, GraphicsError> result = texture.Create(
 		CubeImageData{
-			.m_data = data,
-			.m_format = format,
-			.m_width = static_cast<std::uint32_t>(width),
-			.m_height = static_cast<std::uint32_t>(height)
+			.data = data,
+			.format = format,
+			.width = static_cast<std::uint32_t>(width),
+			.height = static_cast<std::uint32_t>(height)
 		});
 	if (!result.has_value() || !texture.IsValid())
 	{
@@ -328,20 +328,20 @@ Scene::Scene(GraphicsApi const & graphics_api, std::string const & title)
 	RainbowTextPipeline rainbow_text_pipeline = create_pipeline<RainbowTextPipeline>(*m_arial_font);
 
 	MeshAsset<NormalVertex> sword_mesh = create_mesh<NormalVertex>(objects_path / "skullsword.obj");
-	init_sword_transform(0, m_sword0.m_model);
-	init_sword_transform(1, m_sword1.m_model);
+	init_sword_transform(0, m_sword0.model);
+	init_sword_transform(1, m_sword1.model);
 	create_render_object("sword0", sword_mesh, reflection_pipeline, m_sword0);
 	create_render_object("sword1", sword_mesh, reflection_pipeline, m_sword1);
 
 	MeshAsset<NormalVertex> red_gem_mesh = create_mesh<NormalVertex>(objects_path / "redgem.obj");
 	MeshAsset<NormalVertex> green_gem_mesh = create_mesh<NormalVertex>(objects_path / "greengem.obj");
 	MeshAsset<NormalVertex> blue_gem_mesh = create_mesh<NormalVertex>(objects_path / "bluegem.obj");
-	m_red_gem.m_color = glm::vec3{ 1.0f, 0.0f, 0.0f };
-	m_green_gem.m_color = glm::vec3{ 0.0f, 1.0f, 0.0f };
-	m_blue_gem.m_color = glm::vec3{ 0.0f, 0.0f, 1.0f };
-	init_gem_transform(0, m_red_gem.m_model);
-	init_gem_transform(1, m_green_gem.m_model);
-	init_gem_transform(2, m_blue_gem.m_model);
+	m_red_gem.color = glm::vec3{ 1.0f, 0.0f, 0.0f };
+	m_green_gem.color = glm::vec3{ 0.0f, 1.0f, 0.0f };
+	m_blue_gem.color = glm::vec3{ 0.0f, 0.0f, 1.0f };
+	init_gem_transform(0, m_red_gem.model);
+	init_gem_transform(1, m_green_gem.model);
+	init_gem_transform(2, m_blue_gem.model);
 	create_render_object("red gem", red_gem_mesh, light_source_pipeline, m_red_gem);
 	create_render_object("green gem", green_gem_mesh, light_source_pipeline, m_green_gem);
 	create_render_object("blue gem", blue_gem_mesh, light_source_pipeline, m_blue_gem);
@@ -353,44 +353,44 @@ Scene::Scene(GraphicsApi const & graphics_api, std::string const & title)
 	create_render_object("skybox", skybox_mesh, skybox_pipeline, std::nullopt); // don't have to provide nullopt here, but intellisense complains if we don't
 
 	MeshAsset<NormalVertex> tree_mesh = create_mesh<NormalVertex>(objects_path / "tree.obj");
-	m_tree.m_color = glm::vec3{ 0.0f, 0.5f, 0.0f };
-	m_tree.m_model = glm::scale(m_tree.m_model, glm::vec3(3.281, 3.281, 3.281)); // meters to feet
-	m_tree.m_model = glm::translate(m_tree.m_model, glm::vec3(3.0f, 5.0f, 0.0f));
+	m_tree.color = glm::vec3{ 0.0f, 0.5f, 0.0f };
+	m_tree.model = glm::scale(m_tree.model, glm::vec3(3.281, 3.281, 3.281)); // meters to feet
+	m_tree.model = glm::translate(m_tree.model, glm::vec3(3.0f, 5.0f, 0.0f));
 	create_render_object("tree", tree_mesh, light_source_pipeline, m_tree);
 
 	std::vector<MeshAsset<ColorVertex>> tree_with_material_meshes = create_tree_with_material_meshes();
-	m_tree_with_material.m_model = glm::scale(m_tree_with_material.m_model, glm::vec3(3.281, 3.281, 3.281)); // meters to feet
-	m_tree_with_material.m_model = glm::translate(m_tree_with_material.m_model, glm::vec3(-3.0f, 5.0f, 0.0f));
+	m_tree_with_material.model = glm::scale(m_tree_with_material.model, glm::vec3(3.281, 3.281, 3.281)); // meters to feet
+	m_tree_with_material.model = glm::translate(m_tree_with_material.model, glm::vec3(-3.0f, 5.0f, 0.0f));
 	for (auto const & mesh : tree_with_material_meshes)
 		create_render_object("tree_with_material", mesh, color_pipeline, m_tree_with_material);
 
 	m_fps_mesh = create_text_mesh("FPS: ", *m_arial_font, label_font_size, glm::vec2{ -0.9, -0.9 } /*origin*/,
 		0 /*viewport_width*/, 0 /*viewport_height*/);
 	m_fps_label = TextPipeline::ObjectData{
-		.m_screen_px_range = m_fps_mesh->GetScreenPxRange(),
-		.m_bg_color = { 0.0f, 0.0f, 0.0f, 0.0f },
-		.m_text_color = { 1.0f, 1.0f, 0.0f, 1.0 },
+		.screen_px_range = m_fps_mesh->GetScreenPxRange(),
+		.bg_color = { 0.0f, 0.0f, 0.0f, 0.0f },
+		.text_color = { 1.0f, 1.0f, 0.0f, 1.0 },
 	};
 	create_render_object("fps label", *m_fps_mesh, text_pipeline, m_fps_label);
 
 	m_title_mesh = create_text_mesh(m_title, *m_arial_font, title_font_size, glm::vec2{ -0.9, 0.8 } /*origin*/,
 		0 /*viewport_width*/, 0 /*viewport_height*/);
 	m_title_label = RainbowTextPipeline::ObjectData{
-		.m_bg_color = { 0.0f, 0.0f, 0.0f, 0.0f },
-		.m_screen_px_range = m_title_mesh->GetScreenPxRange(),
-		.m_rainbow_width = 200.0f * m_dpi_scale,
-		.m_slant_factor = -1.0f
+		.bg_color = { 0.0f, 0.0f, 0.0f, 0.0f },
+		.screen_px_range = m_title_mesh->GetScreenPxRange(),
+		.rainbow_width = 200.0f * m_dpi_scale,
+		.slant_factor = -1.0f
 	};
 	create_render_object("title", *m_title_mesh, rainbow_text_pipeline, m_title_label);
 
 	m_lights.SetAmbientLight(AmbientLight{ glm::vec3{ 0.3, 0.3, 0.3 } });
 
 	m_lights.SetSpotLight(SpotLight{
-		.m_pos{ 0.0f, 0.0f, 25.0f },
-		.m_dir{ 0.0f, 0.0f, -1.0f },
-		.m_color{ 1.0f, 1.0f, 1.0f },
-		.m_inner_radius = 0.988f,
-		.m_outer_radius = 0.986f
+		.pos{ 0.0f, 0.0f, 25.0f },
+		.dir{ 0.0f, 0.0f, -1.0f },
+		.color{ 1.0f, 1.0f, 1.0f },
+		.inner_radius = 0.988f,
+		.outer_radius = 0.986f
 		});
 
 	glm::vec3 camera_pos{ 0.0f, -10.0f, 5.0f };
@@ -430,34 +430,34 @@ void Scene::Update(double delta_time, Input const & input)
 	bg_color.b = std::tan(m_timer) / 2.0f + 0.5f;
 	m_renderer.SetClearColor(bg_color);
 
-	update_sword_transform(0, m_sword0.m_model, m_timer, dt);
-	update_sword_transform(1, m_sword1.m_model, m_timer, dt);
-	update_gem_transform(m_red_gem.m_model, dt);
-	update_gem_transform(m_green_gem.m_model, dt);
-	update_gem_transform(m_blue_gem.m_model, dt);
+	update_sword_transform(0, m_sword0.model, m_timer, dt);
+	update_sword_transform(1, m_sword1.model, m_timer, dt);
+	update_gem_transform(m_red_gem.model, dt);
+	update_gem_transform(m_green_gem.model, dt);
+	update_gem_transform(m_blue_gem.model, dt);
 
-	glm::mat4 const & red_gem_transform = m_red_gem.m_model;
+	glm::mat4 const & red_gem_transform = m_red_gem.model;
 	m_lights.SetPointLight1(PointLight{
-		.m_pos{ red_gem_transform[3][0], red_gem_transform[3][1], red_gem_transform[3][2] },
-		.m_color{ 1.0, 0.0, 0.0 },
-		.m_radius = 20.0f
+		.pos{ red_gem_transform[3][0], red_gem_transform[3][1], red_gem_transform[3][2] },
+		.color{ 1.0, 0.0, 0.0 },
+		.radius = 20.0f
 		});
 
-	glm::mat4 const & green_gem_transform = m_green_gem.m_model;
+	glm::mat4 const & green_gem_transform = m_green_gem.model;
 	m_lights.SetPointLight2(PointLight{
-		.m_pos{ green_gem_transform[3][0], green_gem_transform[3][1], green_gem_transform[3][2] },
-		.m_color{ 0.0, 1.0, 0.0 },
-		.m_radius = 20.0f
+		.pos{ green_gem_transform[3][0], green_gem_transform[3][1], green_gem_transform[3][2] },
+		.color{ 0.0, 1.0, 0.0 },
+		.radius = 20.0f
 		});
 
-	glm::mat4 const & blue_gem_transform = m_blue_gem.m_model;
+	glm::mat4 const & blue_gem_transform = m_blue_gem.model;
 	m_lights.SetPointLight3(PointLight{
-		.m_pos{ blue_gem_transform[3][0], blue_gem_transform[3][1], blue_gem_transform[3][2] },
-		.m_color{ 0.0, 0.0, 1.0 },
-		.m_radius = 20.0f
+		.pos{ blue_gem_transform[3][0], blue_gem_transform[3][1], blue_gem_transform[3][2] },
+		.color{ 0.0, 0.0, 1.0 },
+		.radius = 20.0f
 		});
 
-	m_title_label.m_time = m_timer;
+	m_title_label.time = m_timer;
 }
 
 void Scene::Render() const
@@ -472,17 +472,17 @@ void Scene::Render() const
 
 	for (PipelineRenderObjects const & pipeline_r_objs : m_active_render_objects)
 	{
-		GraphicsPipeline const * pipeline = m_pipeline_pool.Get(pipeline_r_objs.m_pipeline_id);
+		GraphicsPipeline const * pipeline = m_pipeline_pool.Get(pipeline_r_objs.pipeline_id);
 		if (!pipeline)
 		{
-			std::cout << "Scene::Render: No pipeline found in pool for pipeline ID: " << pipeline_r_objs.m_pipeline_id.GetIndex() << std::endl;
+			std::cout << "Scene::Render: No pipeline found in pool for pipeline ID: " << pipeline_r_objs.pipeline_id.GetIndex() << std::endl;
 			continue;
 		}
 
 		pipeline->Activate();
 		pipeline->UpdatePerFrameConstants();
 
-		for (AssetId obj_id : pipeline_r_objs.m_render_object_ids)
+		for (AssetId obj_id : pipeline_r_objs.render_object_ids)
 		{
 			RenderObject const * obj = m_render_object_pool.Get(obj_id);
 			if (!obj)

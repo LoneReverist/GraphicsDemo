@@ -21,15 +21,15 @@ namespace Vertex
 
 	export struct AttributeDesc
 	{
-		AttributeType m_type;
-		std::size_t m_offset;
-		uint32_t m_location; // shader location
+		AttributeType type;
+		std::size_t offset;
+		uint32_t location; // shader location
 	};
 
 	export struct LayoutDesc
 	{
-		std::size_t m_stride;
-		std::vector<AttributeDesc> m_attributes;
+		std::size_t stride;
+		std::vector<AttributeDesc> attributes;
 	};
 
 	export template<typename VertexT>
@@ -40,12 +40,12 @@ namespace Vertex
 	// Set OpenGL vertex attributes from a VertexLayoutDesc
 	export void SetAttributes(const LayoutDesc & layout)
 	{
-		for (const auto & attr : layout.m_attributes)
+		for (const auto & attr : layout.attributes)
 		{
 			GLint size = 0;
 			GLenum type = GL_FLOAT;
 			GLboolean normalize = GL_FALSE;
-			switch (attr.m_type)
+			switch (attr.type)
 			{
 			case AttributeType::Float:
 				size = 1;
@@ -62,13 +62,13 @@ namespace Vertex
 			}
 
 			glVertexAttribPointer(
-				attr.m_location,
+				attr.location,
 				size,
 				type,
 				normalize,
-				static_cast<GLsizei>(layout.m_stride),
-				reinterpret_cast<const void *>(attr.m_offset));
-			glEnableVertexAttribArray(attr.m_location);
+				static_cast<GLsizei>(layout.stride),
+				reinterpret_cast<const void *>(attr.offset));
+			glEnableVertexAttribArray(attr.location);
 		}
 	}
 }

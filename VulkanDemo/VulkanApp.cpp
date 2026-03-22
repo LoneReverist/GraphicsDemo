@@ -30,7 +30,7 @@ VulkanApp::VulkanApp(WindowSize window_size, std::string const & title)
 
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-	m_window = glfwCreateWindow(window_size.m_width, window_size.m_height, m_title.c_str(), nullptr, nullptr);
+	m_window = glfwCreateWindow(window_size.width, window_size.height, m_title.c_str(), nullptr, nullptr);
 	if (!m_window)
 		return;
 
@@ -67,11 +67,11 @@ void VulkanApp::Run()
 			const char ** extensions = glfwGetRequiredInstanceExtensions(&extension_count);
 
 			GraphicsApi graphics_api{
-				m_window, size.m_width, size.m_height,
+				m_window, size.width, size.height,
 				m_title, extension_count, extensions };
 
 			Scene scene{ graphics_api, m_title };
-			scene.OnViewportResized(size.m_width, size.m_height);
+			scene.OnViewportResized(size.width, size.height);
 
 			double last_update_time = glfwGetTime();
 
@@ -92,8 +92,8 @@ void VulkanApp::Run()
 				WindowSize new_size = m_window_size.load();
 				if (swap_chain_out_of_date || new_size != size)
 				{
-					graphics_api.RecreateSwapChain(new_size.m_width, new_size.m_height);
-					scene.OnViewportResized(new_size.m_width, new_size.m_height);
+					graphics_api.RecreateSwapChain(new_size.width, new_size.height);
+					scene.OnViewportResized(new_size.width, new_size.height);
 					size = new_size;
 				}
 			}

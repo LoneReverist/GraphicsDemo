@@ -50,8 +50,8 @@ concept ObjectDataIsCompatibleWithPipeline = std::same_as<ObjectData, typename P
 // this allows the render objects to be grouped by pipeline for more efficient rendering
 struct PipelineRenderObjects
 {
-	AssetId m_pipeline_id;
-	std::vector<AssetId> m_render_object_ids;
+	AssetId pipeline_id;
+	std::vector<AssetId> render_object_ids;
 };
 
 export class Scene
@@ -202,9 +202,9 @@ AssetId Scene::create_render_object(
 		return obj_id;
 	}
 
-	auto iter = std::ranges::find(m_active_render_objects, pipeline.GetAssetId(), &PipelineRenderObjects::m_pipeline_id);
+	auto iter = std::ranges::find(m_active_render_objects, pipeline.GetAssetId(), &PipelineRenderObjects::pipeline_id);
 	if (iter != m_active_render_objects.end())
-		iter->m_render_object_ids.push_back(obj_id);
+		iter->render_object_ids.push_back(obj_id);
 	else
 		m_active_render_objects.push_back(PipelineRenderObjects{ pipeline.GetAssetId(), { obj_id } });
 

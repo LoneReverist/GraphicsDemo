@@ -24,10 +24,10 @@ export std::uint8_t GetPixelSize(PixelFormat format)
 
 export struct ImageData
 {
-	std::uint8_t const * m_data = nullptr;
-	PixelFormat m_format = PixelFormat::RGBA_SRGB;
-	std::uint32_t m_width = 0;
-	std::uint32_t m_height = 0;
+	std::uint8_t const * data = nullptr;
+	PixelFormat format = PixelFormat::RGBA_SRGB;
+	std::uint32_t width = 0;
+	std::uint32_t height = 0;
 
 	bool IsValid() const;
 	std::uint64_t GetSize() const;
@@ -35,10 +35,10 @@ export struct ImageData
 
 export struct CubeImageData
 {
-	std::array<std::uint8_t const *, 6> m_data;
-	PixelFormat m_format = PixelFormat::RGBA_SRGB;
-	std::uint32_t m_width = 0;
-	std::uint32_t m_height = 0;
+	std::array<std::uint8_t const *, 6> data;
+	PixelFormat format = PixelFormat::RGBA_SRGB;
+	std::uint32_t width = 0;
+	std::uint32_t height = 0;
 
 	bool IsValid() const;
 	std::uint64_t GetSize() const;

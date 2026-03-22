@@ -19,10 +19,13 @@ namespace
 {
 	struct ObjVertex
 	{
-		unsigned int m_position_index = 0;
-		unsigned int m_normal_index = 0;
+		unsigned int position_index = 0;
+		unsigned int normal_index = 0;
 
-		bool operator==(ObjVertex const & other) const { return m_position_index == other.m_position_index && m_normal_index == other.m_normal_index; }
+		bool operator==(ObjVertex const & other) const
+		{
+			return position_index == other.position_index && normal_index == other.normal_index;
+		}
 	};
 
 	using ObjFaceVerts = std::vector<ObjVertex>;
@@ -33,7 +36,7 @@ struct std::hash<ObjVertex>
 {
 	size_t operator()(const ObjVertex & index) const
 	{
-		return std::hash<std::uint64_t>{}(index.m_position_index ^ (static_cast<std::uint64_t>(index.m_normal_index) << 32));
+		return std::hash<std::uint64_t>{}(index.position_index ^ (static_cast<std::uint64_t>(index.normal_index) << 32));
 	}
 };
 
@@ -146,8 +149,8 @@ namespace ObjLoader
 				if (iter != vert_index_map.end())
 					return iter->second;
 
-				std::array<float, 3> const & pos = positions[vert.m_position_index - 1];
-				std::array<float, 3> const & norm = normals[vert.m_normal_index - 1];
+				std::array<float, 3> const & pos = positions[vert.position_index - 1];
+				std::array<float, 3> const & norm = normals[vert.normal_index - 1];
 				out_vertices.push_back(NormalVertex{
 					{ pos[0], pos[1], pos[2] },
 					{ norm[0], norm[1], norm[2] }

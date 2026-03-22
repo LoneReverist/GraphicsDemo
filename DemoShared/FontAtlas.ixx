@@ -28,10 +28,10 @@ export class FontAtlas
 public:
 	struct Glyph
 	{
-		std::uint32_t m_unicode = 0;
-		float m_advance = 0.0f;
-		std::optional<glm::vec4> m_plane_bounds; // left, bottom, right, top
-		std::optional<glm::vec4> m_atlas_bounds; // left, bottom, right, top (pixels)
+		std::uint32_t unicode = 0;
+		float advance = 0.0f;
+		std::optional<glm::vec4> plane_bounds; // left, bottom, right, top
+		std::optional<glm::vec4> atlas_bounds; // left, bottom, right, top (pixels)
 	};
 
 public:
@@ -70,10 +70,10 @@ private:
 		m_texture = std::make_unique<Texture>(graphics_api);
 		std::expected<void, GraphicsError> result = m_texture->Create(
 			ImageData{
-				.m_data = image.GetData(),
-				.m_format = format,
-				.m_width = m_width,
-				.m_height = m_height
+				.data = image.GetData(),
+				.format = format,
+				.width = m_width,
+				.height = m_height
 			},
 			false /*use_mip_map*/);
 		if (!result.has_value())
@@ -95,18 +95,18 @@ private:
 		for (const auto & g : json["glyphs"])
 		{
 			Glyph glyph;
-			glyph.m_unicode = g["unicode"].get<std::uint32_t>();
-			glyph.m_advance = g["advance"].get<float>();
+			glyph.unicode = g["unicode"].get<std::uint32_t>();
+			glyph.advance = g["advance"].get<float>();
 
 			auto pb = g.find("planeBounds");
 			if (pb != g.end())
-				glyph.m_plane_bounds = glm::vec4((*pb)["left"], (*pb)["bottom"], (*pb)["right"], (*pb)["top"]);
+				glyph.plane_bounds = glm::vec4((*pb)["left"], (*pb)["bottom"], (*pb)["right"], (*pb)["top"]);
 
 			auto ab = g.find("atlasBounds");
 			if (ab != g.end())
-				glyph.m_atlas_bounds = glm::vec4((*ab)["left"], (*ab)["bottom"], (*ab)["right"], (*ab)["top"]);
+				glyph.atlas_bounds = glm::vec4((*ab)["left"], (*ab)["bottom"], (*ab)["right"], (*ab)["top"]);
 
-			m_glyphs.emplace(glyph.m_unicode, std::move(glyph));
+			m_glyphs.emplace(glyph.unicode, std::move(glyph));
 		}
 	}
 

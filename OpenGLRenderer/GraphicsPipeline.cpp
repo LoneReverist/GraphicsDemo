@@ -84,30 +84,30 @@ std::expected<void, GraphicsError> GraphicsPipeline::Create(
 
 	if (vs_object_uniform_size > 0)
 	{
-		m_vs_object_uniform.m_buffer.Create();
-		m_vs_object_uniform.m_size = vs_object_uniform_size;
-		glBindBuffer(GL_UNIFORM_BUFFER, m_vs_object_uniform.m_buffer.GetId());
-		glBufferData(GL_UNIFORM_BUFFER, m_vs_object_uniform.m_size, nullptr, GL_DYNAMIC_DRAW);
+		m_vs_object_uniform.buffer.Create();
+		m_vs_object_uniform.size = vs_object_uniform_size;
+		glBindBuffer(GL_UNIFORM_BUFFER, m_vs_object_uniform.buffer.GetId());
+		glBufferData(GL_UNIFORM_BUFFER, m_vs_object_uniform.size, nullptr, GL_DYNAMIC_DRAW);
 	}
 	if (fs_object_uniform_size > 0)
 	{
-		m_fs_object_uniform.m_buffer.Create();
-		m_fs_object_uniform.m_size = fs_object_uniform_size;
-		glBindBuffer(GL_UNIFORM_BUFFER, m_fs_object_uniform.m_buffer.GetId());
-		glBufferData(GL_UNIFORM_BUFFER, m_fs_object_uniform.m_size, nullptr, GL_DYNAMIC_DRAW);
+		m_fs_object_uniform.buffer.Create();
+		m_fs_object_uniform.size = fs_object_uniform_size;
+		glBindBuffer(GL_UNIFORM_BUFFER, m_fs_object_uniform.buffer.GetId());
+		glBufferData(GL_UNIFORM_BUFFER, m_fs_object_uniform.size, nullptr, GL_DYNAMIC_DRAW);
 	}
 
 	std::vector<size_t> uniform_sizes{ vs_uniform_sizes };
 	uniform_sizes.insert(uniform_sizes.end(), fs_uniform_sizes.begin(), fs_uniform_sizes.end());
 
-	m_descriptor_set.m_uniform_buffers.reserve(uniform_sizes.size());
+	m_descriptor_set.uniform_buffers.reserve(uniform_sizes.size());
 	for (size_t binding = 0; binding < uniform_sizes.size(); ++binding)
 	{
-		UniformBuffer & uniform = m_descriptor_set.m_uniform_buffers.emplace_back();
-		uniform.m_buffer.Create();
-		uniform.m_size = uniform_sizes[binding];
-		glBindBuffer(GL_UNIFORM_BUFFER, uniform.m_buffer.GetId());
-		glBufferData(GL_UNIFORM_BUFFER, uniform.m_size, nullptr, GL_DYNAMIC_DRAW);
+		UniformBuffer & uniform = m_descriptor_set.uniform_buffers.emplace_back();
+		uniform.buffer.Create();
+		uniform.size = uniform_sizes[binding];
+		glBindBuffer(GL_UNIFORM_BUFFER, uniform.buffer.GetId());
+		glBufferData(GL_UNIFORM_BUFFER, uniform.size, nullptr, GL_DYNAMIC_DRAW);
 	}
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
@@ -121,21 +121,21 @@ void GraphicsPipeline::Activate() const
 	if (m_program.GetId() == 0)
 		return;
 
-	if (m_depth_test_options.m_enable_depth_test)
+	if (m_depth_test_options.enable_depth_test)
 	{
 		glEnable(GL_DEPTH_TEST);
-		glDepthMask(m_depth_test_options.m_enable_depth_write ? GL_TRUE : GL_FALSE);
-		glDepthFunc(static_cast<GLenum>(m_depth_test_options.m_depth_compare_op));
+		glDepthMask(m_depth_test_options.enable_depth_write ? GL_TRUE : GL_FALSE);
+		glDepthFunc(static_cast<GLenum>(m_depth_test_options.depth_compare_op));
 	}
 	else
 	{
 		glDisable(GL_DEPTH_TEST);
 	}
 
-	if (m_blend_options.m_enable_blend)
+	if (m_blend_options.enable_blend)
 	{
 		glEnable(GL_BLEND);
-		glBlendFunc(static_cast<GLenum>(m_blend_options.m_src_factor), static_cast<GLenum>(m_blend_options.m_dst_factor));
+		glBlendFunc(static_cast<GLenum>(m_blend_options.src_factor), static_cast<GLenum>(m_blend_options.dst_factor));
 	}
 	else
 	{

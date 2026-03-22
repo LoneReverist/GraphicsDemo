@@ -21,15 +21,15 @@ namespace Vertex
 
 	export struct AttributeDesc
 	{
-		AttributeType m_type;
-		std::size_t m_offset;
-		std::uint32_t m_location; // shader location
+		AttributeType type;
+		std::size_t offset;
+		std::uint32_t location; // shader location
 	};
 
 	export struct LayoutDesc
 	{
-		std::size_t m_stride;
-		std::vector<AttributeDesc> m_attributes;
+		std::size_t stride;
+		std::vector<AttributeDesc> attributes;
 	};
 
 	export template<typename VertexT>
@@ -59,7 +59,7 @@ namespace Vertex
 	{
 		return VkVertexInputBindingDescription{
 			.binding = 0,
-			.stride = static_cast<std::uint32_t>(layout.m_stride),
+			.stride = static_cast<std::uint32_t>(layout.stride),
 			.inputRate = VK_VERTEX_INPUT_RATE_VERTEX
 		};
 	}
@@ -68,13 +68,13 @@ namespace Vertex
 	export std::vector<VkVertexInputAttributeDescription> GetAttribDescs(LayoutDesc const & layout)
 	{
 		std::vector<VkVertexInputAttributeDescription> attribs;
-		for (auto const & attr : layout.m_attributes)
+		for (auto const & attr : layout.attributes)
 		{
 			attribs.emplace_back(VkVertexInputAttributeDescription{
-				.location = attr.m_location,
+				.location = attr.location,
 				.binding = 0,
-				.format = attribute_type_to_vkformat(attr.m_type),
-				.offset = static_cast<std::uint32_t>(attr.m_offset)
+				.format = attribute_type_to_vkformat(attr.type),
+				.offset = static_cast<std::uint32_t>(attr.offset)
 				});
 		}
 		return attribs;

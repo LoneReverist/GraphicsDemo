@@ -27,13 +27,13 @@ public:
 
 	struct ObjectData
 	{
-		glm::vec4 m_bg_color = glm::vec4(0.0f);
-		float m_screen_px_range = 1.0f;
-		float m_time = 0.0f;
-		float m_rainbow_width = 200.0f; // in pixels, adjust for dpi
+		glm::vec4 bg_color = glm::vec4(0.0f);
+		float screen_px_range = 1.0f;
+		float time = 0.0f;
+		float rainbow_width = 200.0f; // in pixels, adjust for dpi
 
 		// Adjust for slant angle (0.0 = vertical, 1.0 = 45 degrees forward, -1.0 = 45 degrees backward)
-		float m_slant_factor = -1.0f;
+		float slant_factor = -1.0f;
 	};
 
 	static std::expected<GraphicsPipeline, GraphicsError> CreateGraphicsPipeline(
@@ -76,14 +76,14 @@ std::expected<GraphicsPipeline, GraphicsError> RainbowTextPipeline::CreateGraphi
 	builder.SetObjectDataTypes<std::nullopt_t, ObjectDataFS>();
 	builder.SetTexture(font_atlas.GetTexture());
 	builder.SetDepthTestOptions(DepthTestOptions{
-		.m_enable_depth_test = false,
-		.m_enable_depth_write = false,
-		.m_depth_compare_op = DepthCompareOp::ALWAYS
+		.enable_depth_test = false,
+		.enable_depth_write = false,
+		.depth_compare_op = DepthCompareOp::ALWAYS
 		});
 	builder.SetBlendOptions(BlendOptions{
-		.m_enable_blend = true,
-		.m_src_factor = BlendFactor::SRC_ALPHA,
-		.m_dst_factor = BlendFactor::ONE_MINUS_SRC_ALPHA
+		.enable_blend = true,
+		.src_factor = BlendFactor::SRC_ALPHA,
+		.dst_factor = BlendFactor::ONE_MINUS_SRC_ALPHA
 		});
 	builder.SetCullMode(CullMode::BACK);
 
@@ -101,11 +101,11 @@ std::expected<GraphicsPipeline, GraphicsError> RainbowTextPipeline::CreateGraphi
 			pipeline.SetObjectData(
 				std::nullopt,
 				ObjectDataFS{
-					.bg_color = data->m_bg_color,
-					.screen_px_range = data->m_screen_px_range,
-					.time = data->m_time,
-					.rainbow_width = data->m_rainbow_width,
-					.slant_factor = data->m_slant_factor
+					.bg_color = data->bg_color,
+					.screen_px_range = data->screen_px_range,
+					.time = data->time,
+					.rainbow_width = data->rainbow_width,
+					.slant_factor = data->slant_factor
 				});
 		});
 

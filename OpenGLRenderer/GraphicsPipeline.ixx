@@ -18,13 +18,13 @@ import Texture;
 
 struct UniformBuffer
 {
-	Buffer m_buffer;
-	size_t m_size = 0;
+	Buffer buffer;
+	size_t size = 0;
 };
 
 struct DescriptorSet
 {
-	std::vector<UniformBuffer> m_uniform_buffers;
+	std::vector<UniformBuffer> uniform_buffers;
 };
 
 export enum class DepthCompareOp
@@ -41,9 +41,9 @@ export enum class DepthCompareOp
 
 export struct DepthTestOptions
 {
-	bool m_enable_depth_test = true;
-	bool m_enable_depth_write = true;
-	DepthCompareOp m_depth_compare_op = DepthCompareOp::LESS;
+	bool enable_depth_test = true;
+	bool enable_depth_write = true;
+	DepthCompareOp depth_compare_op = DepthCompareOp::LESS;
 };
 
 export enum class BlendFactor {
@@ -66,9 +66,9 @@ export enum class BlendFactor {
 
 export struct BlendOptions
 {
-	bool m_enable_blend = false;
-	BlendFactor m_src_factor = BlendFactor::SRC_ALPHA;
-	BlendFactor m_dst_factor = BlendFactor::ONE_MINUS_SRC_ALPHA;
+	bool enable_blend = false;
+	BlendFactor src_factor = BlendFactor::SRC_ALPHA;
+	BlendFactor dst_factor = BlendFactor::ONE_MINUS_SRC_ALPHA;
 };
 
 // By default, front facing facets have counter-clockwise vertex windings.
@@ -161,19 +161,19 @@ private:
 template <typename UniformData>
 void set_uniform(std::uint32_t binding, UniformBuffer const & uniform, UniformData const & data)
 {
-	if (uniform.m_buffer.GetId() == 0)
+	if (uniform.buffer.GetId() == 0)
 	{
 		std::cout << "Uniform buffer not initialized for binding: " << binding << std::endl;
 		return;
 	}
-	if (uniform.m_size != sizeof(data))
+	if (uniform.size != sizeof(data))
 	{
 		std::cout << "Uniform buffer size is different from data size: " << binding << std::endl;
 		return;
 	}
 
-	glBindBuffer(GL_UNIFORM_BUFFER, uniform.m_buffer.GetId());
-	glBindBufferBase(GL_UNIFORM_BUFFER, binding, uniform.m_buffer.GetId());
+	glBindBuffer(GL_UNIFORM_BUFFER, uniform.buffer.GetId());
+	glBindBufferBase(GL_UNIFORM_BUFFER, binding, uniform.buffer.GetId());
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(data), &data);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
@@ -181,13 +181,13 @@ void set_uniform(std::uint32_t binding, UniformBuffer const & uniform, UniformDa
 template <typename UniformData>
 void GraphicsPipeline::SetUniform(std::uint32_t binding, UniformData const & data) const
 {
-	if (binding >= m_descriptor_set.m_uniform_buffers.size())
+	if (binding >= m_descriptor_set.uniform_buffers.size())
 	{
 		std::cout << "Invalid uniform binding: " << binding << std::endl;
 		return;
 	}
 
-	UniformBuffer const & uniform = m_descriptor_set.m_uniform_buffers[binding];
+	UniformBuffer const & uniform = m_descriptor_set.uniform_buffers[binding];
 	set_uniform(binding, uniform, data);
 }
 

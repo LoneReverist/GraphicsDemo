@@ -105,19 +105,19 @@ std::expected<Mesh, GraphicsError> TextMesh::CreateMesh() const
 		FontAtlas::Glyph const & g = glyph.value();
 
 		// For the space character we just advance the pen position
-		if (!g.m_plane_bounds.has_value() || !g.m_atlas_bounds.has_value())
+		if (!g.plane_bounds.has_value() || !g.atlas_bounds.has_value())
 		{
-			pen.x += g.m_advance * width_scale;
+			pen.x += g.advance * width_scale;
 			continue;
 		}
 
 		// left, bottom, right, top
-		glm::vec4 pb = g.m_plane_bounds.value();
+		glm::vec4 pb = g.plane_bounds.value();
 		pb.x *= width_scale;
 		pb.z *= width_scale;
 		pb.y *= height_scale;
 		pb.w *= height_scale;
-		glm::vec4 uv = g.m_atlas_bounds.value();
+		glm::vec4 uv = g.atlas_bounds.value();
 		uv.x /= m_font_atlas.GetWidth();
 		uv.z /= m_font_atlas.GetWidth();
 		uv.y /= m_font_atlas.GetHeight();
@@ -137,7 +137,7 @@ std::expected<Mesh, GraphicsError> TextMesh::CreateMesh() const
 		indices.push_back(static_cast<Mesh::IndexT>(start_vi + 2));
 		indices.push_back(static_cast<Mesh::IndexT>(start_vi + 3));
 
-		pen.x += g.m_advance * width_scale;
+		pen.x += g.advance * width_scale;
 	}
 
 	// Vulkan screen coordinates are different from OpenGL, the y-axis is -1 at the top instead of the bottom of the screen.
@@ -145,7 +145,7 @@ std::expected<Mesh, GraphicsError> TextMesh::CreateMesh() const
 	if (m_graphics_api.ShouldFlipScreenY())
 	{
 		for (VertexT & v : verts)
-			v.m_pos.y = -v.m_pos.y;
+			v.pos.y = -v.pos.y;
 	}
 
 	Mesh mesh{ m_graphics_api };

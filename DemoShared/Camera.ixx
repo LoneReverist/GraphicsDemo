@@ -14,13 +14,13 @@ import Input;
 
 export struct ViewProjUniform
 {
-	alignas(16) glm::mat4 m_view;
-	alignas(16) glm::mat4 m_proj;
+	alignas(16) glm::mat4 view;
+	alignas(16) glm::mat4 proj;
 };
 
 export struct CameraPosUniform
 {
-	alignas(16) glm::vec3 m_pos;
+	alignas(16) glm::vec3 pos;
 };
 
 export class Camera
@@ -52,9 +52,9 @@ private:
 
 void Camera::Init(glm::vec3 const & pos, glm::vec3 const & dir)
 {
-	m_pos_uniform.m_pos = pos;
+	m_pos_uniform.pos = pos;
 	m_dir = dir;
-	m_view_proj_uniform.m_view = glm::lookAt(m_pos_uniform.m_pos, m_pos_uniform.m_pos + m_dir, m_up_dir);
+	m_view_proj_uniform.view = glm::lookAt(m_pos_uniform.pos, m_pos_uniform.pos + m_dir, m_up_dir);
 }
 
 void Camera::OnViewportResized(int width, int height)
@@ -63,10 +63,10 @@ void Camera::OnViewportResized(int width, int height)
 		return;
 
 	const float aspect_ratio = static_cast<float>(width) / static_cast<float>(height);
-	m_view_proj_uniform.m_proj = glm::perspective(m_fov, aspect_ratio, m_near_plane, m_far_plane);
+	m_view_proj_uniform.proj = glm::perspective(m_fov, aspect_ratio, m_near_plane, m_far_plane);
 
 	if (m_flip_proj_y)
-		m_view_proj_uniform.m_proj[1][1] *= -1; // account for vulkan having flipped y-axis compared to opengl
+		m_view_proj_uniform.proj[1][1] *= -1; // account for vulkan having flipped y-axis compared to opengl
 }
 
 void Camera::Update(double delta_time, Input const & input)
@@ -109,9 +109,9 @@ void Camera::Update(double delta_time, Input const & input)
 	if (move)
 	{
 		const float speed = 10.0f;
-		m_pos_uniform.m_pos += glm::normalize(velocity) * (speed * dt);
+		m_pos_uniform.pos += glm::normalize(velocity) * (speed * dt);
 	}
 
 	if (move || rotate)
-		m_view_proj_uniform.m_view = glm::lookAt(m_pos_uniform.m_pos, m_pos_uniform.m_pos + m_dir, glm::vec3(0.0, 0.0, 1.0));
+		m_view_proj_uniform.view = glm::lookAt(m_pos_uniform.pos, m_pos_uniform.pos + m_dir, glm::vec3(0.0, 0.0, 1.0));
 }

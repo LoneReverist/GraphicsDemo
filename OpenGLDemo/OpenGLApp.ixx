@@ -14,8 +14,8 @@ import Input;
 
 export struct WindowSize
 {
-	int m_width = 0;
-	int m_height = 0;
+	int width = 0;
+	int height = 0;
 
 	auto operator<=>(WindowSize const &) const = default;
 };

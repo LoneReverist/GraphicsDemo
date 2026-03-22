@@ -61,9 +61,9 @@ std::expected<GraphicsPipeline, GraphicsError> SkyboxPipeline::CreateGraphicsPip
 	builder.SetVSUniformTypes<ViewProjUniform>();
 	builder.SetTexture(*texture);
 	builder.SetDepthTestOptions(DepthTestOptions{
-		.m_enable_depth_test = true,
-		.m_enable_depth_write = false,
-		.m_depth_compare_op = DepthCompareOp::EQUAL
+		.enable_depth_test = true,
+		.enable_depth_write = false,
+		.depth_compare_op = DepthCompareOp::EQUAL
 		});
 	builder.SetCullMode(CullMode::BACK);
 
