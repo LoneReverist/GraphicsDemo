@@ -12,12 +12,12 @@ module;
 export module RainbowTextPipeline;
 
 import AssetPool;
-import FontAtlas;
 import GraphicsApi;
 import GraphicsError;
 import GraphicsPipeline;
 import PipelineBuilder;
 import RenderObject;
+import Texture;
 import Vertex;
 
 export class RainbowTextPipeline
@@ -39,7 +39,8 @@ public:
 	static std::expected<GraphicsPipeline, GraphicsError> CreateGraphicsPipeline(
 		GraphicsApi const & graphics_api,
 		std::filesystem::path const & shaders_path,
-		FontAtlas const & font_atlas);
+		AssetPool<Texture> const & texture_pool,
+		AssetId texture_id);
 
 	RainbowTextPipeline() = default;
 	explicit RainbowTextPipeline(AssetId asset_id) : m_asset_id(asset_id) {}
@@ -53,7 +54,8 @@ private:
 std::expected<GraphicsPipeline, GraphicsError> RainbowTextPipeline::CreateGraphicsPipeline(
 	GraphicsApi const & graphics_api,
 	std::filesystem::path const & shaders_path,
-	FontAtlas const & font_atlas)
+	AssetPool<Texture> const & texture_pool,
+	AssetId texture_id)
 {
 	struct ObjectDataFS
 	{
@@ -63,6 +65,10 @@ std::expected<GraphicsPipeline, GraphicsError> RainbowTextPipeline::CreateGraphi
 		alignas(4) float rainbow_width;
 		alignas(4) float slant_factor;
 	};
+
+	Texture const * texture = texture_pool.Get(texture_id);
+	if (!texture)
+		return std::unexpected{ GraphicsError{ "TextPipeline::CreateGraphicsPipeline: invalid texture" } };
 
 	PipelineBuilder builder{ graphics_api };
 
@@ -74,7 +80,7 @@ std::expected<GraphicsPipeline, GraphicsError> RainbowTextPipeline::CreateGraphi
 
 	builder.SetVertexType<VertexT>();
 	builder.SetObjectDataTypes<std::nullopt_t, ObjectDataFS>();
-	builder.SetTexture(font_atlas.GetTexture());
+	builder.SetTexture(*texture);
 	builder.SetDepthTestOptions(DepthTestOptions{
 		.enable_depth_test = false,
 		.enable_depth_write = false,

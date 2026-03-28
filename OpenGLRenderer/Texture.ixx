@@ -83,9 +83,14 @@ public:
 
 	void Bind(unsigned int binding) const;
 
+	std::uint32_t GetWidth() const { return m_width; }
+	std::uint32_t GetHeight() const { return m_height; }
+
 private:
 	std::reference_wrapper<GraphicsApi const> m_graphics_api;
 
 	unsigned int m_type = 0;
 	Image m_image;
+	std::uint32_t m_width = 0;
+	std::uint32_t m_height = 0;
 };

@@ -103,6 +103,9 @@ std::expected<void, GraphicsError> Texture::Create(ImageData const & image_data,
 	if (!image_data.IsValid())
 		return std::unexpected{ GraphicsError{ "Texture() image_data not valid" } };
 
+	m_width = image_data.width;
+	m_height = image_data.height;
+
 	m_type = GL_TEXTURE_2D;
 	m_image.Create();
 	glBindTexture(m_type, m_image.GetId());
@@ -121,8 +124,8 @@ std::expected<void, GraphicsError> Texture::Create(ImageData const & image_data,
 		m_type,
 		0 /*level*/,
 		internal_format,
-		image_data.width,
-		image_data.height,
+		m_width,
+		m_height,
 		0 /*border*/,
 		format,
 		GL_UNSIGNED_BYTE,
@@ -138,6 +141,9 @@ std::expected<void, GraphicsError> Texture::Create(CubeImageData const & image_d
 {
 	if (!image_data.IsValid())
 		return std::unexpected{ GraphicsError{ "Texture() image_data not valid" } };
+
+	m_width = image_data.width;
+	m_height = image_data.height;
 
 	m_type = GL_TEXTURE_CUBE_MAP;
 	m_image.Create();
@@ -160,8 +166,8 @@ std::expected<void, GraphicsError> Texture::Create(CubeImageData const & image_d
 			GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
 			0,
 			internal_format,
-			image_data.width,
-			image_data.height,
+			m_width,
+			m_height,
 			0,
 			format,
 			GL_UNSIGNED_BYTE,

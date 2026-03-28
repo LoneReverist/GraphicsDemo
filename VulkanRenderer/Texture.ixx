@@ -121,9 +121,14 @@ public:
 	VkImageView GetImageView() const { return m_image.GetView(); }
 	VkSampler GetSampler() const { return m_sampler.Get(); }
 
+	std::uint32_t GetWidth() const { return m_width; }
+	std::uint32_t GetHeight() const { return m_height; }
+
 private:
 	std::reference_wrapper<GraphicsApi const> m_graphics_api;
 
 	Image m_image;
 	Sampler m_sampler;
+	std::uint32_t m_width = 0;
+	std::uint32_t m_height = 0;
 };

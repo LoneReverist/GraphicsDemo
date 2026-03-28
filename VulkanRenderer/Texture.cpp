@@ -367,6 +367,9 @@ std::expected<void, GraphicsError> Texture::Create(ImageData const & image_data,
 	if (!sampler_result.has_value())
 		return sampler_result;
 
+	m_width = image_data.width;
+	m_height = image_data.height;
+
 	return {};
 }
 
@@ -379,6 +382,9 @@ std::expected<void, GraphicsError> Texture::Create(CubeImageData const & image_d
 	std::expected<void, GraphicsError> sampler_result = m_sampler.Create();
 	if (!sampler_result.has_value())
 		return sampler_result;
+
+	m_width = image_data.width;
+	m_height = image_data.height;
 
 	return {};
 }

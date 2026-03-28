@@ -12,12 +12,12 @@ module;
 export module TextPipeline;
 
 import AssetPool;
-import FontAtlas;
 import GraphicsApi;
 import GraphicsError;
 import GraphicsPipeline;
 import PipelineBuilder;
 import RenderObject;
+import Texture;
 import Vertex;
 
 export class TextPipeline
@@ -35,7 +35,8 @@ public:
 	static std::expected<GraphicsPipeline, GraphicsError> CreateGraphicsPipeline(
 		GraphicsApi const & graphics_api,
 		std::filesystem::path const & shaders_path,
-		FontAtlas const & font_atlas);
+		AssetPool<Texture> const & texture_pool,
+		AssetId texture_id);
 
 	TextPipeline() = default;
 	explicit TextPipeline(AssetId asset_id) : m_asset_id(asset_id) {}
@@ -49,7 +50,8 @@ private:
 std::expected<GraphicsPipeline, GraphicsError> TextPipeline::CreateGraphicsPipeline(
 	GraphicsApi const & graphics_api,
 	std::filesystem::path const & shaders_path,
-	FontAtlas const & font_atlas)
+	AssetPool<Texture> const & texture_pool,
+	AssetId texture_id)
 {
 	struct ObjectDataFS
 	{
@@ -57,6 +59,10 @@ std::expected<GraphicsPipeline, GraphicsError> TextPipeline::CreateGraphicsPipel
 		alignas(16) glm::vec4 bg_color;
 		alignas(16) glm::vec4 text_color;
 	};
+
+	Texture const * texture = texture_pool.Get(texture_id);
+	if (!texture)
+		return std::unexpected{ GraphicsError{ "TextPipeline::CreateGraphicsPipeline: invalid texture" } };
 
 	PipelineBuilder builder{ graphics_api };
 
@@ -68,7 +74,7 @@ std::expected<GraphicsPipeline, GraphicsError> TextPipeline::CreateGraphicsPipel
 
 	builder.SetVertexType<VertexT>();
 	builder.SetObjectDataTypes<std::nullopt_t, ObjectDataFS>();
-	builder.SetTexture(font_atlas.GetTexture());
+	builder.SetTexture(*texture);
 	builder.SetDepthTestOptions(DepthTestOptions{
 		.enable_depth_test = false,
 		.enable_depth_write = false,

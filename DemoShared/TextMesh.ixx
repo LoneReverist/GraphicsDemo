@@ -31,6 +31,8 @@ public:
 		GraphicsApi const & graphics_api,
 		std::string const & text,
 		FontAtlas const & font_atlas,
+		std::uint32_t font_tex_width,
+		std::uint32_t font_tex_height,
 		float font_size,
 		glm::vec2 origin,
 		int viewport_width,
@@ -56,6 +58,8 @@ private:
 
 	std::string m_text;
 	FontAtlas const & m_font_atlas;
+	std::uint32_t m_font_tex_width = 0;
+	std::uint32_t m_font_tex_height = 0;
 	float m_font_size = 0.0f;
 	float m_screen_px_range = 0.0f;
 	glm::vec2 m_origin;
@@ -68,6 +72,8 @@ TextMesh::TextMesh(
 	GraphicsApi const & graphics_api,
 	std::string const & text,
 	FontAtlas const & font_atlas,
+	std::uint32_t font_tex_width,
+	std::uint32_t font_tex_height,
 	float font_size,
 	glm::vec2 origin,
 	int viewport_width,
@@ -75,6 +81,8 @@ TextMesh::TextMesh(
 	: m_graphics_api(graphics_api)
 	, m_text(text)
 	, m_font_atlas(font_atlas)
+	, m_font_tex_width(font_tex_width)
+	, m_font_tex_height(font_tex_height)
 	, m_font_size(font_size)
 	, m_screen_px_range(font_size * font_atlas.GetPxRange())
 	, m_origin(origin)
@@ -85,8 +93,12 @@ TextMesh::TextMesh(
 
 std::expected<Mesh, GraphicsError> TextMesh::CreateMesh() const
 {
-	if (m_viewport_width == 0 || m_viewport_height == 0 || m_text.empty())
+	if (m_font_tex_width == 0 || m_font_tex_height == 0
+		|| m_viewport_width == 0 || m_viewport_height == 0
+		|| m_text.empty())
+	{
 		return Mesh{ m_graphics_api }; // an empty mesh is an expected result here
+	}
 
 	std::vector<VertexT> verts;
 	std::vector<Mesh::IndexT> indices;
@@ -118,10 +130,10 @@ std::expected<Mesh, GraphicsError> TextMesh::CreateMesh() const
 		pb.y *= height_scale;
 		pb.w *= height_scale;
 		glm::vec4 uv = g.atlas_bounds.value();
-		uv.x /= m_font_atlas.GetWidth();
-		uv.z /= m_font_atlas.GetWidth();
-		uv.y /= m_font_atlas.GetHeight();
-		uv.w /= m_font_atlas.GetHeight();
+		uv.x /= m_font_tex_width;
+		uv.z /= m_font_tex_width;
+		uv.y /= m_font_tex_height;
+		uv.w /= m_font_tex_height;
 
 		// 2 triangles
 		Mesh::IndexT start_vi = verts.size();

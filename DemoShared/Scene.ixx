@@ -79,7 +79,11 @@ private:
 		Pipeline const & pipeline,
 		ObjectData const & object_data = std::nullopt);
 
-	AssetId create_texture(std::filesystem::path const & filepath);
+	AssetId create_texture(
+		std::filesystem::path const & filepath,
+		PixelFormat format = PixelFormat::RGBA_SRGB,
+		bool flip_vertically = false,
+		bool use_mip_map = true);
 	AssetId create_cubemap_texture(std::array<std::filesystem::path, 6> const & filepaths);
 
 	MeshAsset<PositionVertex> create_skybox_mesh();

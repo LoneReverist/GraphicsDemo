@@ -22,11 +22,12 @@ import AssimpLoader;
 AssetId create_texture(
 	AssetPool<Texture> & texture_pool,
 	GraphicsApi const & graphics_api,
-	std::filesystem::path const & filepath)
+	std::filesystem::path const & filepath,
+	PixelFormat format = PixelFormat::RGBA_SRGB,
+	bool flip_vertically = false,
+	bool use_mip_map = true)
 {
-	PixelFormat format = PixelFormat::RGBA_SRGB;
-
-	StbImage image(filepath, GetPixelSize(format) /*STBI_rgb_alpha*/);
+	StbImage image(filepath, GetPixelSize(format) /*req_comp*/, flip_vertically);
 	if (!image.IsValid())
 	{
 		std::cout << "Failed to load image: " << filepath << std::endl;
@@ -54,9 +55,13 @@ AssetId create_texture(
 	return texture_id;
 }
 
-AssetId Scene::create_texture(std::filesystem::path const & filepath)
+AssetId Scene::create_texture(
+	std::filesystem::path const & filepath,
+	PixelFormat format /*= PixelFormat::RGBA_SRGB*/,
+	bool flip_vertically /*= false*/,
+	bool use_mip_map /*= true*/)
 {
-	return ::create_texture(m_texture_pool, m_graphics_api, filepath);
+	return ::create_texture(m_texture_pool, m_graphics_api, filepath, format, flip_vertically, use_mip_map);
 }
 
 AssetId create_cubemap_texture(
@@ -203,7 +208,16 @@ std::unique_ptr<TextMesh> Scene::create_text_mesh(
 	int viewport_width,
 	int viewport_height)
 {
-	auto text_mesh = std::make_unique<TextMesh>(m_graphics_api, text, font_atlas, font_size, origin, viewport_width, viewport_height);
+	std::uint32_t font_tex_width = 0, font_tex_height = 0;
+	Texture const * font_tex = m_texture_pool.Get(font_atlas.GetTexture());
+	if (font_tex)
+	{
+		font_tex_width = font_tex->GetWidth();
+		font_tex_height = font_tex->GetHeight();
+	}
+
+	auto text_mesh = std::make_unique<TextMesh>(m_graphics_api, text,
+		font_atlas, font_tex_width, font_tex_height, font_size, origin, viewport_width, viewport_height);
 	text_mesh->SetUpdateMeshCallback([&mesh_pool = m_mesh_pool](AssetId id, Mesh new_mesh)
 		{
 			if (!id.IsValid())
@@ -317,15 +331,16 @@ Scene::Scene(GraphicsApi const & graphics_api, std::string const & title)
 		textures_path / "skybox" / "back.jpg"
 	});
 
-	m_arial_font = std::make_unique<FontAtlas>(m_graphics_api, fonts_path / "ArialAtlas.png", fonts_path / "ArialAtlas.json");
+	AssetId arial_tex_id = create_texture(fonts_path / "ArialAtlas.png", PixelFormat::RGB_UNORM, true /*flip_vertically*/, false /*use_mip_map*/);
+	m_arial_font = std::make_unique<FontAtlas>(arial_tex_id, fonts_path / "ArialAtlas.json");
 
 	ColorPipeline color_pipeline = create_pipeline<ColorPipeline>(m_camera, m_lights);
 	TexturePipeline ground_pipeline = create_pipeline<TexturePipeline>(m_camera, m_lights, m_texture_pool, ground_tex_id);
 	SkyboxPipeline skybox_pipeline = create_pipeline<SkyboxPipeline>(m_camera, m_texture_pool, skybox_tex_id);
 	LightSourcePipeline light_source_pipeline = create_pipeline<LightSourcePipeline>(m_camera);
 	ReflectionPipeline reflection_pipeline = create_pipeline<ReflectionPipeline>(m_camera, m_lights, m_texture_pool, skybox_tex_id);
-	TextPipeline text_pipeline = create_pipeline<TextPipeline>(*m_arial_font);
-	RainbowTextPipeline rainbow_text_pipeline = create_pipeline<RainbowTextPipeline>(*m_arial_font);
+	TextPipeline text_pipeline = create_pipeline<TextPipeline>(m_texture_pool, arial_tex_id);
+	RainbowTextPipeline rainbow_text_pipeline = create_pipeline<RainbowTextPipeline>(m_texture_pool, arial_tex_id);
 
 	MeshAsset<NormalVertex> sword_mesh = create_mesh<NormalVertex>(objects_path / "skullsword.obj");
 	init_sword_transform(0, m_sword0.model);

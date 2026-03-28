@@ -14,7 +14,7 @@ export class StbImage
 {
 public:
 	StbImage() = default;
-	explicit StbImage(std::filesystem::path const & filepath, int req_comp);
+	explicit StbImage(std::filesystem::path const & filepath, int req_comp, bool flip_vertically = false);
 
 	~StbImage();
 
@@ -42,9 +42,9 @@ private:
 	std::uint8_t * m_data{ nullptr };
 };
 
-StbImage::StbImage(std::filesystem::path const & filepath, int req_comp)
+StbImage::StbImage(std::filesystem::path const & filepath, int req_comp, bool flip_vertically /*= false*/)
 {
-	LoadImage(filepath, req_comp);
+	LoadImage(filepath, req_comp, flip_vertically);
 }
 
 StbImage::~StbImage()
