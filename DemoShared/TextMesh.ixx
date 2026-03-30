@@ -17,6 +17,7 @@ import FontAtlas;
 import GraphicsApi;
 import GraphicsError;
 import Mesh;
+import MeshManager;
 import Renderer;
 import Vertex;
 
@@ -46,14 +47,14 @@ public:
 
 	void SetUpdateMeshCallback(UpdateMeshCallbackT const & callback) { m_update_mesh_callback = callback; }
 
-	void SetAssetId(AssetId asset_id) { m_asset_id = asset_id; }
-	AssetId GetAssetId() const { return m_asset_id; }
+	void SetMeshId(MeshId<VertexT> mesh_id) { m_mesh_id = mesh_id; }
+	MeshId<VertexT> GetMeshId() const { return m_mesh_id; }
 
 	float GetScreenPxRange() const { return m_screen_px_range; }
 
 private:
 	GraphicsApi const & m_graphics_api;
-	AssetId m_asset_id;
+	MeshId<VertexT> m_mesh_id;
 	UpdateMeshCallbackT m_update_mesh_callback;
 
 	std::string m_text;
@@ -185,7 +186,7 @@ void TextMesh::OnViewportResized(int width, int height)
 			return;
 		}
 
-		m_update_mesh_callback(m_asset_id, std::move(mesh.value()));
+		m_update_mesh_callback(m_mesh_id, std::move(mesh.value()));
 	}
 }
 
@@ -205,6 +206,6 @@ void TextMesh::SetText(std::string const & text)
 			return;
 		}
 
-		m_update_mesh_callback(m_asset_id, std::move(mesh.value()));
+		m_update_mesh_callback(m_mesh_id, std::move(mesh.value()));
 	}
 }

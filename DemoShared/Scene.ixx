@@ -24,7 +24,7 @@ import Input;
 import LightsManager;
 import LightSourcePipeline;
 import Mesh;
-import MeshAsset;
+import MeshManager;
 import RainbowTextPipeline;
 import ReflectionPipeline;
 import Renderer;
@@ -66,16 +66,16 @@ public:
 
 private:
 	template <IsVertex VertexT, typename... Args>
-	MeshAsset<VertexT> create_mesh(Args &&... args);
+	MeshId<VertexT> create_mesh(Args &&... args);
 
 	template <typename PipelineT, typename... Args>
 	PipelineT create_pipeline(Args &&... args);
 
-	template <typename Mesh, typename Pipeline, typename ObjectData = std::nullopt_t>
-		requires MeshIsCompatibleWithPipeline<Mesh, Pipeline> && ObjectDataIsCompatibleWithPipeline<ObjectData, Pipeline>
+	template <IsVertex VertexT, typename Pipeline, typename ObjectData = std::nullopt_t>
+		requires MeshIsCompatibleWithPipeline<MeshId<VertexT>, Pipeline> && ObjectDataIsCompatibleWithPipeline<ObjectData, Pipeline>
 	AssetId create_render_object(
 		std::string const & name,
-		Mesh const & mesh,
+		MeshId<VertexT> const & mesh_id,
 		Pipeline const & pipeline,
 		ObjectData const & object_data = std::nullopt);
 
@@ -86,9 +86,9 @@ private:
 		bool use_mip_map = true);
 	AssetId create_cubemap_texture(std::array<std::filesystem::path, 6> const & filepaths);
 
-	MeshAsset<PositionVertex> create_skybox_mesh();
-	MeshAsset<TextureVertex> create_ground_mesh();
-	std::vector<MeshAsset<ColorVertex>> create_tree_with_material_meshes();
+	MeshId<PositionVertex> create_skybox_mesh();
+	MeshId<TextureVertex> create_ground_mesh();
+	std::vector<MeshId<ColorVertex>> create_tree_meshes();
 	std::unique_ptr<TextMesh> create_text_mesh(
 		std::string const & text,
 		FontAtlas const & font_atlas,
@@ -106,7 +106,7 @@ private:
 	Camera m_camera;
 	LightsManager m_lights;
 
-	AssetPool<Mesh> m_mesh_pool;
+	MeshManager m_mesh_manager;
 	AssetPool<GraphicsPipeline> m_pipeline_pool;
 	AssetPool<RenderObject> m_render_object_pool;
 	AssetPool<Texture> m_texture_pool;
@@ -126,8 +126,7 @@ private:
 	TexturePipeline::ObjectData m_ground;
 	TextPipeline::ObjectData m_fps_label;
 	RainbowTextPipeline::ObjectData m_title_label;
-	LightSourcePipeline::ObjectData m_tree;
-	ColorPipeline::ObjectData m_tree_with_material;
+	ColorPipeline::ObjectData m_tree;
 
 	float m_timer = 0.0f;
 	float m_frame_timer = 0.0f;
@@ -137,22 +136,17 @@ private:
 };
 
 template<IsVertex VertexT, typename... Args>
-MeshAsset<VertexT> Scene::create_mesh(Args &&... args)
+MeshId<VertexT> Scene::create_mesh(Args &&... args)
 {
-	std::expected<Mesh, GraphicsError> mesh
-		= MeshAsset<VertexT>::Create(m_graphics_api, std::forward<Args>(args)...);
-	if (!mesh.has_value())
+	std::expected<MeshId<VertexT>, GraphicsError> mesh_id
+		= m_mesh_manager.CreateMesh<VertexT>(std::forward<Args>(args)...);
+	if (!mesh_id.has_value())
 	{
-		std::cout << "Failed to create MeshAsset<" << typeid(VertexT).name()
-			<< "> Error: " << mesh.error().GetMessage() << std::endl;
-		return MeshAsset<VertexT>{};
+		std::cout << "Failed to create mesh: " << mesh_id.error().GetMessage() << std::endl;
+		return MeshId<VertexT>{};
 	}
 
-	AssetId mesh_id = m_mesh_pool.Add(std::move(mesh.value()));
-	if (!mesh_id.IsValid())
-		std::cout << "Failed to add mesh to pool." << std::endl;
-
-	return MeshAsset<VertexT>{ mesh_id };
+	return mesh_id.value();
 }
 
 template <typename PipelineT, typename... Args>
@@ -176,15 +170,15 @@ PipelineT Scene::create_pipeline(Args &&... args)
 	return PipelineT{ pipeline_id };
 }
 
-template <typename Mesh, typename Pipeline, typename ObjectData /*= std::nullopt_t*/>
-	requires MeshIsCompatibleWithPipeline<Mesh, Pipeline> && ObjectDataIsCompatibleWithPipeline<ObjectData, Pipeline>
+template <IsVertex VertexT, typename Pipeline, typename ObjectData /*= std::nullopt_t*/>
+	requires MeshIsCompatibleWithPipeline<MeshId<VertexT>, Pipeline> && ObjectDataIsCompatibleWithPipeline<ObjectData, Pipeline>
 AssetId Scene::create_render_object(
 	std::string const & name,
-	Mesh const & mesh,
+	MeshId<VertexT> const & mesh_id,
 	Pipeline const & pipeline,
 	ObjectData const & object_data /*= std::nullopt*/)
 {
-	if (!mesh.GetAssetId().IsValid())
+	if (!mesh_id.IsValid())
 	{
 		std::cout << "Scene::create_render_object: invalid mesh id for object: " + name;
 		return AssetId{};
@@ -195,7 +189,7 @@ AssetId Scene::create_render_object(
 		return AssetId{};
 	}
 
-	RenderObject obj{ name, mesh.GetAssetId(), pipeline.GetAssetId() };
+	RenderObject obj{ name, mesh_id, pipeline.GetAssetId() };
 	if constexpr (!std::same_as<ObjectData, std::nullopt_t>)
 		obj.SetObjectData(&object_data);
 

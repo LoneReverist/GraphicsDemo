@@ -24,7 +24,7 @@ public:
 
 	std::uint32_t GetIndex() const { return id & IndexMask; }
 	std::uint32_t GetGeneration() const { return id >> GenerationShift; }
-	bool IsValid() { return id != InvalidId; }
+	bool IsValid() const { return id != InvalidId; }
 
 	bool operator==(AssetId const & other) const { return id == other.id; }
 

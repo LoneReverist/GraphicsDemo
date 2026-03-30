@@ -124,7 +124,7 @@ AssetId Scene::create_cubemap_texture(std::array<std::filesystem::path, 6> const
 	return ::create_cubemap_texture(m_texture_pool, m_graphics_api, filepaths);
 }
 
-MeshAsset<PositionVertex> Scene::create_skybox_mesh()
+MeshId<PositionVertex> Scene::create_skybox_mesh()
 {
 	std::vector<PositionVertex> verts{
 		{ { -1.0f,  1.0f, -1.0f } },
@@ -153,7 +153,7 @@ MeshAsset<PositionVertex> Scene::create_skybox_mesh()
 	return create_mesh<PositionVertex>(verts, indices);
 }
 
-MeshAsset<TextureVertex> Scene::create_ground_mesh()
+MeshId<TextureVertex> Scene::create_ground_mesh()
 {
 	float scale = 30.0f;
 
@@ -176,7 +176,7 @@ MeshAsset<TextureVertex> Scene::create_ground_mesh()
 	return create_mesh<TextureVertex>(verts, indices);
 }
 
-std::vector<MeshAsset<ColorVertex>> Scene::create_tree_with_material_meshes()
+std::vector<MeshId<ColorVertex>> Scene::create_tree_meshes()
 {
 	std::vector<Mesh> tree_meshes = AssimpLoader::LoadObjWithColorMaterial(m_graphics_api, m_resources_path / "objects" / "tree_with_material.obj");
 	if (tree_meshes.empty())
@@ -185,19 +185,19 @@ std::vector<MeshAsset<ColorVertex>> Scene::create_tree_with_material_meshes()
 		return {};
 	}
 
-	std::vector<MeshAsset<ColorVertex>> tree_with_material_meshes;
+	std::vector<MeshId<ColorVertex>> tree_mesh_ids;
 	for (auto & mesh : tree_meshes)
 	{
-		AssetId mesh_id = m_mesh_pool.Add(std::move(mesh));
-		if (!mesh_id.IsValid())
+		std::expected<MeshId<ColorVertex>, GraphicsError> mesh_id = m_mesh_manager.AddMesh<ColorVertex>(std::move(mesh));
+		if (!mesh_id.has_value() || !mesh_id.value().IsValid())
 		{
-			std::cout << "Failed to add tree_with_material to pool." << std::endl;
+			std::cout << "Failed to add tree_with_material to mesh manager: " << mesh_id.error().GetMessage() << std::endl;
 			continue;
 		}
 
-		tree_with_material_meshes.push_back(MeshAsset<ColorVertex>{ mesh_id });
+		tree_mesh_ids.push_back(mesh_id.value());
 	}
-	return tree_with_material_meshes;
+	return tree_mesh_ids;
 }
 
 std::unique_ptr<TextMesh> Scene::create_text_mesh(
@@ -218,7 +218,7 @@ std::unique_ptr<TextMesh> Scene::create_text_mesh(
 
 	auto text_mesh = std::make_unique<TextMesh>(m_graphics_api, text,
 		font_atlas, font_tex_width, font_tex_height, font_size, origin, viewport_width, viewport_height);
-	text_mesh->SetUpdateMeshCallback([&mesh_pool = m_mesh_pool](AssetId id, Mesh new_mesh)
+	text_mesh->SetUpdateMeshCallback([&mesh_manager = m_mesh_manager](AssetId id, Mesh new_mesh)
 		{
 			if (!id.IsValid())
 			{
@@ -226,7 +226,7 @@ std::unique_ptr<TextMesh> Scene::create_text_mesh(
 				return;
 			}
 
-			Mesh * mesh = mesh_pool.Get(id);
+			Mesh * mesh = mesh_manager.Get(id);
 			if (!mesh)
 			{
 				std::cout << "Scene::create_text_mesh: No mesh found in pool for AssetId: " << id.GetIndex() << std::endl;
@@ -244,14 +244,14 @@ std::unique_ptr<TextMesh> Scene::create_text_mesh(
 		return text_mesh;
 	}
 
-	AssetId mesh_id = m_mesh_pool.Add(std::move(mesh.value()));
-	if (!mesh_id.IsValid())
+	std::expected<MeshId<TextMesh::VertexT>, GraphicsError> mesh_id = m_mesh_manager.AddMesh<TextMesh::VertexT>(std::move(mesh.value()));
+	if (!mesh_id.has_value() || !mesh_id.value().IsValid())
 	{
-		std::cout << "Failed to add mesh to pool." << std::endl;
+		std::cout << "Failed to add text mesh to mesh manager: " << mesh_id.error().GetMessage() << std::endl;
 		return text_mesh;
 	}
 
-	text_mesh->SetAssetId(mesh_id);
+	text_mesh->SetMeshId(mesh_id.value());
 	return text_mesh;
 }
 
@@ -312,6 +312,7 @@ Scene::Scene(GraphicsApi const & graphics_api, std::string const & title)
 	, m_title{ title }
 	, m_renderer{ graphics_api }
 	, m_camera{ graphics_api.ShouldFlipScreenY() }
+	, m_mesh_manager{ graphics_api }
 {
 	m_dpi_scale = PlatformUtils::GetDPIScalingFactor();
 	float label_font_size = 18.0f * m_dpi_scale;
@@ -342,15 +343,15 @@ Scene::Scene(GraphicsApi const & graphics_api, std::string const & title)
 	TextPipeline text_pipeline = create_pipeline<TextPipeline>(m_texture_pool, arial_tex_id);
 	RainbowTextPipeline rainbow_text_pipeline = create_pipeline<RainbowTextPipeline>(m_texture_pool, arial_tex_id);
 
-	MeshAsset<NormalVertex> sword_mesh = create_mesh<NormalVertex>(objects_path / "skullsword.obj");
+	MeshId<NormalVertex> sword_mesh = create_mesh<NormalVertex>(objects_path / "skullsword.obj");
 	init_sword_transform(0, m_sword0.model);
 	init_sword_transform(1, m_sword1.model);
 	create_render_object("sword0", sword_mesh, reflection_pipeline, m_sword0);
 	create_render_object("sword1", sword_mesh, reflection_pipeline, m_sword1);
 
-	MeshAsset<NormalVertex> red_gem_mesh = create_mesh<NormalVertex>(objects_path / "redgem.obj");
-	MeshAsset<NormalVertex> green_gem_mesh = create_mesh<NormalVertex>(objects_path / "greengem.obj");
-	MeshAsset<NormalVertex> blue_gem_mesh = create_mesh<NormalVertex>(objects_path / "bluegem.obj");
+	MeshId<NormalVertex> red_gem_mesh = create_mesh<NormalVertex>(objects_path / "redgem.obj");
+	MeshId<NormalVertex> green_gem_mesh = create_mesh<NormalVertex>(objects_path / "greengem.obj");
+	MeshId<NormalVertex> blue_gem_mesh = create_mesh<NormalVertex>(objects_path / "bluegem.obj");
 	m_red_gem.color = glm::vec3{ 1.0f, 0.0f, 0.0f };
 	m_green_gem.color = glm::vec3{ 0.0f, 1.0f, 0.0f };
 	m_blue_gem.color = glm::vec3{ 0.0f, 0.0f, 1.0f };
@@ -361,23 +362,17 @@ Scene::Scene(GraphicsApi const & graphics_api, std::string const & title)
 	create_render_object("green gem", green_gem_mesh, light_source_pipeline, m_green_gem);
 	create_render_object("blue gem", blue_gem_mesh, light_source_pipeline, m_blue_gem);
 
-	MeshAsset<TextureVertex> ground_mesh = create_ground_mesh();
+	MeshId<TextureVertex> ground_mesh = create_ground_mesh();
 	create_render_object("ground", ground_mesh, ground_pipeline, m_ground);
 
-	MeshAsset<PositionVertex> skybox_mesh = create_skybox_mesh();
+	MeshId<PositionVertex> skybox_mesh = create_skybox_mesh();
 	create_render_object("skybox", skybox_mesh, skybox_pipeline, std::nullopt); // don't have to provide nullopt here, but intellisense complains if we don't
 
-	MeshAsset<NormalVertex> tree_mesh = create_mesh<NormalVertex>(objects_path / "tree.obj");
-	m_tree.color = glm::vec3{ 0.0f, 0.5f, 0.0f };
+	std::vector<MeshId<ColorVertex>> tree_meshes = create_tree_meshes();
 	m_tree.model = glm::scale(m_tree.model, glm::vec3(3.281, 3.281, 3.281)); // meters to feet
-	m_tree.model = glm::translate(m_tree.model, glm::vec3(3.0f, 5.0f, 0.0f));
-	create_render_object("tree", tree_mesh, light_source_pipeline, m_tree);
-
-	std::vector<MeshAsset<ColorVertex>> tree_with_material_meshes = create_tree_with_material_meshes();
-	m_tree_with_material.model = glm::scale(m_tree_with_material.model, glm::vec3(3.281, 3.281, 3.281)); // meters to feet
-	m_tree_with_material.model = glm::translate(m_tree_with_material.model, glm::vec3(-3.0f, 5.0f, 0.0f));
-	for (auto const & mesh : tree_with_material_meshes)
-		create_render_object("tree_with_material", mesh, color_pipeline, m_tree_with_material);
+	m_tree.model = glm::translate(m_tree.model, glm::vec3(-3.0f, 5.0f, 0.0f));
+	for (auto const & mesh : tree_meshes)
+		create_render_object("tree", mesh, color_pipeline, m_tree);
 
 	m_fps_mesh = create_text_mesh("FPS: ", *m_arial_font, label_font_size, glm::vec2{ -0.9, -0.9 } /*origin*/,
 		0 /*viewport_width*/, 0 /*viewport_height*/);
@@ -386,7 +381,7 @@ Scene::Scene(GraphicsApi const & graphics_api, std::string const & title)
 		.bg_color = { 0.0f, 0.0f, 0.0f, 0.0f },
 		.text_color = { 1.0f, 1.0f, 0.0f, 1.0 },
 	};
-	create_render_object("fps label", *m_fps_mesh, text_pipeline, m_fps_label);
+	create_render_object("fps label", m_fps_mesh->GetMeshId(), text_pipeline, m_fps_label);
 
 	m_title_mesh = create_text_mesh(m_title, *m_arial_font, title_font_size, glm::vec2{ -0.9, 0.8 } /*origin*/,
 		0 /*viewport_width*/, 0 /*viewport_height*/);
@@ -396,7 +391,7 @@ Scene::Scene(GraphicsApi const & graphics_api, std::string const & title)
 		.rainbow_width = 200.0f * m_dpi_scale,
 		.slant_factor = -1.0f
 	};
-	create_render_object("title", *m_title_mesh, rainbow_text_pipeline, m_title_label);
+	create_render_object("title", m_title_mesh->GetMeshId(), rainbow_text_pipeline, m_title_label);
 
 	m_lights.SetAmbientLight(AmbientLight{ glm::vec3{ 0.3, 0.3, 0.3 } });
 
@@ -506,7 +501,7 @@ void Scene::Render() const
 				continue;
 			}
 
-			Mesh const * mesh = m_mesh_pool.Get(obj->GetMeshId());
+			Mesh const * mesh = m_mesh_manager.Get(obj->GetMeshId());
 			if (!mesh)
 			{
 				std::cout << "Scene::Render: No mesh found in pool for AssetId: " << obj->GetMeshId().GetIndex() << std::endl;
