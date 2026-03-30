@@ -179,14 +179,15 @@ std::expected<void, GraphicsError> Texture::Create(CubeImageData const & image_d
 
 bool Texture::IsValid() const
 {
-	return m_image.GetId() != 0 && m_type != 0;
+	return m_image.GetId() != 0 && m_type != 0 && m_width != 0 && m_height != 0;
 }
 
-void Texture::Bind(unsigned int binding) const
+// static
+void Texture::Bind(unsigned int id, unsigned int type, unsigned int binding)
 {
-	if (!IsValid())
+	if (id == 0 || type == 0)
 		return;
 
 	glActiveTexture(GL_TEXTURE0 + binding);
-	glBindTexture(m_type, m_image.GetId());
+	glBindTexture(type, id);
 }

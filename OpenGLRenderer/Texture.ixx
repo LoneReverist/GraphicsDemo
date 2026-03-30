@@ -81,10 +81,13 @@ public:
 
 	bool IsValid() const;
 
-	void Bind(unsigned int binding) const;
+	unsigned int GetId() const { return m_image.GetId(); }
+	unsigned int GetType() const { return m_type; }
 
 	std::uint32_t GetWidth() const { return m_width; }
 	std::uint32_t GetHeight() const { return m_height; }
+
+	static void Bind(unsigned int id, unsigned int type, unsigned int binding);
 
 private:
 	std::reference_wrapper<GraphicsApi const> m_graphics_api;

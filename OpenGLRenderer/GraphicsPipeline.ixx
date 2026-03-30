@@ -25,6 +25,9 @@ struct UniformBuffer
 struct DescriptorSet
 {
 	std::vector<UniformBuffer> uniform_buffers;
+	unsigned int texture_binding = 0;
+	unsigned int texture_id = 0;
+	unsigned int texture_type = 0;
 };
 
 export enum class DepthCompareOp
@@ -146,9 +149,6 @@ private:
 	DescriptorSet m_descriptor_set;
 	UniformBuffer m_vs_object_uniform;
 	UniformBuffer m_fs_object_uniform;
-
-	Texture const * m_texture = nullptr;
-	unsigned int m_texture_binding = 0;
 
 	DepthTestOptions m_depth_test_options;
 	BlendOptions m_blend_options;

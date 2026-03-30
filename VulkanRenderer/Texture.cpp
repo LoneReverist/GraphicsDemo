@@ -394,5 +394,7 @@ bool Texture::IsValid() const
 	return m_image.Get() != VK_NULL_HANDLE
 		&& m_image.GetMemory() != VK_NULL_HANDLE
 		&& m_image.GetView() != VK_NULL_HANDLE
-		&& m_sampler.Get() != VK_NULL_HANDLE;
+		&& m_sampler.Get() != VK_NULL_HANDLE
+		&& m_width != 0
+		&& m_height != 0;
 }

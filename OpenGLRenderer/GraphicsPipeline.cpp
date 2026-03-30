@@ -63,7 +63,6 @@ std::expected<void, GraphicsError> GraphicsPipeline::Create(
 	BlendOptions const & blend_options,
 	CullMode cull_mode)
 {
-	m_texture = texture;
 	m_depth_test_options = depth_options;
 	m_blend_options = blend_options;
 	m_cull_mode = cull_mode;
@@ -111,7 +110,12 @@ std::expected<void, GraphicsError> GraphicsPipeline::Create(
 	}
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-	m_texture_binding = uniform_sizes.size();
+	if (texture && texture->IsValid())
+	{
+		m_descriptor_set.texture_binding = uniform_sizes.size();
+		m_descriptor_set.texture_id = texture->GetId();
+		m_descriptor_set.texture_type = texture->GetType();
+	}
 
 	return {};
 }
@@ -154,8 +158,8 @@ void GraphicsPipeline::Activate() const
 
 	glUseProgram(m_program.GetId());
 
-	if (m_texture)
-		m_texture->Bind(m_texture_binding);
+	if (m_descriptor_set.texture_id != 0)
+		Texture::Bind(m_descriptor_set.texture_id, m_descriptor_set.texture_type, m_descriptor_set.texture_binding);
 }
 
 void GraphicsPipeline::UpdatePerFrameConstants() const
