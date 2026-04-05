@@ -70,7 +70,7 @@ GraphicsApi::~GraphicsApi()
 {
 }
 
-void GraphicsApi::SetViewport(int width, int height) const
+void GraphicsApi::SetViewport(int width_pixels, int height_pixels) const
 {
-	glViewport(0, 0, width, height);
+	glViewport(0, 0, width_pixels, height_pixels);
 }

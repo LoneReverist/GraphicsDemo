@@ -15,7 +15,7 @@ module OpenGLApp;
 import GraphicsApi;
 import Scene;
 
-OpenGLApp::OpenGLApp(WindowSize window_size, std::string const & title)
+OpenGLApp::OpenGLApp(WindowSize window_size_screen_coords, std::string const & title)
 	: m_title(title)
 {
 	glfwSetErrorCallback([](int error, const char * description)
@@ -31,15 +31,20 @@ OpenGLApp::OpenGLApp(WindowSize window_size, std::string const & title)
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	m_window = glfwCreateWindow(window_size.width, window_size.height, title.c_str(), nullptr, nullptr);
+	m_window = glfwCreateWindow(
+		window_size_screen_coords.width,
+		window_size_screen_coords.height,
+		title.c_str(),
+		nullptr,
+		nullptr);
 	if (!m_window)
 		return;
 
 	glfwSetWindowUserPointer(m_window, this);
-	glfwSetFramebufferSizeCallback(m_window, [](GLFWwindow * window, int width, int height)
+	glfwSetFramebufferSizeCallback(m_window, [](GLFWwindow * window, int width_pixels, int height_pixels)
 		{
 			OpenGLApp * app = static_cast<OpenGLApp *>(glfwGetWindowUserPointer(window));
-			app->OnWindowResize(WindowSize{ width, height });
+			app->OnWindowResize(WindowSize{ width_pixels, height_pixels });
 		});
 	glfwSetKeyCallback(m_window, [](GLFWwindow * window, int key, int scan_code, int action, int mods)
 		{
@@ -47,7 +52,9 @@ OpenGLApp::OpenGLApp(WindowSize window_size, std::string const & title)
 			app->OnKeyEvent(key, scan_code, action, mods);
 		});
 
-	m_window_size.store(window_size);
+	int width_pixels = 0, height_pixels = 0;
+	glfwGetFramebufferSize(m_window, &width_pixels, &height_pixels);
+	m_window_size_pixels.store(WindowSize{ width_pixels, height_pixels });
 }
 
 OpenGLApp::~OpenGLApp()
@@ -65,7 +72,7 @@ void OpenGLApp::Run()
 		{
 			glfwMakeContextCurrent(m_window);
 
-			WindowSize size = m_window_size.load();
+			WindowSize size = m_window_size_pixels.load();
 
 			GraphicsApi graphics_api{ reinterpret_cast<GraphicsApi::LoadProcFn *>(glfwGetProcAddress) };
 
@@ -85,7 +92,7 @@ void OpenGLApp::Run()
 				scene.Render();
 				glfwSwapBuffers(m_window);
 
-				WindowSize new_size = m_window_size.load();
+				WindowSize new_size = m_window_size_pixels.load();
 				if (new_size != size)
 				{
 					graphics_api.SetViewport(new_size.width, new_size.height);
@@ -99,9 +106,9 @@ void OpenGLApp::Run()
 		glfwPollEvents(); // must only be called from main thread
 }
 
-void OpenGLApp::OnWindowResize(WindowSize size)
+void OpenGLApp::OnWindowResize(WindowSize size_pixels)
 {
-	m_window_size.store(size);
+	m_window_size_pixels.store(size_pixels);
 }
 
 void OpenGLApp::OnKeyEvent(int key, int /*scan_code*/, int action, int /*mods*/)

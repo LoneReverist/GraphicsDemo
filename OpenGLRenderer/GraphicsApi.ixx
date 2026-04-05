@@ -12,7 +12,7 @@ public:
 	explicit GraphicsApi(LoadProcFn * load_proc_fn);
 	~GraphicsApi();
 
-	void SetViewport(int width, int height) const;
+	void SetViewport(int width_pixels, int height_pixels) const;
 
 	bool ShouldFlipScreenY() const { return false; }
 };

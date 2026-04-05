@@ -23,7 +23,7 @@ export struct WindowSize
 export class VulkanApp
 {
 public:
-	explicit VulkanApp(WindowSize window_size, std::string const & title);
+	explicit VulkanApp(WindowSize window_size_screen_coords, std::string const & title);
 	~VulkanApp();
 
 	void Run();
@@ -39,6 +39,6 @@ private:
 	GLFWwindow * m_window = nullptr;
 	std::string const m_title;
 
-	std::atomic<WindowSize> m_window_size;
+	std::atomic<WindowSize> m_window_size_pixels;
 	Input m_input;
 };

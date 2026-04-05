@@ -16,7 +16,7 @@ import GraphicsApi;
 import Renderer;
 import Scene;
 
-VulkanApp::VulkanApp(WindowSize window_size, std::string const & title)
+VulkanApp::VulkanApp(WindowSize window_size_screen_coords, std::string const & title)
 	: m_title(title)
 {
 	glfwSetErrorCallback([](int error, const char * description)
@@ -30,15 +30,20 @@ VulkanApp::VulkanApp(WindowSize window_size, std::string const & title)
 
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-	m_window = glfwCreateWindow(window_size.width, window_size.height, m_title.c_str(), nullptr, nullptr);
+	m_window = glfwCreateWindow(
+		window_size_screen_coords.width,
+		window_size_screen_coords.height,
+		m_title.c_str(),
+		nullptr,
+		nullptr);
 	if (!m_window)
 		return;
 
 	glfwSetWindowUserPointer(m_window, this);
-	glfwSetFramebufferSizeCallback(m_window, [](GLFWwindow * window, int width, int height)
+	glfwSetFramebufferSizeCallback(m_window, [](GLFWwindow * window, int width_pixels, int height_pixels)
 		{
 			VulkanApp * app = static_cast<VulkanApp *>(glfwGetWindowUserPointer(window));
-			app->OnWindowResize(WindowSize{ width, height });
+			app->OnWindowResize(WindowSize{ width_pixels, height_pixels });
 		});
 	glfwSetKeyCallback(m_window, [](GLFWwindow * window, int key, int scan_code, int action, int mods)
 		{
@@ -46,7 +51,9 @@ VulkanApp::VulkanApp(WindowSize window_size, std::string const & title)
 			app->OnKeyEvent(key, scan_code, action, mods);
 		});
 
-	m_window_size.store(window_size);
+	int width_pixels = 0, height_pixels = 0;
+	glfwGetFramebufferSize(m_window, &width_pixels, &height_pixels);
+	m_window_size_pixels.store(WindowSize{ width_pixels, height_pixels });
 }
 
 VulkanApp::~VulkanApp()
@@ -62,7 +69,7 @@ void VulkanApp::Run()
 
 	std::jthread update_render_loop([this](std::stop_token s_token)
 		{
-			WindowSize size = m_window_size.load();
+			WindowSize size = m_window_size_pixels.load();
 			std::uint32_t extension_count = 0;
 			const char ** extensions = glfwGetRequiredInstanceExtensions(&extension_count);
 
@@ -89,7 +96,7 @@ void VulkanApp::Run()
 				else
 					swap_chain_out_of_date = true;
 
-				WindowSize new_size = m_window_size.load();
+				WindowSize new_size = m_window_size_pixels.load();
 				if (swap_chain_out_of_date || new_size != size)
 				{
 					graphics_api.RecreateSwapChain(new_size.width, new_size.height);
@@ -105,9 +112,9 @@ void VulkanApp::Run()
 		glfwPollEvents(); // must only be called from main thread
 }
 
-void VulkanApp::OnWindowResize(WindowSize size)
+void VulkanApp::OnWindowResize(WindowSize size_pixels)
 {
-	m_window_size.store(size);
+	m_window_size_pixels.store(size_pixels);
 }
 
 void VulkanApp::OnKeyEvent(int key, int /*scan_code*/, int action, int /*mods*/)
