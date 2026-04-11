@@ -10,7 +10,7 @@ module;
 #include <string>
 #include <vector>
 
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan_raii.hpp>
 
 module Texture;
 
@@ -81,7 +81,7 @@ Image & Image::operator=(Image && other)
 
 void Image::destroy()
 {
-	VkDevice device = m_graphics_api.GetDevice();
+	VkDevice device = *m_graphics_api.GetDevice();
 
 	vkDestroyImageView(device, m_image_view, nullptr);
 	m_image_view = VK_NULL_HANDLE;
@@ -125,7 +125,7 @@ std::expected<void, GraphicsError> load_image_into_buffer(
 	if (!result.has_value())
 		return std::unexpected{ result.error() };
 
-	VkDevice device = graphics_api.GetDevice();
+	VkDevice device = *graphics_api.GetDevice();
 
 	void * buffer_data = nullptr;
 	vkMapMemory(device, out_buffer.GetMemory(), 0, buffer_size, 0, &buffer_data);
@@ -140,7 +140,7 @@ std::expected<void, GraphicsError> Image::Create2dImage(ImageData const & image_
 	if (!image_data.IsValid())
 		return std::unexpected{ GraphicsError{ "Image::Create2dImage image_data not valid" } };
 
-	VkDevice device = m_graphics_api.GetDevice();
+	VkDevice device = *m_graphics_api.GetDevice();
 
 	Buffer staging_buffer{ m_graphics_api };
 	std::expected<void, GraphicsError> buffer_result = load_image_into_buffer(m_graphics_api, image_data, staging_buffer);
@@ -212,7 +212,7 @@ std::expected<void, GraphicsError> load_cube_image_into_buffer(
 	if (!result.has_value())
 		return std::unexpected{ result.error() };
 
-	VkDevice device = graphics_api.GetDevice();
+	VkDevice device = *graphics_api.GetDevice();
 
 	void * buffer_data = nullptr;
 	vkMapMemory(device, out_buffer.GetMemory(), 0, buffer_size, 0, &buffer_data);
@@ -231,7 +231,7 @@ std::expected<void, GraphicsError> Image::CreateCubeImage(CubeImageData const & 
 	if (!image_data.IsValid())
 		return std::unexpected{ GraphicsError{ "Image::CreateCubeImage image_data not valid" } };
 
-	VkDevice device = m_graphics_api.GetDevice();
+	VkDevice device = *m_graphics_api.GetDevice();
 
 	Buffer staging_buffer{ m_graphics_api };
 	std::expected<void, GraphicsError> buffer_result = load_cube_image_into_buffer(m_graphics_api, image_data, staging_buffer);
@@ -314,7 +314,7 @@ Sampler & Sampler::operator=(Sampler && other)
 
 void Sampler::destroy()
 {
-	VkDevice device = m_graphics_api.GetDevice();
+	VkDevice device = *m_graphics_api.GetDevice();
 
 	vkDestroySampler(device, m_sampler, nullptr);
 	m_sampler = VK_NULL_HANDLE;
@@ -343,7 +343,7 @@ std::expected<void, GraphicsError> Sampler::Create()
 		.unnormalizedCoordinates = VK_FALSE
 	};
 
-	VkResult result = vkCreateSampler(m_graphics_api.GetDevice(), &sampler_info, nullptr, &m_sampler);
+	VkResult result = vkCreateSampler(*m_graphics_api.GetDevice(), &sampler_info, nullptr, &m_sampler);
 	if (result != VK_SUCCESS)
 		return std::unexpected{ GraphicsError{ "Failed to create vulkan sampler for texture. code: " + std::to_string(result) } };
 

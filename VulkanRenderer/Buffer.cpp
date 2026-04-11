@@ -6,7 +6,7 @@ module;
 #include <expected>
 #include <string>
 
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan_raii.hpp>
 
 module Buffer;
 
@@ -45,7 +45,7 @@ std::expected<void, GraphicsError> Buffer::Create(VkDeviceSize size, VkBufferUsa
 {
 	Destroy();
 
-	VkDevice device = m_graphics_api.GetDevice();
+	VkDevice device = *m_graphics_api.GetDevice();
 
 	VkBufferCreateInfo buffer_info{
 		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
@@ -80,7 +80,7 @@ std::expected<void, GraphicsError> Buffer::Create(VkDeviceSize size, VkBufferUsa
 
 void Buffer::Destroy()
 {
-	VkDevice device = m_graphics_api.GetDevice();
+	VkDevice device = *m_graphics_api.GetDevice();
 
 	vkDestroyBuffer(device, m_buffer, nullptr);
 	m_buffer = VK_NULL_HANDLE;

@@ -9,7 +9,7 @@ module;
 #include <functional>
 #include <optional>
 
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan_raii.hpp>
 
 export module GraphicsPipeline;
 
@@ -61,39 +61,16 @@ private:
 	std::array<DescriptorSet, GraphicsApi::m_max_frames_in_flight> m_descriptor_sets;
 };
 
-class PipelineLayout
-{
-public:
-	explicit PipelineLayout(GraphicsApi const & graphics_api);
-	~PipelineLayout();
-
-	PipelineLayout(PipelineLayout && other);
-	PipelineLayout & operator=(PipelineLayout && other);
-
-	PipelineLayout(PipelineLayout const &) = delete;
-	PipelineLayout & operator=(PipelineLayout const &) = delete;
-
-	VkResult Create(VkDescriptorSetLayout descriptor_set_layout, std::vector<VkPushConstantRange> const & push_constants_ranges);
-	void Destroy();
-
-	VkPipelineLayout Get() const { return m_pipeline_layout; }
-
-private:
-	GraphicsApi const & m_graphics_api;
-
-	VkPipelineLayout m_pipeline_layout = VK_NULL_HANDLE;
-};
-
 export enum class DepthCompareOp
 {
-	NEVER = VK_COMPARE_OP_NEVER,
-	LESS = VK_COMPARE_OP_LESS,
-	EQUAL = VK_COMPARE_OP_EQUAL,
-	LESS_OR_EQUAL = VK_COMPARE_OP_LESS_OR_EQUAL,
-	GREATER = VK_COMPARE_OP_GREATER,
-	NOT_EQUAL = VK_COMPARE_OP_NOT_EQUAL,
-	GREATER_OR_EQUAL = VK_COMPARE_OP_GREATER_OR_EQUAL,
-	ALWAYS = VK_COMPARE_OP_ALWAYS
+	NEVER = vk::CompareOp::eNever,
+	LESS = vk::CompareOp::eLess,
+	EQUAL = vk::CompareOp::eEqual,
+	LESS_OR_EQUAL = vk::CompareOp::eLessOrEqual,
+	GREATER = vk::CompareOp::eGreater,
+	NOT_EQUAL = vk::CompareOp::eNotEqual,
+	GREATER_OR_EQUAL = vk::CompareOp::eGreaterOrEqual,
+	ALWAYS = vk::CompareOp::eAlways
 };
 
 export struct DepthTestOptions
@@ -106,28 +83,28 @@ export struct DepthTestOptions
 // By default, front facing facets have counter-clockwise vertex windings.
 export enum class CullMode
 {
-	NONE = VK_CULL_MODE_NONE,
-	FRONT = VK_CULL_MODE_FRONT_BIT,
-	BACK = VK_CULL_MODE_BACK_BIT
+	NONE = vk::CullModeFlagBits::eNone,
+	FRONT = vk::CullModeFlagBits::eFront,
+	BACK = vk::CullModeFlagBits::eBack
 };
 
 export enum class BlendFactor
 {
-	ZERO = VK_BLEND_FACTOR_ZERO,
-	ONE = VK_BLEND_FACTOR_ONE,
-	SRC_COLOR = VK_BLEND_FACTOR_SRC_COLOR,
-	ONE_MINUS_SRC_COLOR = VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR,
-	DST_COLOR = VK_BLEND_FACTOR_DST_COLOR,
-	ONE_MINUS_DST_COLOR = VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR,
-	SRC_ALPHA = VK_BLEND_FACTOR_SRC_ALPHA,
-	ONE_MINUS_SRC_ALPHA = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
-	DST_ALPHA = VK_BLEND_FACTOR_DST_ALPHA,
-	ONE_MINUS_DST_ALPHA = VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA,
-	CONSTANT_COLOR = VK_BLEND_FACTOR_CONSTANT_COLOR,
-	ONE_MINUS_CONSTANT_COLOR = VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR,
-	CONSTANT_ALPHA = VK_BLEND_FACTOR_CONSTANT_ALPHA,
-	ONE_MINUS_CONSTANT_ALPHA = VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA,
-	SRC_ALPHA_SATURATE = VK_BLEND_FACTOR_SRC_ALPHA_SATURATE
+	ZERO = vk::BlendFactor::eZero,
+	ONE = vk::BlendFactor::eOne,
+	SRC_COLOR = vk::BlendFactor::eSrcColor,
+	ONE_MINUS_SRC_COLOR = vk::BlendFactor::eOneMinusSrcColor,
+	DST_COLOR = vk::BlendFactor::eDstColor,
+	ONE_MINUS_DST_COLOR = vk::BlendFactor::eOneMinusDstColor,
+	SRC_ALPHA = vk::BlendFactor::eSrcAlpha,
+	ONE_MINUS_SRC_ALPHA = vk::BlendFactor::eOneMinusSrcAlpha,
+	DST_ALPHA = vk::BlendFactor::eDstAlpha,
+	ONE_MINUS_DST_ALPHA = vk::BlendFactor::eOneMinusDstAlpha,
+	CONSTANT_COLOR = vk::BlendFactor::eConstantColor,
+	ONE_MINUS_CONSTANT_COLOR = vk::BlendFactor::eOneMinusConstantColor,
+	CONSTANT_ALPHA = vk::BlendFactor::eConstantAlpha,
+	ONE_MINUS_CONSTANT_ALPHA = vk::BlendFactor::eOneMinusConstantAlpha,
+	SRC_ALPHA_SATURATE = vk::BlendFactor::eSrcAlphaSaturate
 };
 
 export struct BlendOptions
@@ -135,38 +112,6 @@ export struct BlendOptions
 	bool enable_blend = false;
 	BlendFactor src_factor = BlendFactor::SRC_ALPHA;
 	BlendFactor dst_factor = BlendFactor::ONE_MINUS_SRC_ALPHA;
-};
-
-class Pipeline
-{
-public:
-	explicit Pipeline(GraphicsApi const & graphics_api);
-	~Pipeline();
-
-	Pipeline(Pipeline && other);
-	Pipeline & operator=(Pipeline && other);
-
-	Pipeline(Pipeline const &) = delete;
-	Pipeline & operator=(Pipeline const &) = delete;
-
-	VkResult Create(
-		VkDevice device,
-		VkRenderPass render_pass,
-		VkPipelineLayout pipeline_layout,
-		std::vector<VkPipelineShaderStageCreateInfo> const & shader_stages,
-		VkVertexInputBindingDescription const & binding_desc,
-		std::vector<VkVertexInputAttributeDescription> const & attrib_descs,
-		DepthTestOptions const & depth_options,
-		BlendOptions const & blend_options,
-		CullMode cull_mode);
-	void Destroy();
-
-	VkPipeline Get() const { return m_pipeline; }
-
-private:
-	GraphicsApi const & m_graphics_api;
-
-	VkPipeline m_pipeline = VK_NULL_HANDLE;
 };
 
 export class GraphicsPipeline
@@ -188,19 +133,17 @@ public:
 	GraphicsPipeline & operator=(GraphicsPipeline &) = delete;
 
 	std::expected<void, GraphicsError> Create(
-		VkShaderModule vert_shader_module,
-		VkShaderModule frag_shader_module,
-		VkVertexInputBindingDescription const & binding_desc,
-		std::vector<VkVertexInputAttributeDescription> const & attrib_descs,
-		std::vector<VkPushConstantRange> const & push_constants_ranges,
-		std::vector<VkDeviceSize> const & vs_uniform_sizes,
-		std::vector<VkDeviceSize> const & fs_uniform_sizes,
+		vk::ShaderModule vert_shader_module,
+		vk::ShaderModule frag_shader_module,
+		vk::VertexInputBindingDescription const & binding_desc,
+		std::vector<vk::VertexInputAttributeDescription> const & attrib_descs,
+		std::vector<vk::PushConstantRange> const & push_constants_ranges,
+		std::vector<vk::DeviceSize> const & vs_uniform_sizes,
+		std::vector<vk::DeviceSize> const & fs_uniform_sizes,
 		Texture const * texture,
 		DepthTestOptions const & depth_options,
 		BlendOptions const & blend_options,
 		CullMode cull_mode);
-
-	bool IsValid() const { return m_pipeline.Get() != VK_NULL_HANDLE; }
 
 	void Activate() const;
 	void UpdatePerFrameConstants() const;
@@ -215,8 +158,8 @@ public:
 private:
 	std::reference_wrapper<GraphicsApi const> m_graphics_api;
 
-	PipelineLayout m_pipeline_layout;
-	Pipeline m_pipeline;
+	vk::raii::PipelineLayout m_pipeline_layout = nullptr;
+	vk::raii::Pipeline m_pipeline = nullptr;
 
 	DescriptorSets m_descriptor_sets;
 
@@ -237,20 +180,18 @@ void GraphicsPipeline::SetObjectData(ObjectDataVS const & vs_data, ObjectDataFS 
 	static_assert(!std::same_as<ObjectDataVS, std::nullopt_t> || !std::same_as<ObjectDataFS, std::nullopt_t>,
 		"At least one push constant data must be provided");
 
-	VkCommandBuffer command_buffer = m_graphics_api.get().GetCurCommandBuffer();
+	vk::raii::CommandBuffer const & command_buffer = m_graphics_api.get().GetCurCommandBuffer();
 	std::uint32_t offset = 0;
 
 	if constexpr (!std::same_as<ObjectDataVS, std::nullopt_t>)
 	{
-		vkCmdPushConstants(command_buffer, m_pipeline_layout.Get(), VK_SHADER_STAGE_VERTEX_BIT,
-			offset, sizeof(ObjectDataVS), &vs_data);
+		command_buffer.pushConstants<ObjectDataVS>(m_pipeline_layout, vk::ShaderStageFlagBits::eVertex, offset, vs_data);
 
 		offset += static_cast<std::uint32_t>(sizeof(ObjectDataVS));
 	}
 
 	if constexpr (!std::same_as<ObjectDataFS, std::nullopt_t>)
 	{
-		vkCmdPushConstants(command_buffer, m_pipeline_layout.Get(), VK_SHADER_STAGE_FRAGMENT_BIT,
-			offset, sizeof(ObjectDataFS), &fs_data);
+		command_buffer.pushConstants<ObjectDataFS>(m_pipeline_layout, vk::ShaderStageFlagBits::eFragment, offset, fs_data);
 	}
 }

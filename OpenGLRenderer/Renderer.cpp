@@ -17,7 +17,7 @@ Renderer::Renderer(GraphicsApi const & graphics_api)
 {
 }
 
-std::expected<void, GraphicsError> Renderer::BeginDraw() const
+void Renderer::BeginDraw() const
 {
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
@@ -25,11 +25,8 @@ std::expected<void, GraphicsError> Renderer::BeginDraw() const
 
 	glClearColor(m_clear_color.r, m_clear_color.g, m_clear_color.b, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	return {};
 }
 
-std::expected<void, GraphicsError> Renderer::EndDraw() const
+void Renderer::EndDraw() const
 {
-	return {};
 }

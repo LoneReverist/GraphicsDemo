@@ -9,7 +9,7 @@ module;
 #include <iostream>
 #include <vector>
 
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan_raii.hpp>
 
 module PipelineBuilder;
 
@@ -32,9 +32,9 @@ std::expected<std::vector<char>, GraphicsError> read_file(std::filesystem::path 
 	return buffer;
 }
 
-std::expected<VkShaderModule, GraphicsError> load_shader(
+std::expected<vk::raii::ShaderModule, GraphicsError> load_shader(
 	std::filesystem::path const & shader_path,
-	VkDevice device)
+	vk::raii::Device const & device)
 {
 	std::expected<std::vector<char>, GraphicsError> read_result = read_file(shader_path);
 	if (!read_result.has_value())
@@ -46,18 +46,12 @@ std::expected<VkShaderModule, GraphicsError> load_shader(
 	if (file_data.size() % sizeof(std::uint32_t) != 0) // SPIR-V files should be 32-bit
 		return std::unexpected{ GraphicsError{ "Shader file size is not a multiple of 4 bytes: " + shader_path.string() } };
 
-	VkShaderModuleCreateInfo create_info{
-		.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+	vk::ShaderModuleCreateInfo create_info{
 		.codeSize = file_data.size(),
 		.pCode = reinterpret_cast<const std::uint32_t *>(file_data.data())
 	};
 
-	VkShaderModule shader_module = VK_NULL_HANDLE;
-	VkResult result = vkCreateShaderModule(device, &create_info, nullptr, &shader_module);
-	if (result != VK_SUCCESS)
-		return std::unexpected{ GraphicsError{ "Failed to create shader module for file: " + shader_path.string() } };
-
-	return shader_module;
+	return vk::raii::ShaderModule(device, create_info);
 }
 
 PipelineBuilder::PipelineBuilder(GraphicsApi const & graphics_api)
@@ -65,33 +59,23 @@ PipelineBuilder::PipelineBuilder(GraphicsApi const & graphics_api)
 {
 }
 
-PipelineBuilder::~PipelineBuilder()
-{
-	VkDevice device = m_graphics_api.GetDevice();
-
-	vkDestroyShaderModule(device, m_frag_shader_module, nullptr);
-	vkDestroyShaderModule(device, m_vert_shader_module, nullptr);
-}
-
 std::expected<void, GraphicsError> PipelineBuilder::LoadShaders(std::filesystem::path const & vs_path, std::filesystem::path const & fs_path)
 {
-	VkDevice device = m_graphics_api.GetDevice();
-
 	// In Vulkan, the shaders are precompiled to SPIR-V
 	std::filesystem::path vert_spirv_path = vs_path;
 	vert_spirv_path.replace_extension(".vert.spv");
-	std::expected<VkShaderModule, GraphicsError> vert_shader_result = load_shader(vert_spirv_path, device);
+	std::expected<vk::raii::ShaderModule, GraphicsError> vert_shader_result = load_shader(vert_spirv_path, m_graphics_api.GetDevice());
 	if (!vert_shader_result.has_value())
 		return std::unexpected{ vert_shader_result.error() };
 
 	std::filesystem::path frag_spirv_path = fs_path;
 	frag_spirv_path.replace_extension(".frag.spv");
-	std::expected<VkShaderModule, GraphicsError> frag_shader_result = load_shader(frag_spirv_path, device);
+	std::expected<vk::raii::ShaderModule, GraphicsError> frag_shader_result = load_shader(frag_spirv_path, m_graphics_api.GetDevice());
 	if (!frag_shader_result.has_value())
 		return std::unexpected{ frag_shader_result.error() };
 
-	m_vert_shader_module = vert_shader_result.value();
-	m_frag_shader_module = frag_shader_result.value();
+	m_vert_shader_module = std::move(vert_shader_result.value());
+	m_frag_shader_module = std::move(frag_shader_result.value());
 
 	return {};
 }

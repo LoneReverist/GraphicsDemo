@@ -5,7 +5,7 @@ module;
 #include <cstdint>
 #include <vector>
 
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan_raii.hpp>
 
 export module VertexLayout;
 
@@ -37,40 +37,40 @@ namespace Vertex
 		{ VertexT::CreateLayout() } -> std::same_as<LayoutDesc>;
 	};
 
-	VkFormat attribute_type_to_vkformat(AttributeType type)
+	vk::Format attribute_type_to_vkformat(AttributeType type)
 	{
 		switch (type)
 		{
 		case AttributeType::Float:
-			return VK_FORMAT_R32_SFLOAT;
+			return vk::Format::eR32Sfloat;
 		case AttributeType::Float2:
-			return VK_FORMAT_R32G32_SFLOAT;
+			return vk::Format::eR32G32Sfloat;
 		case AttributeType::Float3:
-			return VK_FORMAT_R32G32B32_SFLOAT;
+			return vk::Format::eR32G32B32Sfloat;
 		case AttributeType::Float4:
-			return VK_FORMAT_R32G32B32A32_SFLOAT;
+			return vk::Format::eR32G32B32A32Sfloat;
 		default:
-			return VK_FORMAT_UNDEFINED;
+			return vk::Format::eUndefined;
 		}
 	}
 
 	// Get Vulkan binding description from LayoutDesc
-	export VkVertexInputBindingDescription GetBindingDesc(LayoutDesc const & layout)
+	export vk::VertexInputBindingDescription GetBindingDesc(LayoutDesc const & layout)
 	{
-		return VkVertexInputBindingDescription{
+		return vk::VertexInputBindingDescription{
 			.binding = 0,
 			.stride = static_cast<std::uint32_t>(layout.stride),
-			.inputRate = VK_VERTEX_INPUT_RATE_VERTEX
+			.inputRate = vk::VertexInputRate::eVertex
 		};
 	}
 
 	// Get Vulkan attribute descriptions from LayoutDesc
-	export std::vector<VkVertexInputAttributeDescription> GetAttribDescs(LayoutDesc const & layout)
+	export std::vector<vk::VertexInputAttributeDescription> GetAttribDescs(LayoutDesc const & layout)
 	{
-		std::vector<VkVertexInputAttributeDescription> attribs;
+		std::vector<vk::VertexInputAttributeDescription> attribs;
 		for (auto const & attr : layout.attributes)
 		{
-			attribs.emplace_back(VkVertexInputAttributeDescription{
+			attribs.emplace_back(vk::VertexInputAttributeDescription{
 				.location = attr.location,
 				.binding = 0,
 				.format = attribute_type_to_vkformat(attr.type),

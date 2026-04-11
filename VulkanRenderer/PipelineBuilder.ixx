@@ -8,7 +8,7 @@ module;
 #include <optional>
 #include <vector>
 
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan_raii.hpp>
 
 export module PipelineBuilder;
 
@@ -25,7 +25,6 @@ public:
 	using PerObjectConstantsCallback = GraphicsPipeline::PerObjectConstantsCallback;
 
 	explicit PipelineBuilder(GraphicsApi const & graphics_api);
-	~PipelineBuilder();
 
 	std::expected<void, GraphicsError> LoadShaders(std::filesystem::path const & vs_path, std::filesystem::path const & fs_path);
 
@@ -54,15 +53,15 @@ public:
 private:
 	GraphicsApi const & m_graphics_api;
 
-	VkShaderModule m_vert_shader_module = VK_NULL_HANDLE;
-	VkShaderModule m_frag_shader_module = VK_NULL_HANDLE;
+	vk::raii::ShaderModule m_vert_shader_module = nullptr;
+	vk::raii::ShaderModule m_frag_shader_module = nullptr;
 
-	VkVertexInputBindingDescription m_vert_binding_desc;
-	std::vector<VkVertexInputAttributeDescription> m_vert_attrib_descs;
+	vk::VertexInputBindingDescription m_vert_binding_desc;
+	std::vector<vk::VertexInputAttributeDescription> m_vert_attrib_descs;
 
-	std::vector<VkPushConstantRange> m_push_constants_ranges;
-	std::vector<VkDeviceSize> m_vs_uniform_sizes;
-	std::vector<VkDeviceSize> m_fs_uniform_sizes;
+	std::vector<vk::PushConstantRange> m_push_constants_ranges;
+	std::vector<vk::DeviceSize> m_vs_uniform_sizes;
+	std::vector<vk::DeviceSize> m_fs_uniform_sizes;
 	Texture const * m_texture = nullptr;
 
 	DepthTestOptions m_depth_test_options;
@@ -95,8 +94,8 @@ void PipelineBuilder::SetObjectDataTypes()
 	if constexpr (!std::same_as<ObjectDataVS, std::nullopt_t>)
 	{
 		m_push_constants_ranges.emplace_back(
-			VkPushConstantRange{
-				.stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+			vk::PushConstantRange{
+				.stageFlags = vk::ShaderStageFlagBits::eVertex,
 				.offset = offset,
 				.size = static_cast<std::uint32_t>(sizeof(ObjectDataVS)),
 			});
@@ -107,8 +106,8 @@ void PipelineBuilder::SetObjectDataTypes()
 	if constexpr (!std::same_as<ObjectDataFS, std::nullopt_t>)
 	{
 		m_push_constants_ranges.emplace_back(
-			VkPushConstantRange{
-				.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+			vk::PushConstantRange{
+				.stageFlags = vk::ShaderStageFlagBits::eFragment,
 				.offset = offset,
 				.size = static_cast<std::uint32_t>(sizeof(ObjectDataFS)),
 			});
@@ -119,7 +118,7 @@ template <typename... UniformTypes>
 void PipelineBuilder::SetVSUniformTypes()
 {
 	m_vs_uniform_sizes = {
-		static_cast<VkDeviceSize>(sizeof(UniformTypes))...
+		static_cast<vk::DeviceSize>(sizeof(UniformTypes))...
 	};
 }
 
@@ -127,6 +126,6 @@ template <typename... UniformTypes>
 void PipelineBuilder::SetFSUniformTypes()
 {
 	m_fs_uniform_sizes = {
-		static_cast<VkDeviceSize>(sizeof(UniformTypes))...
+		static_cast<vk::DeviceSize>(sizeof(UniformTypes))...
 	};
 }

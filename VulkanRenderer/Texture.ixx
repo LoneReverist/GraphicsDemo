@@ -6,7 +6,7 @@ module;
 #include <cstdint>
 #include <expected>
 
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan_raii.hpp>
 
 export module Texture;
 

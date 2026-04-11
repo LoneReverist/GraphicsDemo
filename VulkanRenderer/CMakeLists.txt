@@ -9,6 +9,11 @@ add_library(VulkanRenderer STATIC)
 
 target_compile_features(VulkanRenderer PRIVATE cxx_std_23)
 
+target_compile_definitions(VulkanRenderer PUBLIC
+	VULKAN_HPP_NO_STRUCT_CONSTRUCTORS=1
+	#VULKAN_HPP_HANDLE_ERROR_OUT_OF_DATE_AS_SUCCESS=1
+)
+
 set_target_properties(VulkanRenderer PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
 file(GLOB MODULE_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.ixx")

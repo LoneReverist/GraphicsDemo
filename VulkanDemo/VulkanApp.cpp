@@ -52,7 +52,7 @@ VulkanApp::VulkanApp(WindowSize window_size_screen_coords, std::string const & t
 		});
 
 	int width_pixels = 0, height_pixels = 0;
-	glfwGetFramebufferSize(m_window, &width_pixels, &height_pixels);
+	glfwGetFramebufferSize(m_window, &width_pixels, &height_pixels); // must only be called from main thread
 	m_window_size_pixels.store(WindowSize{ width_pixels, height_pixels });
 }
 

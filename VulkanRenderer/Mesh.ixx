@@ -8,7 +8,7 @@ module;
 #include <string>
 #include <vector>
 
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan_raii.hpp>
 
 export module Mesh;
 
@@ -63,7 +63,7 @@ std::expected<void, GraphicsError> create_buffer(
 	VkBufferUsageFlags buffer_usage,
 	Buffer & out_buffer)
 {
-	VkDevice device = graphics_api.GetDevice();
+	VkDevice device = *graphics_api.GetDevice();
 
 	VkDeviceSize buffer_size = sizeof(objects[0]) * objects.size();
 	Buffer staging_buffer(graphics_api);

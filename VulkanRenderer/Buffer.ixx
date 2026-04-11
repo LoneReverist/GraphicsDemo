@@ -4,7 +4,7 @@ module;
 
 #include <expected>
 
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan_raii.hpp>
 
 export module Buffer;
 

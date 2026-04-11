@@ -472,13 +472,7 @@ void Scene::Update(double delta_time, Input const & input)
 
 void Scene::Render() const
 {
-	std::expected<void, GraphicsError> result = m_renderer.BeginDraw();
-	if (!result.has_value())
-	{
-		std::cout << "Scene::Render: Failed to begin drawing. Error: "
-			<< result.error().GetMessage() << std::endl;
-		return;
-	}
+	m_renderer.BeginDraw();
 
 	for (PipelineRenderObjects const & pipeline_r_objs : m_active_render_objects)
 	{
@@ -513,11 +507,5 @@ void Scene::Render() const
 		}
 	}
 
-	result = m_renderer.EndDraw();
-	if (!result.has_value())
-	{
-		std::cout << "Scene::Render: Failed to end drawing. Error: "
-			<< result.error().GetMessage() << std::endl;
-		return;
-	}
+	m_renderer.EndDraw();
 }
