@@ -2,8 +2,6 @@
 
 module;
 
-#include <expected>
-
 #include <glm/vec3.hpp>
 
 export module Renderer;

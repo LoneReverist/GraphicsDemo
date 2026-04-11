@@ -51,45 +51,37 @@ private:
 
 Mesh::Mesh(GraphicsApi const & graphics_api)
 	: m_graphics_api{ graphics_api }
-	, m_vertex_buffer{ graphics_api }
-	, m_index_buffer{ graphics_api }
 {
 }
 
 template <typename T>
-std::expected<void, GraphicsError> create_buffer(
+Buffer create_buffer(
 	GraphicsApi const & graphics_api,
 	std::vector<T> objects,
-	VkBufferUsageFlags buffer_usage,
-	Buffer & out_buffer)
+	vk::BufferUsageFlagBits buffer_usage)
 {
-	VkDevice device = *graphics_api.GetDevice();
-
 	VkDeviceSize buffer_size = sizeof(objects[0]) * objects.size();
-	Buffer staging_buffer(graphics_api);
-	std::expected<void, GraphicsError> result = staging_buffer.Create(
+	Buffer staging_buffer;
+	staging_buffer.Create(
+		graphics_api,
 		buffer_size,
-		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-	);
-	if (!result.has_value())
-		return std::unexpected{ result.error().AddToMessage(" Mesh::create_buffer: Failed to create staging buffer.") };
+		vk::BufferUsageFlagBits::eTransferSrc,
+		vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
 
-	void * data;
-	vkMapMemory(device, staging_buffer.GetMemory(), 0, buffer_size, 0, &data);
+	void * data = staging_buffer.GetMemory().mapMemory(0, buffer_size);
 	std::memcpy(data, objects.data(), (size_t)buffer_size);
-	vkUnmapMemory(device, staging_buffer.GetMemory());
-
-	result = out_buffer.Create(
+	staging_buffer.GetMemory().unmapMemory();
+	
+	Buffer out_buffer;
+	out_buffer.Create(
+		graphics_api,
 		buffer_size,
-		VK_BUFFER_USAGE_TRANSFER_DST_BIT | buffer_usage,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-	if (!result.has_value())
-		return std::unexpected{ result.error().AddToMessage(" Mesh::create_buffer: Failed to create device local buffer.") };
+		vk::BufferUsageFlagBits::eTransferDst | buffer_usage,
+		vk::MemoryPropertyFlagBits::eDeviceLocal);
 
 	graphics_api.CopyBuffer(staging_buffer.Get(), out_buffer.Get(), buffer_size);
 
-	return {};
+	return out_buffer;
 }
 
 template<Vertex::VertexWithLayout VertexT>
@@ -100,21 +92,22 @@ std::expected<void, GraphicsError> Mesh::Create(
 	if (vertices.empty() || indices.empty())
 		return std::unexpected{ GraphicsError{ "Mesh::Create: invalid vertices or indicies." } };
 
-	std::expected<void, GraphicsError> v_buf_result = create_buffer(
-		m_graphics_api.get(),
-		vertices,
-		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-		m_vertex_buffer);
-	if (!v_buf_result.has_value())
-		return std::unexpected{ v_buf_result.error().AddToMessage(" Mesh::Create: Failed to create vertex buffer.") };
+	try
+	{
+		m_vertex_buffer = create_buffer(
+			m_graphics_api.get(),
+			vertices,
+			vk::BufferUsageFlagBits::eVertexBuffer);
 
-	std::expected<void, GraphicsError> i_buf_result = create_buffer(
-		m_graphics_api.get(),
-		indices,
-		VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-		m_index_buffer);
-	if (!i_buf_result.has_value())
-		return std::unexpected{ i_buf_result.error().AddToMessage(" Mesh::Create: Failed to create index buffer.") };
+		m_index_buffer = create_buffer(
+			m_graphics_api.get(),
+			indices,
+			vk::BufferUsageFlagBits::eIndexBuffer);
+	}
+	catch (vk::SystemError const & err)
+	{
+		return std::unexpected{ GraphicsError{ "Mesh::Create: failed to create buffers. code: " + std::to_string(err.code().value()) } };
+	}
 
 	m_index_count = static_cast<std::uint32_t>(indices.size());
 

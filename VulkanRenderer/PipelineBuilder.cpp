@@ -6,7 +6,6 @@ module;
 #include <expected>
 #include <filesystem>
 #include <fstream>
-#include <iostream>
 #include <vector>
 
 #include <vulkan/vulkan_raii.hpp>
@@ -91,6 +90,19 @@ std::expected<GraphicsPipeline, GraphicsError> PipelineBuilder::CreatePipeline()
 	if (!m_cull_mode.has_value())
 		return std::unexpected{ GraphicsError{ "Cull mode not set" } };
 
+	std::vector<vk::PipelineShaderStageCreateInfo> shader_stages{
+		{
+			.stage = vk::ShaderStageFlagBits::eVertex,
+			.module = *m_vert_shader_module,
+			.pName = "main"
+		},
+		{
+			.stage = vk::ShaderStageFlagBits::eFragment,
+			.module = *m_frag_shader_module,
+			.pName = "main"
+		}
+	};
+
 	GraphicsPipeline pipeline{
 		m_graphics_api,
 		m_per_frame_constants_callback,
@@ -98,8 +110,7 @@ std::expected<GraphicsPipeline, GraphicsError> PipelineBuilder::CreatePipeline()
 	};
 
 	std::expected<void, GraphicsError> result = pipeline.Create(
-		m_vert_shader_module,
-		m_frag_shader_module,
+		shader_stages,
 		m_vert_binding_desc,
 		m_vert_attrib_descs,
 		m_push_constants_ranges,

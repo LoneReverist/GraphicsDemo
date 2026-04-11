@@ -46,66 +46,10 @@ export struct CubeImageData
 	std::uint64_t GetSize() const;
 };
 
-class Image
-{
-public:
-	explicit Image(GraphicsApi const & graphics_api) : m_graphics_api(graphics_api) {}
-	~Image();
-
-	Image(Image && other);
-	Image & operator=(Image && other);
-
-	Image(Image const &) = delete;
-	Image & operator=(Image const &) = delete;
-
-	std::expected<void, GraphicsError> Create2dImage(ImageData const & image_data);
-	std::expected<void, GraphicsError> CreateCubeImage(CubeImageData const & image_data);
-
-	VkImage Get() const { return m_image; }
-	VkDeviceMemory GetMemory() const { return m_image_memory; }
-	VkImageView GetView() const { return m_image_view; }
-
-private:
-	void destroy();
-
-private:
-	GraphicsApi const & m_graphics_api;
-
-	VkImage m_image = VK_NULL_HANDLE;
-	VkDeviceMemory m_image_memory = VK_NULL_HANDLE;
-	VkImageView m_image_view = VK_NULL_HANDLE;
-};
-
-class Sampler
-{
-public:
-	explicit Sampler(GraphicsApi const & graphics_api) : m_graphics_api(graphics_api) {}
-	~Sampler();
-
-	Sampler(Sampler && other);
-	Sampler & operator=(Sampler && other);
-
-	Sampler(Sampler const &) = delete;
-	Sampler & operator=(Sampler const &) = delete;
-
-	std::expected<void, GraphicsError> Create();
-
-	VkSampler Get() const { return m_sampler; }
-
-private:
-	void destroy();
-
-private:
-	GraphicsApi const & m_graphics_api;
-
-	VkSampler m_sampler = VK_NULL_HANDLE;
-};
-
 export class Texture
 {
 public:
-	explicit Texture(GraphicsApi const & graphics_api);
-	~Texture() = default;
+	Texture() = default;
 
 	Texture(Texture && other) = default;
 	Texture & operator=(Texture && other) = default;
@@ -113,22 +57,22 @@ public:
 	Texture(Texture const &) = delete;
 	Texture & operator=(Texture const &) = delete;
 
-	std::expected<void, GraphicsError> Create(ImageData const & image_data, bool use_mip_map = true);
-	std::expected<void, GraphicsError> Create(CubeImageData const & image_data);
+	std::expected<void, GraphicsError> Create(GraphicsApi const & graphics_api, ImageData const & image_data, bool use_mip_map = true);
+	std::expected<void, GraphicsError> Create(GraphicsApi const & graphics_api, CubeImageData const & image_data);
 
 	bool IsValid() const;
 
-	VkImageView GetImageView() const { return m_image.GetView(); }
-	VkSampler GetSampler() const { return m_sampler.Get(); }
+	vk::raii::ImageView const & GetImageView() const { return m_image_view; }
+	vk::raii::Sampler const & GetSampler() const { return m_sampler; }
 
 	std::uint32_t GetWidth() const { return m_width; }
 	std::uint32_t GetHeight() const { return m_height; }
 
 private:
-	std::reference_wrapper<GraphicsApi const> m_graphics_api;
-
-	Image m_image;
-	Sampler m_sampler;
+	vk::raii::Image m_image = nullptr;
+	vk::raii::DeviceMemory m_image_memory = nullptr;
+	vk::raii::ImageView m_image_view = nullptr;
+	vk::raii::Sampler m_sampler = nullptr;
 	std::uint32_t m_width = 0;
 	std::uint32_t m_height = 0;
 };

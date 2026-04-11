@@ -17,20 +17,20 @@ module Texture;
 import Buffer;
 import GraphicsError;
 
-VkFormat to_vk_format(PixelFormat format)
+vk::Format to_vk_format(PixelFormat format)
 {
 	switch (format)
 	{
 	case PixelFormat::RGBA_UNORM:
-		return VK_FORMAT_R8G8B8A8_UNORM;
+		return vk::Format::eR8G8B8A8Unorm;
 	case PixelFormat::RGB_UNORM:
-		return VK_FORMAT_R8G8B8A8_UNORM; //VK_FORMAT_R8G8B8_UNORM;
+		return vk::Format::eR8G8B8A8Unorm; //vk::Format::eR8G8B8Unorm;
 	case PixelFormat::RGBA_SRGB:
-		return VK_FORMAT_R8G8B8A8_SRGB;
+		return vk::Format::eR8G8B8A8Srgb;
 	case PixelFormat::RGB_SRGB:
-		return VK_FORMAT_R8G8B8_SRGB;
+		return vk::Format::eR8G8B8Srgb;
 	default:
-		return VK_FORMAT_UNDEFINED;
+		return vk::Format::eUndefined;
 	}
 }
 
@@ -55,46 +55,9 @@ std::uint64_t CubeImageData::GetSize() const
 	return static_cast<std::uint64_t>(width * height * GetPixelSize(format));
 }
 
-Image::~Image()
-{
-	destroy();
-}
-
-Image::Image(Image && other)
-	: m_graphics_api(other.m_graphics_api)
-{
-	*this = std::move(other);
-}
-
-Image & Image::operator=(Image && other)
-{
-	if (this != &other)
-	{
-		destroy();
-
-		std::swap(m_image, other.m_image);
-		std::swap(m_image_memory, other.m_image_memory);
-		std::swap(m_image_view, other.m_image_view);
-	}
-	return *this;
-}
-
-void Image::destroy()
-{
-	VkDevice device = *m_graphics_api.GetDevice();
-
-	vkDestroyImageView(device, m_image_view, nullptr);
-	m_image_view = VK_NULL_HANDLE;
-	vkDestroyImage(device, m_image, nullptr);
-	m_image = VK_NULL_HANDLE;
-	vkFreeMemory(device, m_image_memory, nullptr);
-	m_image_memory = VK_NULL_HANDLE;
-}
-
-std::expected<void, GraphicsError> load_image_into_buffer(
+Buffer load_image_into_buffer(
 	GraphicsApi const & graphics_api,
-	ImageData const & image_data,
-	Buffer & out_buffer)
+	ImageData const & image_data)
 {
 	std::uint64_t input_size = image_data.GetSize();
 
@@ -118,254 +81,115 @@ std::expected<void, GraphicsError> load_image_into_buffer(
 		buffer_size = pixel_count * 4;
 	}
 
-	std::expected<void, GraphicsError> result = out_buffer.Create(
+	Buffer out_buffer;
+	out_buffer.Create(
+		graphics_api,
 		buffer_size,
-		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-	if (!result.has_value())
-		return std::unexpected{ result.error() };
+		vk::BufferUsageFlagBits::eTransferSrc,
+		vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
 
-	VkDevice device = *graphics_api.GetDevice();
-
-	void * buffer_data = nullptr;
-	vkMapMemory(device, out_buffer.GetMemory(), 0, buffer_size, 0, &buffer_data);
+	void * buffer_data = out_buffer.GetMemory().mapMemory(0, buffer_size);
 	std::memcpy(buffer_data, data_ptr, buffer_size);
-	vkUnmapMemory(device, out_buffer.GetMemory());
+	out_buffer.GetMemory().unmapMemory();
 
-	return {};
+	return out_buffer;
 }
 
-std::expected<void, GraphicsError> Image::Create2dImage(ImageData const & image_data)
-{
-	if (!image_data.IsValid())
-		return std::unexpected{ GraphicsError{ "Image::Create2dImage image_data not valid" } };
-
-	VkDevice device = *m_graphics_api.GetDevice();
-
-	Buffer staging_buffer{ m_graphics_api };
-	std::expected<void, GraphicsError> buffer_result = load_image_into_buffer(m_graphics_api, image_data, staging_buffer);
-	if (!buffer_result.has_value())
-		return std::unexpected{ buffer_result.error().AddToMessage(" Image::Create2dImage Failed to create staging buffer.") };
-
-	VkFormat format = to_vk_format(image_data.format);
-	if (format == VK_FORMAT_UNDEFINED)
-		return std::unexpected{ GraphicsError{ "Image::Create2dImage Unsupported pixel format: " + std::to_string(format) } };;
-
-	VkResult result = m_graphics_api.Create2dImage(
-		image_data.width,
-		image_data.height,
-		1 /*layers*/,
-		format,
-		VK_IMAGE_TILING_OPTIMAL,
-		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-		0 /*flags*/,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		m_image,
-		m_image_memory);
-	if (result != VK_SUCCESS)
-		return std::unexpected{ GraphicsError{ "Image::Create2dImage Failed to create image. code: " + std::to_string(result) } };
-
-	m_graphics_api.TransitionImageLayout(
-		m_image,
-		1 /*layers*/,
-		format,
-		VK_IMAGE_LAYOUT_UNDEFINED,
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-	m_graphics_api.CopyBufferToImage(
-		staging_buffer.Get(),
-		m_image,
-		image_data.width,
-		image_data.height,
-		1 /*layers*/);
-	m_graphics_api.TransitionImageLayout(
-		m_image,
-		1 /*layers*/,
-		format,
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
-	result = m_graphics_api.CreateImageView(
-		m_image,
-		VK_IMAGE_VIEW_TYPE_2D,
-		format,
-		VK_IMAGE_ASPECT_COLOR_BIT,
-		1 /*layers*/,
-		m_image_view);
-	if (result != VK_SUCCESS)
-		return std::unexpected{ GraphicsError{ "Image::Create2dImage Failed to create vulkan image view for texture. code: " + std::to_string(result) } };
-
-	return {};
-}
-
-std::expected<void, GraphicsError> load_cube_image_into_buffer(
+Buffer load_cube_image_into_buffer(
 	GraphicsApi const & graphics_api,
-	CubeImageData const & image_data,
-	Buffer & out_buffer)
+	CubeImageData const & image_data)
 {
 	std::uint64_t image_size = image_data.GetSize();
 	std::uint64_t buffer_size = image_size * image_data.data.size();
 
-	std::expected<void, GraphicsError> result = out_buffer.Create(
+	Buffer out_buffer;
+	out_buffer.Create(
+		graphics_api,
 		buffer_size,
-		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-	if (!result.has_value())
-		return std::unexpected{ result.error() };
+		vk::BufferUsageFlagBits::eTransferSrc,
+		vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
 
 	VkDevice device = *graphics_api.GetDevice();
 
-	void * buffer_data = nullptr;
-	vkMapMemory(device, out_buffer.GetMemory(), 0, buffer_size, 0, &buffer_data);
+	void * buffer_data = out_buffer.GetMemory().mapMemory(0, buffer_size);
 	for (std::uint8_t const * data : image_data.data)
 	{
 		std::memcpy(buffer_data, data, image_size);
 		buffer_data = static_cast<std::uint8_t *>(buffer_data) + image_size;
 	}
-	vkUnmapMemory(device, out_buffer.GetMemory());
+	out_buffer.GetMemory().unmapMemory();
 
-	return {};
+	return out_buffer;
 }
 
-std::expected<void, GraphicsError> Image::CreateCubeImage(CubeImageData const & image_data)
+vk::raii::Sampler create_sampler(GraphicsApi const & graphics_api)
 {
-	if (!image_data.IsValid())
-		return std::unexpected{ GraphicsError{ "Image::CreateCubeImage image_data not valid" } };
+	vk::PhysicalDeviceProperties const & props = graphics_api.GetPhysicalDeviceInfo().properties;
 
-	VkDevice device = *m_graphics_api.GetDevice();
-
-	Buffer staging_buffer{ m_graphics_api };
-	std::expected<void, GraphicsError> buffer_result = load_cube_image_into_buffer(m_graphics_api, image_data, staging_buffer);
-	if (!buffer_result.has_value())
-		return std::unexpected{ buffer_result.error().AddToMessage(" Image::CreateCubeImage Failed to create staging buffer.") };
-
-	VkFormat format = to_vk_format(image_data.format);
-	if (format == VK_FORMAT_UNDEFINED)
-		return std::unexpected{ GraphicsError{ "Image::Create2dImage Unsupported pixel format: " + std::to_string(format) } };
-
-	VkResult result = m_graphics_api.Create2dImage(
-		image_data.width,
-		image_data.height,
-		6 /*layers*/,
-		format,
-		VK_IMAGE_TILING_OPTIMAL,
-		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-		VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		m_image,
-		m_image_memory);
-	if (result != VK_SUCCESS)
-		return std::unexpected{ GraphicsError{ "Image::CreateCubeImage Failed to create cubemap. code: " + std::to_string(result) } };
-
-	m_graphics_api.TransitionImageLayout(
-		m_image,
-		6 /*layers*/,
-		format,
-		VK_IMAGE_LAYOUT_UNDEFINED,
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-
-	m_graphics_api.CopyBufferToImage(
-		staging_buffer.Get(),
-		m_image,
-		image_data.width,
-		image_data.height,
-		6 /*layers*/);
-
-	m_graphics_api.TransitionImageLayout(
-		m_image,
-		6 /*layers*/,
-		format,
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
-	result = m_graphics_api.CreateImageView(
-		m_image,
-		VK_IMAGE_VIEW_TYPE_CUBE,
-		format,
-		VK_IMAGE_ASPECT_COLOR_BIT,
-		6 /*layers*/,
-		m_image_view);
-	if (result != VK_SUCCESS)
-		return std::unexpected{ GraphicsError{ "Image::CreateCubeImage Failed to create vulkan image view for texture. code: " + std::to_string(result) } };
-
-	return {};
-}
-
-Sampler::~Sampler()
-{
-	destroy();
-}
-
-Sampler::Sampler(Sampler && other)
-	: m_graphics_api(other.m_graphics_api)
-{
-	*this = std::move(other);
-}
-
-Sampler & Sampler::operator=(Sampler && other)
-{
-	if (this != &other)
-	{
-		destroy();
-
-		std::swap(m_sampler, other.m_sampler);
-	}
-	return *this;
-}
-
-void Sampler::destroy()
-{
-	VkDevice device = *m_graphics_api.GetDevice();
-
-	vkDestroySampler(device, m_sampler, nullptr);
-	m_sampler = VK_NULL_HANDLE;
-}
-
-std::expected<void, GraphicsError> Sampler::Create()
-{
-	VkPhysicalDeviceProperties const & props = m_graphics_api.GetPhysicalDeviceInfo().properties;
-
-	VkSamplerCreateInfo sampler_info{
-		.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
-		.magFilter = VK_FILTER_LINEAR,
-		.minFilter = VK_FILTER_LINEAR,
-		.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
-		.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-		.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-		.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+	vk::SamplerCreateInfo sampler_info{
+		.magFilter = vk::Filter::eLinear,
+		.minFilter = vk::Filter::eLinear,
+		.mipmapMode = vk::SamplerMipmapMode::eLinear,
+		.addressModeU = vk::SamplerAddressMode::eRepeat,
+		.addressModeV = vk::SamplerAddressMode::eRepeat,
+		.addressModeW = vk::SamplerAddressMode::eRepeat,
 		.mipLodBias = 0.0f,
-		.anisotropyEnable = VK_TRUE,
+		.anisotropyEnable = vk::True,
 		.maxAnisotropy = props.limits.maxSamplerAnisotropy,
-		.compareEnable = VK_FALSE,
-		.compareOp = VK_COMPARE_OP_ALWAYS,
+		.compareEnable = vk::False,
+		.compareOp = vk::CompareOp::eAlways,
 		.minLod = 0.0f,
 		.maxLod = 0.0f,
-		.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
-		.unnormalizedCoordinates = VK_FALSE
+		.borderColor = vk::BorderColor::eIntOpaqueBlack,
+		.unnormalizedCoordinates = vk::False
 	};
 
-	VkResult result = vkCreateSampler(*m_graphics_api.GetDevice(), &sampler_info, nullptr, &m_sampler);
-	if (result != VK_SUCCESS)
-		return std::unexpected{ GraphicsError{ "Failed to create vulkan sampler for texture. code: " + std::to_string(result) } };
-
-	return {};
+	return vk::raii::Sampler{ graphics_api.GetDevice(), sampler_info };
 }
 
-Texture::Texture(GraphicsApi const & graphics_api)
-	: m_graphics_api(graphics_api)
-	, m_image(graphics_api)
-	, m_sampler(graphics_api)
+std::expected<void, GraphicsError> Texture::Create(GraphicsApi const & graphics_api, ImageData const & image_data, bool use_mip_map /*= true*/)
 {
-}
+	if (!image_data.IsValid())
+		return std::unexpected{ GraphicsError{ "create_2d_image: image_data not valid" } };
 
-std::expected<void, GraphicsError> Texture::Create(ImageData const & image_data, bool use_mip_map /*= true*/)
-{
-	std::expected<void, GraphicsError> image_result = m_image.Create2dImage(image_data);
-	if (!image_result.has_value())
-		return image_result;
+	vk::Format format = to_vk_format(image_data.format);
+	if (format == vk::Format::eUndefined)
+		return std::unexpected{ GraphicsError{ "create_2d_image: Unsupported pixel format: " + std::to_string(static_cast<int>(format)) } };
 
-	std::expected<void, GraphicsError> sampler_result = m_sampler.Create();
-	if (!sampler_result.has_value())
-		return sampler_result;
+	try
+	{
+		Buffer staging_buffer = load_image_into_buffer(graphics_api, image_data);
+
+		constexpr std::uint32_t layers = 1;
+
+		m_image = graphics_api.Create2dImage(
+			image_data.width,
+			image_data.height,
+			layers,
+			format,
+			vk::ImageTiling::eOptimal,
+			vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
+			vk::ImageCreateFlags{});
+
+		m_image_memory = graphics_api.CreateImageMemory(m_image, vk::MemoryPropertyFlagBits::eDeviceLocal);
+
+		graphics_api.TransitionImageLayout(*m_image, layers, format, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
+		graphics_api.CopyBufferToImage(*staging_buffer.Get(), *m_image, image_data.width, image_data.height, layers);
+		graphics_api.TransitionImageLayout(*m_image, layers, format, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
+
+		m_image_view = graphics_api.CreateImageView(
+			*m_image,
+			vk::ImageViewType::e2D,
+			format,
+			vk::ImageAspectFlagBits::eColor,
+			layers);
+
+		m_sampler = create_sampler(graphics_api);
+	}
+	catch (vk::SystemError & err)
+	{
+		return std::unexpected{ GraphicsError{ "Texture::Create: Failed to create texture. " + std::string(err.what()) } };
+	}
 
 	m_width = image_data.width;
 	m_height = image_data.height;
@@ -373,15 +197,49 @@ std::expected<void, GraphicsError> Texture::Create(ImageData const & image_data,
 	return {};
 }
 
-std::expected<void, GraphicsError> Texture::Create(CubeImageData const & image_data)
+std::expected<void, GraphicsError> Texture::Create(GraphicsApi const & graphics_api, CubeImageData const & image_data)
 {
-	std::expected<void, GraphicsError> image_result = m_image.CreateCubeImage(image_data);
-	if (!image_result.has_value())
-		return image_result;
+	if (!image_data.IsValid())
+		return std::unexpected{ GraphicsError{ "create_cube_image: image_data not valid" } };
 
-	std::expected<void, GraphicsError> sampler_result = m_sampler.Create();
-	if (!sampler_result.has_value())
-		return sampler_result;
+	vk::Format format = to_vk_format(image_data.format);
+	if (format == vk::Format::eUndefined)
+		return std::unexpected{ GraphicsError{ "create_cube_image: Unsupported pixel format: " + std::to_string(static_cast<int>(format)) } };
+
+	try
+	{
+		Buffer staging_buffer = load_cube_image_into_buffer(graphics_api, image_data);
+
+		constexpr std::uint32_t layers = 6;
+
+		m_image = graphics_api.Create2dImage(
+			image_data.width,
+			image_data.height,
+			layers,
+			format,
+			vk::ImageTiling::eOptimal,
+			vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
+			vk::ImageCreateFlagBits::eCubeCompatible);
+
+		m_image_memory = graphics_api.CreateImageMemory(m_image, vk::MemoryPropertyFlagBits::eDeviceLocal);
+
+		graphics_api.TransitionImageLayout(*m_image, layers, format, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
+		graphics_api.CopyBufferToImage(*staging_buffer.Get(), *m_image, image_data.width, image_data.height, layers);
+		graphics_api.TransitionImageLayout(*m_image, layers, format, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
+
+		m_image_view = graphics_api.CreateImageView(
+			*m_image,
+			vk::ImageViewType::eCube,
+			format,
+			vk::ImageAspectFlagBits::eColor,
+			layers);
+
+		m_sampler = create_sampler(graphics_api);
+	}
+	catch (vk::SystemError & err)
+	{
+		return std::unexpected{ GraphicsError{ "Texture::Create: Failed to create cube texture. " + std::string(err.what()) } };
+	}
 
 	m_width = image_data.width;
 	m_height = image_data.height;
@@ -391,10 +249,10 @@ std::expected<void, GraphicsError> Texture::Create(CubeImageData const & image_d
 
 bool Texture::IsValid() const
 {
-	return m_image.Get() != VK_NULL_HANDLE
-		&& m_image.GetMemory() != VK_NULL_HANDLE
-		&& m_image.GetView() != VK_NULL_HANDLE
-		&& m_sampler.Get() != VK_NULL_HANDLE
+	return m_image != nullptr
+		&& m_image_memory != nullptr
+		&& m_image_view != nullptr
+		&& m_sampler != nullptr
 		&& m_width != 0
 		&& m_height != 0;
 }

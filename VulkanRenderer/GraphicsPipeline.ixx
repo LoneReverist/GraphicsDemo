@@ -26,7 +26,7 @@ struct UniformBuffer
 
 struct DescriptorSet
 {
-	VkDescriptorSet descriptor_set = VK_NULL_HANDLE; // Automatically cleaned up when m_descriptor_pool is destroyed
+	vk::raii::DescriptorSet descriptor_set = nullptr;
 	std::vector<UniformBuffer> uniform_buffers;
 };
 
@@ -34,43 +34,41 @@ class DescriptorSets
 {
 public:
 	explicit DescriptorSets(GraphicsApi const & graphics_api);
-	~DescriptorSets();
 
-	DescriptorSets(DescriptorSets && other);
-	DescriptorSets & operator=(DescriptorSets && other);
+	DescriptorSets(DescriptorSets && other) = default;
+	DescriptorSets & operator=(DescriptorSets && other) = default;
 
 	DescriptorSets(DescriptorSets &) = delete;
 	DescriptorSets & operator=(DescriptorSets &) = delete;
 
-	std::expected<void, GraphicsError> Create(
+	void Create(
 		std::vector<VkDeviceSize> const & vs_uniform_sizes,
 		std::vector<VkDeviceSize> const & fs_uniform_sizes,
 		Texture const * texture);
-	void Destroy();
 
-	DescriptorSet const & GetCurrent() const { return m_descriptor_sets[m_graphics_api.GetCurFrameIndex()]; }
-	VkDescriptorSetLayout GetLayout() const { return m_descriptor_set_layout; }
-	VkDescriptorPool GetPool() const { return m_descriptor_pool; }
+	DescriptorSet const & GetCurrent() const { return m_descriptor_sets[m_graphics_api.get().GetCurFrameIndex()]; }
+	vk::raii::DescriptorSetLayout const & GetLayout() const { return m_descriptor_set_layout; }
+	vk::raii::DescriptorPool const & GetPool() const { return m_descriptor_pool; }
 
 private:
-	GraphicsApi const & m_graphics_api;
+	std::reference_wrapper<GraphicsApi const> m_graphics_api;
 
-	VkDescriptorSetLayout m_descriptor_set_layout = VK_NULL_HANDLE;
-	VkDescriptorPool m_descriptor_pool = VK_NULL_HANDLE;
+	vk::raii::DescriptorSetLayout m_descriptor_set_layout = nullptr;
+	vk::raii::DescriptorPool m_descriptor_pool = nullptr;
 
 	std::array<DescriptorSet, GraphicsApi::m_max_frames_in_flight> m_descriptor_sets;
 };
 
-export enum class DepthCompareOp
+export enum class DepthCompareOp : std::uint8_t
 {
-	NEVER = vk::CompareOp::eNever,
-	LESS = vk::CompareOp::eLess,
-	EQUAL = vk::CompareOp::eEqual,
-	LESS_OR_EQUAL = vk::CompareOp::eLessOrEqual,
-	GREATER = vk::CompareOp::eGreater,
-	NOT_EQUAL = vk::CompareOp::eNotEqual,
-	GREATER_OR_EQUAL = vk::CompareOp::eGreaterOrEqual,
-	ALWAYS = vk::CompareOp::eAlways
+	NEVER = static_cast<std::uint8_t>(vk::CompareOp::eNever),
+	LESS = static_cast<std::uint8_t>(vk::CompareOp::eLess),
+	EQUAL = static_cast<std::uint8_t>(vk::CompareOp::eEqual),
+	LESS_OR_EQUAL = static_cast<std::uint8_t>(vk::CompareOp::eLessOrEqual),
+	GREATER = static_cast<std::uint8_t>(vk::CompareOp::eGreater),
+	NOT_EQUAL = static_cast<std::uint8_t>(vk::CompareOp::eNotEqual),
+	GREATER_OR_EQUAL = static_cast<std::uint8_t>(vk::CompareOp::eGreaterOrEqual),
+	ALWAYS = static_cast<std::uint8_t>(vk::CompareOp::eAlways)
 };
 
 export struct DepthTestOptions
@@ -81,30 +79,30 @@ export struct DepthTestOptions
 };
 
 // By default, front facing facets have counter-clockwise vertex windings.
-export enum class CullMode
+export enum class CullMode : std::uint8_t
 {
-	NONE = vk::CullModeFlagBits::eNone,
-	FRONT = vk::CullModeFlagBits::eFront,
-	BACK = vk::CullModeFlagBits::eBack
+	NONE = static_cast<std::uint8_t>(vk::CullModeFlagBits::eNone),
+	FRONT = static_cast<std::uint8_t>(vk::CullModeFlagBits::eFront),
+	BACK = static_cast<std::uint8_t>(vk::CullModeFlagBits::eBack)
 };
 
-export enum class BlendFactor
+export enum class BlendFactor : std::uint8_t
 {
-	ZERO = vk::BlendFactor::eZero,
-	ONE = vk::BlendFactor::eOne,
-	SRC_COLOR = vk::BlendFactor::eSrcColor,
-	ONE_MINUS_SRC_COLOR = vk::BlendFactor::eOneMinusSrcColor,
-	DST_COLOR = vk::BlendFactor::eDstColor,
-	ONE_MINUS_DST_COLOR = vk::BlendFactor::eOneMinusDstColor,
-	SRC_ALPHA = vk::BlendFactor::eSrcAlpha,
-	ONE_MINUS_SRC_ALPHA = vk::BlendFactor::eOneMinusSrcAlpha,
-	DST_ALPHA = vk::BlendFactor::eDstAlpha,
-	ONE_MINUS_DST_ALPHA = vk::BlendFactor::eOneMinusDstAlpha,
-	CONSTANT_COLOR = vk::BlendFactor::eConstantColor,
-	ONE_MINUS_CONSTANT_COLOR = vk::BlendFactor::eOneMinusConstantColor,
-	CONSTANT_ALPHA = vk::BlendFactor::eConstantAlpha,
-	ONE_MINUS_CONSTANT_ALPHA = vk::BlendFactor::eOneMinusConstantAlpha,
-	SRC_ALPHA_SATURATE = vk::BlendFactor::eSrcAlphaSaturate
+	ZERO = static_cast<std::uint8_t>(vk::BlendFactor::eZero),
+	ONE = static_cast<std::uint8_t>(vk::BlendFactor::eOne),
+	SRC_COLOR = static_cast<std::uint8_t>(vk::BlendFactor::eSrcColor),
+	ONE_MINUS_SRC_COLOR = static_cast<std::uint8_t>(vk::BlendFactor::eOneMinusSrcColor),
+	DST_COLOR = static_cast<std::uint8_t>(vk::BlendFactor::eDstColor),
+	ONE_MINUS_DST_COLOR = static_cast<std::uint8_t>(vk::BlendFactor::eOneMinusDstColor),
+	SRC_ALPHA = static_cast<std::uint8_t>(vk::BlendFactor::eSrcAlpha),
+	ONE_MINUS_SRC_ALPHA = static_cast<std::uint8_t>(vk::BlendFactor::eOneMinusSrcAlpha),
+	DST_ALPHA = static_cast<std::uint8_t>(vk::BlendFactor::eDstAlpha),
+	ONE_MINUS_DST_ALPHA = static_cast<std::uint8_t>(vk::BlendFactor::eOneMinusDstAlpha),
+	CONSTANT_COLOR = static_cast<std::uint8_t>(vk::BlendFactor::eConstantColor),
+	ONE_MINUS_CONSTANT_COLOR = static_cast<std::uint8_t>(vk::BlendFactor::eOneMinusConstantColor),
+	CONSTANT_ALPHA = static_cast<std::uint8_t>(vk::BlendFactor::eConstantAlpha),
+	ONE_MINUS_CONSTANT_ALPHA = static_cast<std::uint8_t>(vk::BlendFactor::eOneMinusConstantAlpha),
+	SRC_ALPHA_SATURATE = static_cast<std::uint8_t>(vk::BlendFactor::eSrcAlphaSaturate)
 };
 
 export struct BlendOptions
@@ -133,8 +131,7 @@ public:
 	GraphicsPipeline & operator=(GraphicsPipeline &) = delete;
 
 	std::expected<void, GraphicsError> Create(
-		vk::ShaderModule vert_shader_module,
-		vk::ShaderModule frag_shader_module,
+		std::vector<vk::PipelineShaderStageCreateInfo> shader_stages,
 		vk::VertexInputBindingDescription const & binding_desc,
 		std::vector<vk::VertexInputAttributeDescription> const & attrib_descs,
 		std::vector<vk::PushConstantRange> const & push_constants_ranges,

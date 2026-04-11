@@ -11,10 +11,10 @@ module Mesh;
 
 bool Mesh::IsInitialized() const
 {
-	return m_vertex_buffer.Get() != VK_NULL_HANDLE
-		&& m_vertex_buffer.GetMemory() != VK_NULL_HANDLE
-		&& m_index_buffer.Get() != VK_NULL_HANDLE
-		&& m_index_buffer.GetMemory() != VK_NULL_HANDLE
+	return m_vertex_buffer.Get() != nullptr
+		&& m_vertex_buffer.GetMemory() != nullptr
+		&& m_index_buffer.Get() != nullptr
+		&& m_index_buffer.GetMemory() != nullptr
 		&& m_index_count > 0;
 }
 
@@ -25,16 +25,10 @@ void Mesh::Render() const
 
 	vk::raii::CommandBuffer const & command_buffer = m_graphics_api.get().GetCurCommandBuffer();
 
-	command_buffer.bindVertexBuffers(
-		0 /*firstBinding*/,
-		vk::Buffer{ m_vertex_buffer.Get() },
-		vk::DeviceSize{ 0 } /*offsets*/);
+	command_buffer.bindVertexBuffers(0 /*firstBinding*/, *m_vertex_buffer.Get(), vk::DeviceSize{ 0 } /*offsets*/);
 
 	static_assert(std::same_as<IndexT, std::uint16_t>);
-	command_buffer.bindIndexBuffer(
-		vk::Buffer{ m_index_buffer.Get() },
-		vk::DeviceSize{ 0 } /*offset*/,
-		vk::IndexType::eUint16);
+	command_buffer.bindIndexBuffer(m_index_buffer.Get(), vk::DeviceSize{ 0 } /*offset*/, vk::IndexType::eUint16);
 
 	command_buffer.drawIndexed(
 		m_index_count,

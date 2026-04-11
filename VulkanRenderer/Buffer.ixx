@@ -2,8 +2,6 @@
 
 module;
 
-#include <expected>
-
 #include <vulkan/vulkan_raii.hpp>
 
 export module Buffer;
@@ -14,24 +12,24 @@ import GraphicsError;
 export class Buffer
 {
 public:
-	explicit Buffer(GraphicsApi const & graphics_api);
-	~Buffer();
+	Buffer() = default;
 
-	Buffer(Buffer && other) noexcept;
-	Buffer & operator=(Buffer && other) noexcept;
+	Buffer(Buffer &&) = default;
+	Buffer & operator=(Buffer &&) = default;
 
 	Buffer(Buffer const &) = delete;
 	Buffer & operator=(Buffer const &) = delete;
 
-	std::expected<void, GraphicsError> Create(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
-	void Destroy();
+	void Create(
+		GraphicsApi const & graphics_api,
+		vk::DeviceSize size,
+		vk::BufferUsageFlags usage,
+		vk::MemoryPropertyFlags properties);
 
-	VkBuffer Get() const { return m_buffer; }
-	VkDeviceMemory GetMemory() const { return m_memory; }
+	vk::raii::Buffer const & Get() const { return m_buffer; }
+	vk::raii::DeviceMemory const & GetMemory() const { return m_memory; }
 
 private:
-	GraphicsApi const & m_graphics_api;
-
-	VkBuffer m_buffer = VK_NULL_HANDLE;
-	VkDeviceMemory m_memory = VK_NULL_HANDLE;
+	vk::raii::Buffer m_buffer = nullptr;
+	vk::raii::DeviceMemory m_memory = nullptr;
 };

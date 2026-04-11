@@ -67,8 +67,7 @@ private:
 export class Texture
 {
 public:
-	explicit Texture(GraphicsApi const & graphics_api);
-	~Texture() = default;
+	Texture() = default;
 
 	Texture(Texture && other) = default;
 	Texture & operator=(Texture && other) = default;
@@ -76,8 +75,8 @@ public:
 	Texture(Texture const &) = delete;
 	Texture & operator=(Texture const &) = delete;
 
-	std::expected<void, GraphicsError> Create(ImageData const & image_data, bool use_mip_map = true);
-	std::expected<void, GraphicsError> Create(CubeImageData const & image_data);
+	std::expected<void, GraphicsError> Create(GraphicsApi const & graphics_api, ImageData const & image_data, bool use_mip_map = true);
+	std::expected<void, GraphicsError> Create(GraphicsApi const & graphics_api, CubeImageData const & image_data);
 
 	bool IsValid() const;
 
@@ -90,8 +89,6 @@ public:
 	static void Bind(unsigned int id, unsigned int type, unsigned int binding);
 
 private:
-	std::reference_wrapper<GraphicsApi const> m_graphics_api;
-
 	unsigned int m_type = 0;
 	Image m_image;
 	std::uint32_t m_width = 0;

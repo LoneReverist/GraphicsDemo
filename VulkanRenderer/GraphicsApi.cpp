@@ -357,9 +357,9 @@ vk::Format find_depth_image_format(vk::raii::PhysicalDevice const & phys_device)
 		vk::FormatFeatureFlagBits::eDepthStencilAttachment);
 }
 
-bool has_stencil_component(VkFormat format)
+bool has_stencil_component(vk::Format format)
 {
-	return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
+	return format == vk::Format::eD32SfloatS8Uint || format == vk::Format::eD24UnormS8Uint;
 }
 
 vk::raii::CommandPool create_command_pool(
@@ -453,6 +453,29 @@ GraphicsApi::GraphicsApi(
 	{
 		std::cout << "Runtime error: " << err.what() << std::endl;
 	}
+}
+
+void GraphicsApi::create_depth_resources()
+{
+	constexpr std::uint32_t layers = 1;
+
+	m_depth_image = Create2dImage(
+		m_swap_chain_extent.width,
+		m_swap_chain_extent.height,
+		layers,
+		m_depth_image_format,
+		vk::ImageTiling::eOptimal,
+		vk::ImageUsageFlagBits::eDepthStencilAttachment,
+		vk::ImageCreateFlags{});
+
+	m_depth_image_memory = CreateImageMemory(m_depth_image, vk::MemoryPropertyFlagBits::eDeviceLocal);
+
+	m_depth_image_view = CreateImageView(
+		*m_depth_image,
+		vk::ImageViewType::e2D,
+		m_depth_image_format,
+		vk::ImageAspectFlagBits::eDepth,
+		layers);
 }
 
 void GraphicsApi::destroy_swap_chain()
@@ -572,18 +595,6 @@ void GraphicsApi::WaitForLastFrame() const
 	m_logical_device.waitIdle();
 }
 
-std::uint32_t GraphicsApi::FindMemoryType(std::uint32_t type_filter, VkMemoryPropertyFlags properties) const
-{
-	VkPhysicalDeviceMemoryProperties const & mem_properties = m_phys_device_info.mem_properties;
-	for (std::uint32_t i = 0; i < mem_properties.memoryTypeCount; i++)
-	{
-		if (type_filter & (1 << i) && (mem_properties.memoryTypes[i].propertyFlags & properties) == properties)
-			return i;
-	}
-
-	throw std::runtime_error("failed to find suitable memory type!");
-}
-
 std::uint32_t GraphicsApi::FindMemoryType(std::uint32_t type_filter, vk::MemoryPropertyFlags properties) const
 {
 	vk::PhysicalDeviceMemoryProperties const & mem_properties = m_phys_device_info.mem_properties;
@@ -596,22 +607,18 @@ std::uint32_t GraphicsApi::FindMemoryType(std::uint32_t type_filter, vk::MemoryP
 	throw std::runtime_error("failed to find suitable memory type!");
 }
 
-VkResult GraphicsApi::Create2dImage(
+vk::raii::Image GraphicsApi::Create2dImage(
 	std::uint32_t width,
 	std::uint32_t height,
 	std::uint32_t layers,
-	VkFormat format,
-	VkImageTiling tiling,
-	VkImageUsageFlags usage,
-	VkImageCreateFlags flags,
-	VkMemoryPropertyFlags properties,
-	VkImage & out_image,
-	VkDeviceMemory & out_image_memory) const
+	vk::Format format,
+	vk::ImageTiling tiling,
+	vk::ImageUsageFlags usage,
+	vk::ImageCreateFlags flags) const
 {
-	VkImageCreateInfo image_info{
-		.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+	vk::ImageCreateInfo image_info{
 		.flags = flags,
-		.imageType = VK_IMAGE_TYPE_2D,
+		.imageType = vk::ImageType::e2D,
 		.format = format,
 		.extent{
 			.width = width,
@@ -620,83 +627,56 @@ VkResult GraphicsApi::Create2dImage(
 		},
 		.mipLevels = 1,
 		.arrayLayers = layers,
-		.samples = VK_SAMPLE_COUNT_1_BIT,
+		.samples = vk::SampleCountFlagBits::e1,
 		.tiling = tiling,
 		.usage = usage,
-		.sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-		.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+		.sharingMode = vk::SharingMode::eExclusive,
+		.initialLayout = vk::ImageLayout::eUndefined,
 	};
 
-	VkResult result = vkCreateImage(*m_logical_device, &image_info, nullptr, &out_image);
-	if (result != VK_SUCCESS)
-	{
-		std::cout << "Failed to create iamge" << std::endl;
-		return result;
-	}
-
-	return CreateImageMemory(out_image, properties, out_image_memory);
+	return vk::raii::Image{ m_logical_device, image_info };
 }
 
-VkResult GraphicsApi::CreateImageMemory(
-	VkImage image,
-	VkMemoryPropertyFlags properties,
-	VkDeviceMemory & out_image_memory) const
+vk::raii::DeviceMemory GraphicsApi::CreateImageMemory(
+	vk::raii::Image const & image,
+	vk::MemoryPropertyFlags properties) const
 {
-	VkMemoryRequirements mem_requirements;
-	vkGetImageMemoryRequirements(*m_logical_device, image, &mem_requirements);
+	vk::MemoryRequirements mem_requirements = image.getMemoryRequirements();
 
 	std::uint32_t mem_type_index = FindMemoryType(mem_requirements.memoryTypeBits, properties);
 
-	VkMemoryAllocateInfo alloc_info{
-		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+	vk::MemoryAllocateInfo alloc_info{
 		.allocationSize = mem_requirements.size,
 		.memoryTypeIndex = mem_type_index
 	};
 
 	// TODO: should use something like VulkanMemoryAllocator library for managing memory
-	VkResult result = vkAllocateMemory(*m_logical_device, &alloc_info, nullptr, &out_image_memory);
-	if (result != VK_SUCCESS)
-	{
-		std::cout << "Failed to allocate image memory" << std::endl;
-		return result;
-	}
+	vk::raii::DeviceMemory image_memory = vk::raii::DeviceMemory{ m_logical_device, alloc_info };
 
-	return vkBindImageMemory(*m_logical_device, image, out_image_memory, 0);
+	image.bindMemory(*image_memory, 0);
+
+	return image_memory;
 }
 
-VkResult GraphicsApi::CreateImageView(
-	VkImage image,
-	VkImageViewType view_type,
-	VkFormat format,
-	VkImageAspectFlags aspect_flags,
-	std::uint32_t layers,
-	VkImageView & out_image_view) const
+vk::raii::ImageView GraphicsApi::CreateImageView(
+	vk::Image image,
+	vk::ImageViewType view_type,
+	vk::Format format,
+	vk::ImageAspectFlags aspect_flags,
+	std::uint32_t layers) const
 {
-	VkImageViewCreateInfo create_info{
-		.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+	vk::ImageViewCreateInfo create_info{
 		.image = image,
 		.viewType = view_type,
 		.format = format,
-		.components{
-			.r = VK_COMPONENT_SWIZZLE_IDENTITY,
-			.g = VK_COMPONENT_SWIZZLE_IDENTITY,
-			.b = VK_COMPONENT_SWIZZLE_IDENTITY,
-			.a = VK_COMPONENT_SWIZZLE_IDENTITY
-		},
 		.subresourceRange{
 			.aspectMask = aspect_flags,
-			.baseMipLevel = 0,
 			.levelCount = 1,
-			.baseArrayLayer = 0,
 			.layerCount = layers
 		}
 	};
 
-	VkResult result = vkCreateImageView(*m_logical_device, &create_info, nullptr, &out_image_view);
-	if (result != VK_SUCCESS)
-		std::cout << "Failed to create iamge view" << std::endl;
-
-	return result;
+	return vk::raii::ImageView{ m_logical_device, create_info };
 }
 
 void GraphicsApi::DoOneTimeCommand(std::function<void(vk::raii::CommandBuffer const &)> command_fn) const
@@ -723,9 +703,9 @@ void GraphicsApi::DoOneTimeCommand(std::function<void(vk::raii::CommandBuffer co
 }
 
 void GraphicsApi::CopyBuffer(
-	VkBuffer src_buffer,
-	VkBuffer dst_buffer,
-	VkDeviceSize size) const
+	vk::Buffer src_buffer,
+	vk::Buffer dst_buffer,
+	vk::DeviceSize size) const
 {
 	DoOneTimeCommand([src_buffer, dst_buffer, size](vk::raii::CommandBuffer const & command_buffer)
 		{
@@ -739,7 +719,7 @@ void GraphicsApi::CopyBuffer(
 		});
 }
 
-void GraphicsApi::CopyBufferToImage(VkBuffer buffer, VkImage image, std::uint32_t width, std::uint32_t height, std::uint32_t layers) const
+void GraphicsApi::CopyBufferToImage(vk::Buffer buffer, vk::Image image, std::uint32_t width, std::uint32_t height, std::uint32_t layers) const
 {
 	DoOneTimeCommand([buffer, image, width, height, layers](vk::raii::CommandBuffer const & command_buffer)
 		{
@@ -761,120 +741,67 @@ void GraphicsApi::CopyBufferToImage(VkBuffer buffer, VkImage image, std::uint32_
 		});
 }
 
-void GraphicsApi::TransitionImageLayout(VkImage image, std::uint32_t layers, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout) const
+void GraphicsApi::TransitionImageLayout(vk::Image image, std::uint32_t layers, vk::Format format, vk::ImageLayout old_layout, vk::ImageLayout new_layout) const
 {
 	DoOneTimeCommand([image, layers, format, old_layout, new_layout](vk::raii::CommandBuffer const & command_buffer)
 		{
-			VkImageMemoryBarrier barrier{
-				.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-				.srcAccessMask = 0,
-				.dstAccessMask = 0,
+			vk::ImageMemoryBarrier barrier{
+				.srcAccessMask = vk::AccessFlagBits::eNone,
+				.dstAccessMask = vk::AccessFlagBits::eNone,
 				.oldLayout = old_layout,
 				.newLayout = new_layout,
-				.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-				.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+				.srcQueueFamilyIndex = vk::QueueFamilyIgnored,
+				.dstQueueFamilyIndex = vk::QueueFamilyIgnored,
 				.image = image,
 				.subresourceRange{
-					.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-					.baseMipLevel = 0,
+					.aspectMask = vk::ImageAspectFlagBits::eColor,
 					.levelCount = 1,
-					.baseArrayLayer = 0,
 					.layerCount = layers,
 				}
 			};
 
-			if (new_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+			if (new_layout == vk::ImageLayout::eDepthStencilAttachmentOptimal)
 			{
-				barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+				barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eDepth;
 
 				if (has_stencil_component(format))
-					barrier.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+					barrier.subresourceRange.aspectMask |= vk::ImageAspectFlagBits::eStencil;
 			}
 
-			VkPipelineStageFlags src_stage;
-			VkPipelineStageFlags dst_stage;
-
-			if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED && new_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+			vk::PipelineStageFlags src_stage;
+			vk::PipelineStageFlags dst_stage;
+			if (old_layout == vk::ImageLayout::eUndefined && new_layout == vk::ImageLayout::eTransferDstOptimal)
 			{
-				barrier.srcAccessMask = 0;
-				barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+				barrier.srcAccessMask = vk::AccessFlagBits::eNone;
+				barrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
 
-				src_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-				dst_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+				src_stage = vk::PipelineStageFlagBits::eTopOfPipe;
+				dst_stage = vk::PipelineStageFlagBits::eTransfer;
 			}
-			else if (old_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+			else if (old_layout == vk::ImageLayout::eTransferDstOptimal && new_layout == vk::ImageLayout::eShaderReadOnlyOptimal)
 			{
-				barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-				barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+				barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+				barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
 
-				src_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-				dst_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+				src_stage = vk::PipelineStageFlagBits::eTransfer;
+				dst_stage = vk::PipelineStageFlagBits::eFragmentShader;
 			}
-			else if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED && new_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+			else if (old_layout == vk::ImageLayout::eUndefined && new_layout == vk::ImageLayout::eDepthStencilAttachmentOptimal)
 			{
-				barrier.srcAccessMask = 0;
-				barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+				barrier.srcAccessMask = vk::AccessFlagBits::eNone;
+				barrier.dstAccessMask = vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite;
 
-				src_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-				dst_stage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+				src_stage = vk::PipelineStageFlagBits::eTopOfPipe;
+				dst_stage = vk::PipelineStageFlagBits::eEarlyFragmentTests;
 			}
 			else
 			{
 				throw std::invalid_argument("unsupported layout transition!");
 			}
 
-			vkCmdPipelineBarrier(
-				*command_buffer,
+			command_buffer.pipelineBarrier(
 				src_stage, dst_stage,
-				0 /*dependencyFlags*/,
-				0 /*memoryBarrierCount*/, nullptr,
-				0 /*bufferMemoryBarrierCount*/, nullptr,
-				1 /*imageMemoryBarrierCount*/, &barrier
-			);
+				vk::DependencyFlags{},
+				{}, {}, barrier);
 		});
-}
-
-void GraphicsApi::create_depth_resources()
-{
-	vk::ImageCreateInfo image_info{
-		.imageType = vk::ImageType::e2D,
-		.format = m_depth_image_format,
-		.extent{
-			.width = m_swap_chain_extent.width,
-			.height = m_swap_chain_extent.height,
-			.depth = 1,
-		},
-		.mipLevels = 1,
-		.arrayLayers = 1,
-		.samples = vk::SampleCountFlagBits::e1,
-		.tiling = vk::ImageTiling::eOptimal,
-		.usage = vk::ImageUsageFlagBits::eDepthStencilAttachment,
-		.sharingMode = vk::SharingMode::eExclusive,
-		.initialLayout = vk::ImageLayout::eUndefined,
-	};
-
-	m_depth_image = vk::raii::Image{ m_logical_device, image_info };
-
-	vk::MemoryRequirements memRequirements = m_depth_image.getMemoryRequirements();
-	vk::MemoryAllocateInfo allocInfo{
-		.allocationSize = memRequirements.size,
-		.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal)
-	};
-	m_depth_image_memory = vk::raii::DeviceMemory(m_logical_device, allocInfo);
-	m_depth_image.bindMemory(m_depth_image_memory, 0);
-
-	vk::ImageViewCreateInfo view_info{
-		.image = m_depth_image,
-		.viewType = vk::ImageViewType::e2D,
-		.format = m_depth_image_format,
-		.subresourceRange{
-			.aspectMask = vk::ImageAspectFlagBits::eDepth,
-			.baseMipLevel = 0,
-			.levelCount = 1,
-			.baseArrayLayer = 0,
-			.layerCount = 1
-		}
-	};
-
-	m_depth_image_view = vk::raii::ImageView{ m_logical_device, view_info };
 }

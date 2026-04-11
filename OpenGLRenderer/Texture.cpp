@@ -93,15 +93,15 @@ void Image::Create()
 	glGenTextures(1, &m_id);
 }
 
-Texture::Texture(GraphicsApi const & graphics_api)
-	: m_graphics_api(graphics_api)
-{
-}
-
-std::expected<void, GraphicsError> Texture::Create(ImageData const & image_data, bool use_mip_map /*= true*/)
+std::expected<void, GraphicsError> Texture::Create(GraphicsApi const & /*graphics_api*/, ImageData const & image_data, bool use_mip_map /*= true*/)
 {
 	if (!image_data.IsValid())
 		return std::unexpected{ GraphicsError{ "Texture() image_data not valid" } };
+
+	GLenum internal_format = to_gl_internal_format(image_data.format);
+	GLenum format = to_gl_format(image_data.format);
+	if (internal_format == 0 || format == 0)
+		return std::unexpected{ GraphicsError{ "Texture() Unsupported pixel format: " + std::to_string(format) } };
 
 	m_width = image_data.width;
 	m_height = image_data.height;
@@ -114,11 +114,6 @@ std::expected<void, GraphicsError> Texture::Create(ImageData const & image_data,
 	glTexParameteri(m_type, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(m_type, GL_TEXTURE_MIN_FILTER, use_mip_map ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
 	glTexParameteri(m_type, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	GLenum internal_format = to_gl_internal_format(image_data.format);
-	GLenum format = to_gl_format(image_data.format);
-	if (internal_format == 0 || format == 0)
-		return std::unexpected{ GraphicsError{ "Texture() Unsupported pixel format: " + std::to_string(format) } };
 
 	glTexImage2D(
 		m_type,
@@ -137,10 +132,15 @@ std::expected<void, GraphicsError> Texture::Create(ImageData const & image_data,
 	return {};
 }
 
-std::expected<void, GraphicsError> Texture::Create(CubeImageData const & image_data)
+std::expected<void, GraphicsError> Texture::Create(GraphicsApi const & /*graphics_api*/, CubeImageData const & image_data)
 {
 	if (!image_data.IsValid())
 		return std::unexpected{ GraphicsError{ "Texture() image_data not valid" } };
+
+	GLenum internal_format = to_gl_internal_format(image_data.format);
+	GLenum format = to_gl_format(image_data.format);
+	if (internal_format == 0 || format == 0)
+		return std::unexpected{ GraphicsError{ "Texture() Unsupported pixel format: " + std::to_string(format) } };
 
 	m_width = image_data.width;
 	m_height = image_data.height;
@@ -154,11 +154,6 @@ std::expected<void, GraphicsError> Texture::Create(CubeImageData const & image_d
 	glTexParameteri(m_type, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(m_type, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(m_type, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-	GLenum internal_format = to_gl_internal_format(image_data.format);
-	GLenum format = to_gl_format(image_data.format);
-	if (internal_format == 0 || format == 0)
-		return std::unexpected{ GraphicsError{ "Texture() Unsupported pixel format: " + std::to_string(format) } };
 
 	for (unsigned int i = 0; i < image_data.data.size(); i++)
 	{

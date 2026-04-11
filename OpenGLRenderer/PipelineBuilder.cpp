@@ -5,7 +5,6 @@ module;
 #include <expected>
 #include <filesystem>
 #include <fstream>
-#include <iostream>
 #include <vector>
 
 #include <glad/glad.h>

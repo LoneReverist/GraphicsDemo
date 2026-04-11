@@ -47,6 +47,7 @@ namespace
 		if (id == 131185) // ignore notification about using GL_STATIC_DRAW
 			return;
 
+		// TODO: don't call std::cout here, pass the message to the main application
 		std::cout << std::format("OpenGL {3}: type - {1}, id - {2}\nMessage: {0}\n\n",
 			message, type_to_string(type), id, severity_to_string(severity));
 	}

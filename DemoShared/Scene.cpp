@@ -34,8 +34,9 @@ AssetId create_texture(
 		return AssetId{};
 	}
 
-	Texture texture{ graphics_api };
+	Texture texture;
 	std::expected<void, GraphicsError> result = texture.Create(
+		graphics_api,
 		ImageData{
 			.data = image.GetData(),
 			.format = format,
@@ -98,8 +99,9 @@ AssetId create_cubemap_texture(
 	std::ranges::transform(images, data.begin(),
 		[](StbImage const & img) { return img.GetData(); });
 
-	Texture texture{ graphics_api };
+	Texture texture;
 	std::expected<void, GraphicsError> result = texture.Create(
+		graphics_api,
 		CubeImageData{
 			.data = data,
 			.format = format,

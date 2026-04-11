@@ -54,38 +54,32 @@ public:
 	void DrawFrame(std::function<void()> render_fn, bool & out_window_size_out_of_date);
 	void WaitForLastFrame() const;
 
-	std::uint32_t FindMemoryType(std::uint32_t type_filter, VkMemoryPropertyFlags properties) const;
 	std::uint32_t FindMemoryType(std::uint32_t type_filter, vk::MemoryPropertyFlags properties) const;
 
-	VkResult Create2dImage(
+	vk::raii::Image Create2dImage(
 		std::uint32_t width,
 		std::uint32_t height,
 		std::uint32_t layers,
-		VkFormat format,
-		VkImageTiling tiling,
-		VkImageUsageFlags usage,
-		VkImageCreateFlags flags,
-		VkMemoryPropertyFlags properties,
-		VkImage & out_image,
-		VkDeviceMemory & out_image_memory) const;
+		vk::Format format,
+		vk::ImageTiling tiling,
+		vk::ImageUsageFlags usage,
+		vk::ImageCreateFlags flags) const;
 
-	VkResult CreateImageMemory(
-		VkImage image,
-		VkMemoryPropertyFlags properties,
-		VkDeviceMemory & out_image_memory) const;
+	vk::raii::DeviceMemory CreateImageMemory(
+		vk::raii::Image const & image,
+		vk::MemoryPropertyFlags properties) const;
 
-	VkResult CreateImageView(
-		VkImage image,
-		VkImageViewType view_type,
-		VkFormat format,
-		VkImageAspectFlags aspect_flags,
-		std::uint32_t layers,
-		VkImageView & out_image_view) const;
+	vk::raii::ImageView CreateImageView(
+		vk::Image image,
+		vk::ImageViewType view_type,
+		vk::Format format,
+		vk::ImageAspectFlags aspect_flags,
+		std::uint32_t layers) const;
 
 	void DoOneTimeCommand(std::function<void(vk::raii::CommandBuffer const &)> command_fn) const;
-	void CopyBuffer(VkBuffer src_buffer,VkBuffer dst_buffer,VkDeviceSize size) const;
-	void CopyBufferToImage(VkBuffer buffer, VkImage image, std::uint32_t width, std::uint32_t height, std::uint32_t layers) const;
-	void TransitionImageLayout(VkImage image, std::uint32_t layers, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout) const;
+	void CopyBuffer(vk::Buffer src_buffer, vk::Buffer dst_buffer, vk::DeviceSize size) const;
+	void CopyBufferToImage(vk::Buffer buffer, vk::Image image, std::uint32_t width, std::uint32_t height, std::uint32_t layers) const;
+	void TransitionImageLayout(vk::Image image, std::uint32_t layers, vk::Format format, vk::ImageLayout old_layout, vk::ImageLayout new_layout) const;
 
 	// glm expects opengl style screen coordinates, so we need to flip the Y axis
 	bool ShouldFlipScreenY() const { return true; }
@@ -104,9 +98,8 @@ public:
 	PhysicalDeviceInfo const & GetPhysicalDeviceInfo() const { return m_phys_device_info; }
 
 private:
-	void destroy_swap_chain();
-
 	void create_depth_resources();
+	void destroy_swap_chain();
 
 private:
 	vk::raii::Context m_context;
@@ -121,7 +114,7 @@ private:
 	vk::raii::SwapchainKHR m_swap_chain = nullptr;
 	vk::Format m_swap_chain_image_format = vk::Format::eUndefined;
 	vk::Extent2D m_swap_chain_extent{ 0, 0 };
-	std::vector<vk::Image> m_swap_chain_images;
+	std::vector<vk::Image> m_swap_chain_images; // owned by swap chain, do not destroy
 	std::vector<vk::raii::ImageView> m_swap_chain_image_views;
 	std::uint32_t m_current_image_index = 0;
 
