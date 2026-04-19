@@ -98,6 +98,7 @@ vk::raii::DescriptorPool create_descriptor_pool(
 	}
 
 	vk::DescriptorPoolCreateInfo pool_info{
+		.flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
 		.maxSets = descriptor_set_count,
 		.poolSizeCount = static_cast<std::uint32_t>(pool_sizes.size()),
 		.pPoolSizes = pool_sizes.data()

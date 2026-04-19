@@ -57,9 +57,10 @@ struct PipelineRenderObjects
 export class Scene
 {
 public:
-	explicit Scene(GraphicsApi const & graphics_api, std::string const & title);
+	explicit Scene(GraphicsApi const & graphics_api, std::string const & title, float dpi_scale_factor);
 
 	void OnViewportResized(int width, int height);
+	void OnDPIScalingFactorChanged(float dpi_scale_factor);
 
 	void Update(double delta_time, Input const & input);
 	void Render() const;
@@ -131,8 +132,6 @@ private:
 	float m_timer = 0.0f;
 	float m_frame_timer = 0.0f;
 	int m_frame_count = 0;
-
-	float m_dpi_scale = 1.0f;
 };
 
 template<IsVertex VertexT, typename... Args>

@@ -11,8 +11,6 @@ module;
 #elif defined(__linux__)
 #include <unistd.h>
 #include <limits.h>
-//#include <X11/Xlib.h>
-//#include <X11/Xresource.h>
 
 #endif
 
@@ -54,44 +52,5 @@ namespace PlatformUtils
 	export std::filesystem::path GetExecutableDir()
 	{
 		return GetExecutablePath().parent_path();
-	}
-
-	export float GetDPIScalingFactor()
-	{
-#if defined(_WIN32)
-		HDC screen = GetDC(nullptr);
-		float dpiX = GetDeviceCaps(screen, LOGPIXELSX);
-		ReleaseDC(nullptr, screen);
-		return dpiX / 96.0f;
-
-#elif defined(__linux__)
-//		Display * display = XOpenDisplay(nullptr);
-//		if (!display)
-//			return 1.0f;
-//
-//		float dpi = 96.0f;
-//		char * resourceString = XResourceManagerString(display);
-//		if (resourceString)
-//		{
-//			XrmDatabase db = XrmGetStringDatabase(resourceString);
-//			if (db)
-//			{
-//				XrmValue value;
-//				char * type = nullptr;
-//				if (XrmGetResource(db, "Xft.dpi", "Xft.Dpi", &type, &value) && value.addr)
-//					dpi = atof(value.addr);
-//
-//				XrmDestroyDatabase(db);
-//			}
-//		}
-//
-//		XCloseDisplay(display);
-//		return dpi / 96.0f;
-		return 1.0f; // TODO: Set up X11 in Linux build
-
-#else
-		static_assert(false, "Unsupported platform.");
-		return 1.0f; // Default scaling factor
-#endif
 	}
 }

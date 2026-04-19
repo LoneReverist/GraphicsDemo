@@ -2,6 +2,8 @@
 x64/
 packages/
 build/*
+build-debug/*
+build-release/*
 !build/Run-CMake.ps1
 !build/Install-Dependencies.ps1
 

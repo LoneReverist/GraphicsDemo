@@ -113,6 +113,8 @@ namespace ObjLoader
 				while (token_iter != tokens.end())
 				{
 					std::string_view vert_str = next_token();
+					if (vert_str == "\r") // on linux, the \r line ending is read as a token
+						continue;
 
 					auto vert_tokens = get_tokens(vert_str, "/");
 					if (std::ranges::distance(vert_tokens) != 2)

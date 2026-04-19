@@ -5,6 +5,17 @@
 #)
 find_package(Vulkan REQUIRED)
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+	# On Linux the vcpkg Vulkan loader doesn't have wayland support, so we need to link against the system loader instead
+    find_library(VULKAN_SYSTEM_LOADER
+        NAMES vulkan
+        PATHS /usr/lib/x86_64-linux-gnu /usr/lib
+        NO_DEFAULT_PATH
+        REQUIRED)
+    set_target_properties(Vulkan::Vulkan PROPERTIES
+        IMPORTED_LOCATION ${VULKAN_SYSTEM_LOADER})
+endif()
+
 add_library(VulkanRenderer STATIC)
 
 target_compile_features(VulkanRenderer PRIVATE cxx_std_23)

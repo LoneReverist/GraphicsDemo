@@ -308,7 +308,7 @@ void update_gem_transform(glm::mat4 & transform, float delta_time)
 	transform = glm::rotate(glm::mat4(1.0), delta_time * 0.5f, glm::vec3(0.0, 0.0, 1.0)) * transform;
 }
 
-Scene::Scene(GraphicsApi const & graphics_api, std::string const & title)
+Scene::Scene(GraphicsApi const & graphics_api, std::string const & title, float dpi_scale_factor)
 	: m_graphics_api{ graphics_api }
 	, m_resources_path{ PlatformUtils::GetExecutableDir() / "resources" }
 	, m_title{ title }
@@ -316,9 +316,8 @@ Scene::Scene(GraphicsApi const & graphics_api, std::string const & title)
 	, m_camera{ graphics_api.ShouldFlipScreenY() }
 	, m_mesh_manager{ graphics_api }
 {
-	m_dpi_scale = PlatformUtils::GetDPIScalingFactor();
-	float label_font_size = 18.0f * m_dpi_scale;
-	float title_font_size = 32.0f * m_dpi_scale;
+	float label_font_size = 18.0f * dpi_scale_factor;
+	float title_font_size = 32.0f * dpi_scale_factor;
 
 	const std::filesystem::path textures_path = m_resources_path / "textures";
 	const std::filesystem::path objects_path = m_resources_path / "objects";
@@ -390,7 +389,7 @@ Scene::Scene(GraphicsApi const & graphics_api, std::string const & title)
 	m_title_label = RainbowTextPipeline::ObjectData{
 		.bg_color = { 0.0f, 0.0f, 0.0f, 0.0f },
 		.screen_px_range = m_title_mesh->GetScreenPxRange(),
-		.rainbow_width = 200.0f * m_dpi_scale,
+		.rainbow_width = 200.0f * dpi_scale_factor,
 		.slant_factor = -1.0f
 	};
 	create_render_object("title", m_title_mesh->GetMeshId(), rainbow_text_pipeline, m_title_label);
@@ -417,6 +416,19 @@ void Scene::OnViewportResized(int width, int height)
 		m_fps_mesh->OnViewportResized(width, height);
 	if (m_title_mesh)
 		m_title_mesh->OnViewportResized(width, height);
+}
+
+void Scene::OnDPIScalingFactorChanged(float dpi_scale_factor)
+{
+	float label_font_size = 18.0f * dpi_scale_factor;
+	float title_font_size = 32.0f * dpi_scale_factor;
+
+	if (m_fps_mesh)
+		m_fps_mesh->SetFontSize(label_font_size);
+	if (m_title_mesh)
+		m_title_mesh->SetFontSize(title_font_size);
+
+	m_title_label.rainbow_width = 200.0f * dpi_scale_factor;
 }
 
 void Scene::Update(double delta_time, Input const & input)

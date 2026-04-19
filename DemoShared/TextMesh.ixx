@@ -44,6 +44,7 @@ public:
 	void OnViewportResized(int width, int height);
 
 	void SetText(std::string const & text);
+	void SetFontSize(float font_size);
 
 	void SetUpdateMeshCallback(UpdateMeshCallbackT const & callback) { m_update_mesh_callback = callback; }
 
@@ -203,6 +204,27 @@ void TextMesh::SetText(std::string const & text)
 		if (!mesh.has_value())
 		{
 			std::cout << "TextMesh::SetText: Failed to create mesh: " << mesh.error().GetMessage() << std::endl;
+			return;
+		}
+
+		m_update_mesh_callback(m_mesh_id, std::move(mesh.value()));
+	}
+}
+
+void TextMesh::SetFontSize(float font_size)
+{
+	if (m_font_size == font_size)
+		return; // no change
+
+	m_font_size = font_size;
+	m_screen_px_range = m_font_size * m_font_atlas.GetPxRange();
+
+	if (m_update_mesh_callback)
+	{
+		std::expected<Mesh, GraphicsError> mesh = CreateMesh();
+		if (!mesh.has_value())
+		{
+			std::cout << "TextMesh::SetFontSize: Failed to create mesh: " << mesh.error().GetMessage() << std::endl;
 			return;
 		}
 

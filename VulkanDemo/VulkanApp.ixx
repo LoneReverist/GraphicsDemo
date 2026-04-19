@@ -31,7 +31,6 @@ public:
 	bool IsInitialized() const { return m_initialized; }
 	bool HasWindow() const { return m_window != nullptr; }
 
-	void OnWindowResize(WindowSize size);
 	void OnKeyEvent(int key, int scan_code, int action, int mods);
 
 private:
@@ -40,5 +39,6 @@ private:
 	std::string const m_title;
 
 	std::atomic<WindowSize> m_window_size_pixels;
+	std::atomic<float> m_window_scale_factor = 1.0f;
 	Input m_input;
 };
