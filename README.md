@@ -1,8 +1,8 @@
 ## Graphics Demo by LoneReverist
 GraphicsDemo is a cross-platform C++ project showcasing modern graphics API design and architecture, built using C++20, CMake, Docker, and supporting both OpenGL and Vulkan rendering back-ends.
 
-![](https://github.com/chill-gamer-dev/GraphicsDemo/blob/master/OpenGLDemo.gif)
-![](https://github.com/chill-gamer-dev/GraphicsDemo/blob/master/VulkanDemo.gif)
+![](OpenGLDemo.gif)
+![](VulkanDemo.gif)
 
 ## Key Features
 
