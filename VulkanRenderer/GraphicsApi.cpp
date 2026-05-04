@@ -17,6 +17,8 @@ module;
 
 module GraphicsApi;
 
+import GraphicsError;
+
 bool validation_layers_are_supported(
 	vk::raii::Context const & context,
 	std::vector<char const *> const & desired_layers)
@@ -71,7 +73,7 @@ vk::raii::SurfaceKHR create_surface(vk::raii::Instance const & instance, GLFWwin
 	VkSurfaceKHR surface = VK_NULL_HANDLE;
 	VkResult result = glfwCreateWindowSurface(*instance, window, nullptr, &surface);
 	if (result != VK_SUCCESS)
-		throw std::runtime_error("Failed to create vulkan surface.");
+		throw GraphicsException("Failed to create vulkan surface.");
 
 	return vk::raii::SurfaceKHR{ instance, surface };
 }
@@ -160,7 +162,7 @@ PhysicalDeviceInfo pick_physical_device(
 {
 	auto devices = instance.enumeratePhysicalDevices();
 	if (devices.empty())
-		throw std::runtime_error("Failed to find GPUs with Vulkan support!");
+		throw GraphicsException("Failed to find GPUs with Vulkan support!");
 
 	PhysicalDeviceInfo phys_device_info;
 	auto iter = std::ranges::find_if(devices,
@@ -169,7 +171,7 @@ PhysicalDeviceInfo pick_physical_device(
 			return device_is_suitable(device, device_extensions, surface, phys_device_info);
 		});
 	if (iter == devices.end())
-		throw std::runtime_error("Failed to find a suitable GPU!");
+		throw GraphicsException("Failed to find a suitable GPU!");
 
 	return phys_device_info;
 }
@@ -276,7 +278,7 @@ vk::raii::SwapchainKHR create_swap_chain(
 	vk::PresentModeKHR present_mode = choose_swap_present_mode(sws.present_modes);
 	vk::Extent2D extent = choose_swap_extent(sws.capabilities, width_pixels, height_pixels);
 	if (extent.width == 0 || extent.height == 0)
-		throw std::runtime_error("Failed to choose swap extent, got 0 for width or height");
+		throw GraphicsException("Failed to choose swap extent, got 0 for width or height");
 
 	std::uint32_t min_image_count = choose_swap_min_image_count(sws.capabilities);
 
@@ -345,7 +347,7 @@ vk::Format find_supported_format(
 			return format;
 	}
 
-	throw std::runtime_error("Failed to find supported format");
+	throw GraphicsException("Failed to find supported format");
 }
 
 vk::Format find_depth_image_format(vk::raii::PhysicalDevice const & phys_device)
@@ -449,9 +451,9 @@ GraphicsApi::GraphicsApi(
 	{
 		std::cout << "Vulkan error: " << err.what() << std::endl;
 	}
-	catch (std::runtime_error const & err)
+	catch (GraphicsException const & err)
 	{
-		std::cout << "Runtime error: " << err.what() << std::endl;
+		std::cout << "Graphics error: " << err.what() << std::endl;
 	}
 }
 
@@ -515,9 +517,9 @@ void GraphicsApi::RecreateSwapChain(int width_pixels, int height_pixels)
 	{
 		std::cout << "Vulkan error: " << err.what() << std::endl;
 	}
-	catch (std::runtime_error const & err)
+	catch (GraphicsException const & err)
 	{
-		std::cout << "Runtime error: " << err.what() << std::endl;
+		std::cout << "Graphics error: " << err.what() << std::endl;
 	}
 }
 
@@ -530,7 +532,7 @@ void GraphicsApi::DrawFrame(std::function<void()> render_fn, bool & out_swap_cha
 {
 	vk::Result fence_result = m_logical_device.waitForFences(*m_draw_fences[m_current_frame], VK_TRUE, UINT64_MAX);
 	if (fence_result != vk::Result::eSuccess)
-		throw std::runtime_error("Failed to wait for draw fence!");
+		throw GraphicsException("Failed to wait for draw fence!");
 
 	try
 	{
@@ -538,7 +540,7 @@ void GraphicsApi::DrawFrame(std::function<void()> render_fn, bool & out_swap_cha
 		if (ani_result == vk::Result::eSuboptimalKHR)
 			out_swap_chain_out_of_date = true;
 		else if (ani_result != vk::Result::eSuccess)
-			throw std::runtime_error("Failed to acquire swap chain image!");
+			throw GraphicsException("Failed to acquire swap chain image!");
 
 		m_current_image_index = image_index;
 	}
@@ -604,7 +606,7 @@ std::uint32_t GraphicsApi::FindMemoryType(std::uint32_t type_filter, vk::MemoryP
 			return i;
 	}
 
-	throw std::runtime_error("failed to find suitable memory type!");
+	throw GraphicsException("failed to find suitable memory type!");
 }
 
 vk::raii::Image GraphicsApi::Create2dImage(

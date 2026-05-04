@@ -3,6 +3,7 @@
 module;
 
 #include <string>
+#include <stdexcept>
 //#include <source_location>
 //#include <stacktrace>
 
@@ -26,6 +27,12 @@ private:
 	std::string m_message;
 	//std::source_location const m_source_location;
 	//std::stacktrace const m_stack_trace;
+};
+
+export class GraphicsException : public std::runtime_error
+{
+public:
+	explicit GraphicsException(std::string message) : std::runtime_error(std::move(message)) {}
 };
 
 static_assert(sizeof(GraphicsError) <= 64, "a type that is 64 bytes or less is optimal for std::expected usage");
