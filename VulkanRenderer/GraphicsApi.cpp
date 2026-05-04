@@ -549,6 +549,11 @@ void GraphicsApi::DrawFrame(std::function<void()> render_fn, bool & out_swap_cha
 		out_swap_chain_out_of_date = true;
 		return;
 	}
+	catch (vk::SurfaceLostKHRError const &)
+	{
+		out_swap_chain_out_of_date = true;
+		return;
+	}
 
 	// Only reset the fence if we are submitting work
 	m_logical_device.resetFences(*m_draw_fences[m_current_frame]);
@@ -585,6 +590,10 @@ void GraphicsApi::DrawFrame(std::function<void()> render_fn, bool & out_swap_cha
 			out_swap_chain_out_of_date = true;
 	}
 	catch (vk::OutOfDateKHRError const &) // use VULKAN_HPP_HANDLE_ERROR_OUT_OF_DATE_AS_SUCCESS when it's available
+	{
+		out_swap_chain_out_of_date = true;
+	}
+	catch (vk::SurfaceLostKHRError const &)
 	{
 		out_swap_chain_out_of_date = true;
 	}
