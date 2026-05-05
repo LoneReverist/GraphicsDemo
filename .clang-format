@@ -1,0 +1,11 @@
+Language: Cpp
+BasedOnStyle: Microsoft
+PointerAlignment: Middle
+SpaceAroundPointerQualifiers: Both
+UseTab: Always
+TabWidth: 4
+IndentWidth: 4
+ContinuationIndentWidth: 4
+Cpp11BracedListStyle: false
+BreakBeforeBinaryOperators: All
+BreakBinaryOperations: RespectPrecedence

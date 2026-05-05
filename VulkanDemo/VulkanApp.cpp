@@ -30,6 +30,8 @@ VulkanApp::VulkanApp(WindowSize window_size_screen_coords, std::string const & t
 
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
+	//glfwWindowHint(GLFW_DECORATED, GLFW_FALSE); // could use this with ImGui to get around Cosmic compositer issues
+
 	m_window = glfwCreateWindow(
 		window_size_screen_coords.width,
 		window_size_screen_coords.height,
@@ -84,9 +86,7 @@ void VulkanApp::Run()
 			std::uint32_t extension_count = 0;
 			const char ** extensions = glfwGetRequiredInstanceExtensions(&extension_count);
 
-			GraphicsApi graphics_api{
-				m_window, size.width, size.height,
-				m_title, extension_count, extensions };
+			GraphicsApi graphics_api{ m_window, size.width, size.height, m_title, extension_count, extensions };
 
 			Scene scene{ graphics_api, m_title, scale_factor };
 			scene.OnViewportResized(size.width, size.height);
@@ -101,19 +101,21 @@ void VulkanApp::Run()
 
 				scene.Update(delta_time, m_input);
 
-				bool swap_chain_out_of_date = false;
+				DrawFrameResult draw_result = DrawFrameResult::SwapChainOutOfDate;
 				if (graphics_api.SwapChainIsValid())
-					graphics_api.DrawFrame([&scene]() { scene.Render(); }, swap_chain_out_of_date);
-				else
-					swap_chain_out_of_date = true;
+					draw_result = graphics_api.DrawFrame([&scene]() { scene.Render(); });
+
+				if (draw_result == DrawFrameResult::SurfaceLost)
+					break; // The Cosmic compositor has issues
 
 				WindowSize new_size = m_window_size_pixels.load();
-				if (swap_chain_out_of_date || new_size != size)
+				if (draw_result == DrawFrameResult::SwapChainOutOfDate || new_size != size)
 				{
 					graphics_api.RecreateSwapChain(new_size.width, new_size.height);
 					scene.OnViewportResized(new_size.width, new_size.height);
 					size = new_size;
 				}
+
 				float new_scale_factor = m_window_scale_factor.load();
 				if (new_scale_factor != scale_factor)
 				{

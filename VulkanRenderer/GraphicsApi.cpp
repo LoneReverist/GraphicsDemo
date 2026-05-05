@@ -493,6 +493,11 @@ void GraphicsApi::destroy_swap_chain()
 	m_swap_chain_extent = vk::Extent2D{ 0, 0 };
 }
 
+bool GraphicsApi::SwapChainIsValid() const
+{
+	return *m_swap_chain != VK_NULL_HANDLE && !m_swap_chain_image_views.empty();
+}
+
 void GraphicsApi::RecreateSwapChain(int width_pixels, int height_pixels)
 {
 	WaitForLastFrame();
@@ -523,13 +528,10 @@ void GraphicsApi::RecreateSwapChain(int width_pixels, int height_pixels)
 	}
 }
 
-bool GraphicsApi::SwapChainIsValid() const
+DrawFrameResult GraphicsApi::DrawFrame(std::function<void()> render_fn)
 {
-	return *m_swap_chain != VK_NULL_HANDLE && !m_swap_chain_image_views.empty();
-}
+	DrawFrameResult result = DrawFrameResult::Success;
 
-void GraphicsApi::DrawFrame(std::function<void()> render_fn, bool & out_swap_chain_out_of_date)
-{
 	vk::Result fence_result = m_logical_device.waitForFences(*m_draw_fences[m_current_frame], VK_TRUE, UINT64_MAX);
 	if (fence_result != vk::Result::eSuccess)
 		throw GraphicsException("Failed to wait for draw fence!");
@@ -538,7 +540,7 @@ void GraphicsApi::DrawFrame(std::function<void()> render_fn, bool & out_swap_cha
 	{
 		auto [ani_result, image_index] = m_swap_chain.acquireNextImage(UINT64_MAX, *m_present_complete_semaphores[m_current_frame], nullptr);
 		if (ani_result == vk::Result::eSuboptimalKHR)
-			out_swap_chain_out_of_date = true;
+			result = DrawFrameResult::SwapChainOutOfDate;
 		else if (ani_result != vk::Result::eSuccess)
 			throw GraphicsException("Failed to acquire swap chain image!");
 
@@ -546,13 +548,11 @@ void GraphicsApi::DrawFrame(std::function<void()> render_fn, bool & out_swap_cha
 	}
 	catch (vk::OutOfDateKHRError const &) // use VULKAN_HPP_HANDLE_ERROR_OUT_OF_DATE_AS_SUCCESS when it's available
 	{
-		out_swap_chain_out_of_date = true;
-		return;
+		return DrawFrameResult::SwapChainOutOfDate;
 	}
 	catch (vk::SurfaceLostKHRError const &)
 	{
-		out_swap_chain_out_of_date = true;
-		return;
+		return DrawFrameResult::SurfaceLost;
 	}
 
 	// Only reset the fence if we are submitting work
@@ -587,18 +587,19 @@ void GraphicsApi::DrawFrame(std::function<void()> render_fn, bool & out_swap_cha
 	{
 		vk::Result present_result = m_queue.presentKHR(present_info);
 		if (present_result == vk::Result::eSuboptimalKHR /*|| present_result == vk::Result::eErrorOutOfDateKHR*/)
-			out_swap_chain_out_of_date = true;
+			result = DrawFrameResult::SwapChainOutOfDate;
 	}
 	catch (vk::OutOfDateKHRError const &) // use VULKAN_HPP_HANDLE_ERROR_OUT_OF_DATE_AS_SUCCESS when it's available
 	{
-		out_swap_chain_out_of_date = true;
+		result = DrawFrameResult::SwapChainOutOfDate;
 	}
 	catch (vk::SurfaceLostKHRError const &)
 	{
-		out_swap_chain_out_of_date = true;
+		result = DrawFrameResult::SurfaceLost;
 	}
 
 	m_current_frame = (m_current_frame + 1) % m_max_frames_in_flight;
+	return result;
 }
 
 void GraphicsApi::WaitForLastFrame() const

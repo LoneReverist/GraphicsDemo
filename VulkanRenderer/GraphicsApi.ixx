@@ -34,6 +34,13 @@ struct PhysicalDeviceInfo
 	vk::PhysicalDeviceProperties properties;
 };
 
+export enum class DrawFrameResult
+{
+	Success,
+	SwapChainOutOfDate,
+	SurfaceLost
+};
+
 export class GraphicsApi
 {
 public:
@@ -48,10 +55,10 @@ public:
 		std::uint32_t extension_count,
 		char const ** extensions);
 
-	void RecreateSwapChain(int width_pixels, int height_pixels);
 	bool SwapChainIsValid() const;
+	void RecreateSwapChain(int width_pixels, int height_pixels);
 
-	void DrawFrame(std::function<void()> render_fn, bool & out_window_size_out_of_date);
+	DrawFrameResult DrawFrame(std::function<void()> render_fn);
 	void WaitForLastFrame() const;
 
 	std::uint32_t FindMemoryType(std::uint32_t type_filter, vk::MemoryPropertyFlags properties) const;
