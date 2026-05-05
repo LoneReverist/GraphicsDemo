@@ -8,37 +8,40 @@ module;
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
-export module VulkanApp;
+export module App;
 
 import Input;
 
-export struct WindowSize
+namespace Dreamhearth
 {
-	int width = 0;
-	int height = 0;
+	export struct WindowSize
+	{
+		int width = 0;
+		int height = 0;
 
-	auto operator<=>(WindowSize const &) const = default;
-};
+		auto operator<=>(WindowSize const &) const = default;
+	};
 
-export class VulkanApp
-{
-public:
-	explicit VulkanApp(WindowSize window_size_screen_coords, std::string const & title);
-	~VulkanApp();
+	export class App
+	{
+	public:
+		explicit App(WindowSize window_size_screen_coords, std::string const & title);
+		~App();
 
-	void Run();
+		void Run();
 
-	bool IsInitialized() const { return m_initialized; }
-	bool HasWindow() const { return m_window != nullptr; }
+		bool IsInitialized() const { return m_initialized; }
+		bool HasWindow() const { return m_window != nullptr; }
 
-	void OnKeyEvent(int key, int scan_code, int action, int mods);
+		void OnKeyEvent(int key, int scan_code, int action, int mods);
 
-private:
-	bool m_initialized = false;
-	GLFWwindow * m_window = nullptr;
-	std::string const m_title;
+	private:
+		bool m_initialized = false;
+		GLFWwindow * m_window = nullptr;
+		std::string const m_title;
 
-	std::atomic<WindowSize> m_window_size_pixels;
-	std::atomic<float> m_window_scale_factor = 1.0f;
-	Input m_input;
-};
+		std::atomic<WindowSize> m_window_size_pixels;
+		std::atomic<float> m_window_scale_factor = 1.0f;
+		Input m_input;
+	};
+}

@@ -2,6 +2,8 @@ add_executable(VulkanDemo)
 
 target_compile_features(VulkanDemo PRIVATE cxx_std_23)
 
+target_compile_definitions(VulkanDemo PRIVATE BUILD_VULKAN)
+
 set_target_properties(VulkanDemo PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
 set(DEMO_SHARED_DIR ${CMAKE_SOURCE_DIR}/DemoShared)

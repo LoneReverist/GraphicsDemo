@@ -1,4 +1,4 @@
-// VulkanApp.cpp
+// App.cpp
 
 module;
 
@@ -10,134 +10,137 @@ module;
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
-module VulkanApp;
+module App;
 
 import GraphicsApi;
 import Renderer;
 import Scene;
 
-VulkanApp::VulkanApp(WindowSize window_size_screen_coords, std::string const & title)
-	: m_title(title)
+namespace Dreamhearth
 {
-	glfwSetErrorCallback([](int error, const char * description)
-		{
-			std::cout << "GLFW Error: " << error << " " << description << std::endl;
-		});
-
-	if (!glfwInit())
-		return;
-	m_initialized = true;
-
-	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-
-	//glfwWindowHint(GLFW_DECORATED, GLFW_FALSE); // could use this with ImGui to get around Cosmic compositer issues
-
-	m_window = glfwCreateWindow(
-		window_size_screen_coords.width,
-		window_size_screen_coords.height,
-		m_title.c_str(),
-		nullptr,
-		nullptr);
-	if (!m_window)
-		return;
-
-	int width_pixels = 0, height_pixels = 0;
-	glfwGetFramebufferSize(m_window, &width_pixels, &height_pixels); // must only be called from main thread
-	m_window_size_pixels.store(WindowSize{ width_pixels, height_pixels });
-
-	float x_scale = 1.0f, y_scale = 1.0f;
-	glfwGetWindowContentScale(m_window, &x_scale, &y_scale); // must only be called from main thread
-	m_window_scale_factor.store(y_scale); // assume x and y scale are the same
-
-	glfwSetWindowUserPointer(m_window, this);
-	glfwSetFramebufferSizeCallback(m_window, [](GLFWwindow * window, int width_pixels, int height_pixels)
-		{
-			VulkanApp * app = static_cast<VulkanApp *>(glfwGetWindowUserPointer(window));
-			app->m_window_size_pixels.store(WindowSize{ width_pixels, height_pixels });
-		});
-	glfwSetWindowContentScaleCallback(m_window, [](GLFWwindow * window, float x_scale, float y_scale)
-		{
-			VulkanApp * app = static_cast<VulkanApp *>(glfwGetWindowUserPointer(window));
-			app->m_window_scale_factor.store(y_scale); // assume x and y scale are the same
-		});
-	glfwSetKeyCallback(m_window, [](GLFWwindow * window, int key, int scan_code, int action, int mods)
-		{
-			VulkanApp * app = static_cast<VulkanApp *>(glfwGetWindowUserPointer(window));
-			app->OnKeyEvent(key, scan_code, action, mods);
-		});
-}
-
-VulkanApp::~VulkanApp()
-{
-	if (IsInitialized())
-		glfwTerminate();
-}
-
-void VulkanApp::Run()
-{
-	if (!IsInitialized() || !HasWindow())
-		return;
-
-	std::jthread update_render_loop([this](std::stop_token s_token)
-		{
-			WindowSize size = m_window_size_pixels.load();
-			float scale_factor = m_window_scale_factor.load();
-
-			std::uint32_t extension_count = 0;
-			const char ** extensions = glfwGetRequiredInstanceExtensions(&extension_count);
-
-			GraphicsApi graphics_api{ m_window, size.width, size.height, m_title, extension_count, extensions };
-
-			Scene scene{ graphics_api, m_title, scale_factor };
-			scene.OnViewportResized(size.width, size.height);
-
-			double last_update_time = glfwGetTime();
-
-			while (!s_token.stop_requested())
+	App::App(WindowSize window_size_screen_coords, std::string const & title)
+		: m_title(title)
+	{
+		glfwSetErrorCallback([](int error, const char * description)
 			{
-				double cur_time = glfwGetTime();
-				double delta_time = cur_time - last_update_time;
-				last_update_time = cur_time;
+				std::cout << "GLFW Error: " << error << " " << description << std::endl;
+			});
 
-				scene.Update(delta_time, m_input);
+		if (!glfwInit())
+			return;
+		m_initialized = true;
 
-				DrawFrameResult draw_result = DrawFrameResult::SwapChainOutOfDate;
-				if (graphics_api.SwapChainIsValid())
-					draw_result = graphics_api.DrawFrame([&scene]() { scene.Render(); });
+		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-				if (draw_result == DrawFrameResult::SurfaceLost)
-					break; // The Cosmic compositor has issues
+		//glfwWindowHint(GLFW_DECORATED, GLFW_FALSE); // could use this with ImGui to get around Cosmic compositer issues
 
-				WindowSize new_size = m_window_size_pixels.load();
-				if (draw_result == DrawFrameResult::SwapChainOutOfDate || new_size != size)
+		m_window = glfwCreateWindow(
+			window_size_screen_coords.width,
+			window_size_screen_coords.height,
+			m_title.c_str(),
+			nullptr,
+			nullptr);
+		if (!m_window)
+			return;
+
+		int width_pixels = 0, height_pixels = 0;
+		glfwGetFramebufferSize(m_window, &width_pixels, &height_pixels); // must only be called from main thread
+		m_window_size_pixels.store(WindowSize{ width_pixels, height_pixels });
+
+		float x_scale = 1.0f, y_scale = 1.0f;
+		glfwGetWindowContentScale(m_window, &x_scale, &y_scale); // must only be called from main thread
+		m_window_scale_factor.store(y_scale); // assume x and y scale are the same
+
+		glfwSetWindowUserPointer(m_window, this);
+		glfwSetFramebufferSizeCallback(m_window, [](GLFWwindow * window, int width_pixels, int height_pixels)
+			{
+				App * app = static_cast<App *>(glfwGetWindowUserPointer(window));
+				app->m_window_size_pixels.store(WindowSize{ width_pixels, height_pixels });
+			});
+		glfwSetWindowContentScaleCallback(m_window, [](GLFWwindow * window, float x_scale, float y_scale)
+			{
+				App * app = static_cast<App *>(glfwGetWindowUserPointer(window));
+				app->m_window_scale_factor.store(y_scale); // assume x and y scale are the same
+			});
+		glfwSetKeyCallback(m_window, [](GLFWwindow * window, int key, int scan_code, int action, int mods)
+			{
+				App * app = static_cast<App *>(glfwGetWindowUserPointer(window));
+				app->OnKeyEvent(key, scan_code, action, mods);
+			});
+	}
+
+	App::~App()
+	{
+		if (IsInitialized())
+			glfwTerminate();
+	}
+
+	void App::Run()
+	{
+		if (!IsInitialized() || !HasWindow())
+			return;
+
+		std::jthread update_render_loop([this](std::stop_token s_token)
+			{
+				WindowSize size = m_window_size_pixels.load();
+				float scale_factor = m_window_scale_factor.load();
+
+				std::uint32_t extension_count = 0;
+				const char ** extensions = glfwGetRequiredInstanceExtensions(&extension_count);
+
+				GraphicsApi graphics_api{ m_window, size.width, size.height, m_title, extension_count, extensions };
+
+				Scene scene{ graphics_api, m_title, scale_factor };
+				scene.OnViewportResized(size.width, size.height);
+
+				double last_update_time = glfwGetTime();
+
+				while (!s_token.stop_requested())
 				{
-					graphics_api.RecreateSwapChain(new_size.width, new_size.height);
-					scene.OnViewportResized(new_size.width, new_size.height);
-					size = new_size;
+					double cur_time = glfwGetTime();
+					double delta_time = cur_time - last_update_time;
+					last_update_time = cur_time;
+
+					scene.Update(delta_time, m_input);
+
+					DrawFrameResult draw_result = DrawFrameResult::SwapChainOutOfDate;
+					if (graphics_api.SwapChainIsValid())
+						draw_result = graphics_api.DrawFrame([&scene]() { scene.Render(); });
+
+					if (draw_result == DrawFrameResult::SurfaceLost)
+						break; // The Cosmic compositor has issues
+
+					WindowSize new_size = m_window_size_pixels.load();
+					if (draw_result == DrawFrameResult::SwapChainOutOfDate || new_size != size)
+					{
+						graphics_api.RecreateSwapChain(new_size.width, new_size.height);
+						scene.OnViewportResized(new_size.width, new_size.height);
+						size = new_size;
+					}
+
+					float new_scale_factor = m_window_scale_factor.load();
+					if (new_scale_factor != scale_factor)
+					{
+						scene.OnDPIScalingFactorChanged(new_scale_factor);
+						scale_factor = new_scale_factor;
+					}
 				}
 
-				float new_scale_factor = m_window_scale_factor.load();
-				if (new_scale_factor != scale_factor)
-				{
-					scene.OnDPIScalingFactorChanged(new_scale_factor);
-					scale_factor = new_scale_factor;
-				}
-			}
+				graphics_api.WaitForLastFrame();
+			}); // the GraphicsApi and Scene are destroyed in the reverse order they were created
 
-			graphics_api.WaitForLastFrame();
-		}); // the GraphicsApi and Scene are destroyed in the reverse order they were created
+		while (!glfwWindowShouldClose(m_window))
+			glfwPollEvents(); // must only be called from main thread
+	}
 
-	while (!glfwWindowShouldClose(m_window))
-		glfwPollEvents(); // must only be called from main thread
-}
+	void App::OnKeyEvent(int key, int /*scan_code*/, int action, int /*mods*/)
+	{
+		if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+			glfwSetWindowShouldClose(m_window, true);
 
-void VulkanApp::OnKeyEvent(int key, int /*scan_code*/, int action, int /*mods*/)
-{
-	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-		glfwSetWindowShouldClose(m_window, true);
-
-	if (action == GLFW_PRESS)
-		m_input.SetKey(key, true /*pressed*/);
-	else if (action == GLFW_RELEASE)
-		m_input.SetKey(key, false /*pressed*/);
+		if (action == GLFW_PRESS)
+			m_input.SetKey(key, true /*pressed*/);
+		else if (action == GLFW_RELEASE)
+			m_input.SetKey(key, false /*pressed*/);
+	}
 }

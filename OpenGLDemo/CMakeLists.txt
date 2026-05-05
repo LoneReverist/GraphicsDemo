@@ -2,6 +2,8 @@ add_executable(OpenGLDemo)
 
 target_compile_features(OpenGLDemo PRIVATE cxx_std_23)
 
+target_compile_definitions(OpenGLDemo PRIVATE BUILD_OPENGL)
+
 set_target_properties(OpenGLDemo PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
 set(DEMO_SHARED_DIR ${CMAKE_SOURCE_DIR}/DemoShared)

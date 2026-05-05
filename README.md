@@ -1,15 +1,15 @@
-## Graphics Demo by LoneReverist
-GraphicsDemo is a cross-platform C++ project showcasing modern graphics API design and architecture, built using C++20, CMake, Docker, and supporting both OpenGL and Vulkan rendering back-ends.
+## Dreamhearth Engine by LoneReverist
+Dreamhearth Engine is a cross-platform rendering engine showcasing modern graphics API design and architecture, built with C++20, CMake, Docker, and supporting both OpenGL and Vulkan back-ends.
 
 ![](OpenGLDemo.gif)
 ![](VulkanDemo.gif)
 
 ## Key Features
 
-- Matching OpenGL and Vulkan implementations with interchangeable interfaces
+- Matching OpenGL and Vulkan back-ends can be used interchangeably
 - Graphical demos showcasing custom render pipelines, mesh loading, lighting and MSDF text rendering
+- Runs on both Windows and Linux
 - CMake + vcpkg build system
-- Linux docker build
 - Utilizes modern C++20 features, modules, and concepts for type safety and maintainability
 - Modular architecture, clear separation of platform, rendering and scene logic
 
