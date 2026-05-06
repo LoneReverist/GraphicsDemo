@@ -12,8 +12,11 @@ module;
 
 module App;
 
-import GraphicsApi;
+import Dreamhearth;
+
 import Scene;
+
+using namespace Dreamhearth;
 
 namespace Dreamhearth
 {
@@ -135,4 +138,4 @@ namespace Dreamhearth
 		else if (action == GLFW_RELEASE)
 			m_input.SetKey(key, false /*pressed*/);
 	}
-}
+} // namespace Dreamhearth

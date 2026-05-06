@@ -44,4 +44,4 @@ namespace Dreamhearth
 		std::atomic<float> m_window_scale_factor = 1.0f;
 		Input m_input;
 	};
-}
+} // namespace Dreamhearth

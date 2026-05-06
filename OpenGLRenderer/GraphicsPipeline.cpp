@@ -8,167 +8,171 @@ module;
 
 #include <glad/glad.h>
 
-module GraphicsPipeline;
+module Dreamhearth;
 
-import GraphicsError;
+import :GraphicsPipeline;
+import :GraphicsError;
 
-Program::~Program()
+namespace Dreamhearth
 {
-	if (m_id != 0)
-		glDeleteProgram(m_id);
-}
-
-Program::Program(Program && other) noexcept
-{
-	*this = std::move(other);
-}
-
-Program & Program::operator=(Program && other) noexcept
-{
-	if (this != &other)
+	Program::~Program()
 	{
 		if (m_id != 0)
 			glDeleteProgram(m_id);
-
-		std::swap(m_id, other.m_id);
 	}
-	return *this;
-}
 
-void Program::Create()
-{
-	if (m_id != 0)
-		return;
-	m_id = glCreateProgram();
-}
-
-GraphicsPipeline::GraphicsPipeline(
-	PerFrameConstantsCallback per_frame_constants_callback,
-	PerObjectConstantsCallback per_object_constants_callback)
-	: m_per_frame_constants_callback(per_frame_constants_callback)
-	, m_per_object_constants_callback(per_object_constants_callback)
-{
-}
-
-std::expected<void, GraphicsError> GraphicsPipeline::Create(
-	unsigned int vert_shader_id,
-	unsigned int frag_shader_id,
-	size_t vs_object_uniform_size,
-	size_t fs_object_uniform_size,
-	std::vector<size_t> vs_uniform_sizes,
-	std::vector<size_t> fs_uniform_sizes,
-	Texture const * texture,
-	DepthTestOptions const & depth_options,
-	BlendOptions const & blend_options,
-	CullMode cull_mode)
-{
-	m_depth_test_options = depth_options;
-	m_blend_options = blend_options;
-	m_cull_mode = cull_mode;
-
-	m_program.Create();
-	glAttachShader(m_program.GetId(), vert_shader_id);
-	glAttachShader(m_program.GetId(), frag_shader_id);
-	glLinkProgram(m_program.GetId());
-
-	int success = 0;
-	glGetProgramiv(m_program.GetId(), GL_LINK_STATUS, &success);
-	if (!success)
+	Program::Program(Program && other) noexcept
 	{
-		char info_log[512];
-		glGetProgramInfoLog(m_program.GetId(), 512, nullptr, info_log);
-		return std::unexpected{ GraphicsError{ "Failed to link shader program. Info: " + std::string(info_log) } };
+		*this = std::move(other);
 	}
 
-	if (vs_object_uniform_size > 0)
+	Program & Program::operator=(Program && other) noexcept
 	{
-		m_vs_object_uniform.buffer.Create();
-		m_vs_object_uniform.size = vs_object_uniform_size;
-		glBindBuffer(GL_UNIFORM_BUFFER, m_vs_object_uniform.buffer.GetId());
-		glBufferData(GL_UNIFORM_BUFFER, m_vs_object_uniform.size, nullptr, GL_DYNAMIC_DRAW);
+		if (this != &other)
+		{
+			if (m_id != 0)
+				glDeleteProgram(m_id);
+
+			std::swap(m_id, other.m_id);
+		}
+		return *this;
 	}
-	if (fs_object_uniform_size > 0)
+
+	void Program::Create()
 	{
-		m_fs_object_uniform.buffer.Create();
-		m_fs_object_uniform.size = fs_object_uniform_size;
-		glBindBuffer(GL_UNIFORM_BUFFER, m_fs_object_uniform.buffer.GetId());
-		glBufferData(GL_UNIFORM_BUFFER, m_fs_object_uniform.size, nullptr, GL_DYNAMIC_DRAW);
+		if (m_id != 0)
+			return;
+		m_id = glCreateProgram();
 	}
 
-	std::vector<size_t> uniform_sizes{ vs_uniform_sizes };
-	uniform_sizes.insert(uniform_sizes.end(), fs_uniform_sizes.begin(), fs_uniform_sizes.end());
-
-	m_descriptor_set.uniform_buffers.reserve(uniform_sizes.size());
-	for (size_t binding = 0; binding < uniform_sizes.size(); ++binding)
+	GraphicsPipeline::GraphicsPipeline(
+		PerFrameConstantsCallback per_frame_constants_callback,
+		PerObjectConstantsCallback per_object_constants_callback)
+		: m_per_frame_constants_callback(per_frame_constants_callback)
+		, m_per_object_constants_callback(per_object_constants_callback)
 	{
-		UniformBuffer & uniform = m_descriptor_set.uniform_buffers.emplace_back();
-		uniform.buffer.Create();
-		uniform.size = uniform_sizes[binding];
-		glBindBuffer(GL_UNIFORM_BUFFER, uniform.buffer.GetId());
-		glBufferData(GL_UNIFORM_BUFFER, uniform.size, nullptr, GL_DYNAMIC_DRAW);
 	}
-	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-	if (texture && texture->IsValid())
+	std::expected<void, GraphicsError> GraphicsPipeline::Create(
+		unsigned int vert_shader_id,
+		unsigned int frag_shader_id,
+		size_t vs_object_uniform_size,
+		size_t fs_object_uniform_size,
+		std::vector<size_t> vs_uniform_sizes,
+		std::vector<size_t> fs_uniform_sizes,
+		Texture const * texture,
+		DepthTestOptions const & depth_options,
+		BlendOptions const & blend_options,
+		CullMode cull_mode)
 	{
-		m_descriptor_set.texture_binding = uniform_sizes.size();
-		m_descriptor_set.texture_id = texture->GetId();
-		m_descriptor_set.texture_type = texture->GetType();
+		m_depth_test_options = depth_options;
+		m_blend_options = blend_options;
+		m_cull_mode = cull_mode;
+
+		m_program.Create();
+		glAttachShader(m_program.GetId(), vert_shader_id);
+		glAttachShader(m_program.GetId(), frag_shader_id);
+		glLinkProgram(m_program.GetId());
+
+		int success = 0;
+		glGetProgramiv(m_program.GetId(), GL_LINK_STATUS, &success);
+		if (!success)
+		{
+			char info_log[512];
+			glGetProgramInfoLog(m_program.GetId(), 512, nullptr, info_log);
+			return std::unexpected{ GraphicsError{ "Failed to link shader program. Info: " + std::string(info_log) } };
+		}
+
+		if (vs_object_uniform_size > 0)
+		{
+			m_vs_object_uniform.buffer.Create();
+			m_vs_object_uniform.size = vs_object_uniform_size;
+			glBindBuffer(GL_UNIFORM_BUFFER, m_vs_object_uniform.buffer.GetId());
+			glBufferData(GL_UNIFORM_BUFFER, m_vs_object_uniform.size, nullptr, GL_DYNAMIC_DRAW);
+		}
+		if (fs_object_uniform_size > 0)
+		{
+			m_fs_object_uniform.buffer.Create();
+			m_fs_object_uniform.size = fs_object_uniform_size;
+			glBindBuffer(GL_UNIFORM_BUFFER, m_fs_object_uniform.buffer.GetId());
+			glBufferData(GL_UNIFORM_BUFFER, m_fs_object_uniform.size, nullptr, GL_DYNAMIC_DRAW);
+		}
+
+		std::vector<size_t> uniform_sizes{ vs_uniform_sizes };
+		uniform_sizes.insert(uniform_sizes.end(), fs_uniform_sizes.begin(), fs_uniform_sizes.end());
+
+		m_descriptor_set.uniform_buffers.reserve(uniform_sizes.size());
+		for (size_t binding = 0; binding < uniform_sizes.size(); ++binding)
+		{
+			UniformBuffer & uniform = m_descriptor_set.uniform_buffers.emplace_back();
+			uniform.buffer.Create();
+			uniform.size = uniform_sizes[binding];
+			glBindBuffer(GL_UNIFORM_BUFFER, uniform.buffer.GetId());
+			glBufferData(GL_UNIFORM_BUFFER, uniform.size, nullptr, GL_DYNAMIC_DRAW);
+		}
+		glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+		if (texture && texture->IsValid())
+		{
+			m_descriptor_set.texture_binding = uniform_sizes.size();
+			m_descriptor_set.texture_id = texture->GetId();
+			m_descriptor_set.texture_type = texture->GetType();
+		}
+
+		return {};
 	}
 
-	return {};
-}
-
-void GraphicsPipeline::Activate() const
-{
-	if (m_program.GetId() == 0)
-		return;
-
-	if (m_depth_test_options.enable_depth_test)
+	void GraphicsPipeline::Activate() const
 	{
-		glEnable(GL_DEPTH_TEST);
-		glDepthMask(m_depth_test_options.enable_depth_write ? GL_TRUE : GL_FALSE);
-		glDepthFunc(static_cast<GLenum>(m_depth_test_options.depth_compare_op));
+		if (m_program.GetId() == 0)
+			return;
+
+		if (m_depth_test_options.enable_depth_test)
+		{
+			glEnable(GL_DEPTH_TEST);
+			glDepthMask(m_depth_test_options.enable_depth_write ? GL_TRUE : GL_FALSE);
+			glDepthFunc(static_cast<GLenum>(m_depth_test_options.depth_compare_op));
+		}
+		else
+		{
+			glDisable(GL_DEPTH_TEST);
+		}
+
+		if (m_blend_options.enable_blend)
+		{
+			glEnable(GL_BLEND);
+			glBlendFunc(static_cast<GLenum>(m_blend_options.src_factor), static_cast<GLenum>(m_blend_options.dst_factor));
+		}
+		else
+		{
+			glDisable(GL_BLEND);
+		}
+
+		if (m_cull_mode != CullMode::NONE)
+		{
+			glEnable(GL_CULL_FACE);
+			glCullFace(static_cast<GLenum>(m_cull_mode));
+		}
+		else
+		{
+			glDisable(GL_CULL_FACE);
+		}
+
+		glUseProgram(m_program.GetId());
+
+		if (m_descriptor_set.texture_id != 0)
+			Texture::Bind(m_descriptor_set.texture_id, m_descriptor_set.texture_type, m_descriptor_set.texture_binding);
 	}
-	else
+
+	void GraphicsPipeline::UpdatePerFrameConstants() const
 	{
-		glDisable(GL_DEPTH_TEST);
+		if (m_per_frame_constants_callback)
+			m_per_frame_constants_callback(*this);
 	}
 
-	if (m_blend_options.enable_blend)
+	void GraphicsPipeline::UpdatePerObjectConstants(void const * object_data) const
 	{
-		glEnable(GL_BLEND);
-		glBlendFunc(static_cast<GLenum>(m_blend_options.src_factor), static_cast<GLenum>(m_blend_options.dst_factor));
+		if (m_per_object_constants_callback)
+			m_per_object_constants_callback(*this, object_data);
 	}
-	else
-	{
-		glDisable(GL_BLEND);
-	}
-
-	if (m_cull_mode != CullMode::NONE)
-	{
-		glEnable(GL_CULL_FACE);
-		glCullFace(static_cast<GLenum>(m_cull_mode));
-	}
-	else
-	{
-		glDisable(GL_CULL_FACE);
-	}
-
-	glUseProgram(m_program.GetId());
-
-	if (m_descriptor_set.texture_id != 0)
-		Texture::Bind(m_descriptor_set.texture_id, m_descriptor_set.texture_type, m_descriptor_set.texture_binding);
-}
-
-void GraphicsPipeline::UpdatePerFrameConstants() const
-{
-	if (m_per_frame_constants_callback)
-		m_per_frame_constants_callback(*this);
-}
-
-void GraphicsPipeline::UpdatePerObjectConstants(void const * object_data) const
-{
-	if (m_per_object_constants_callback)
-		m_per_object_constants_callback(*this, object_data);
-}
+} // namespace Dreamhearth

@@ -10,179 +10,184 @@ module;
 
 #include <glad/glad.h>
 
-module Texture;
+module Dreamhearth;
 
-GLenum to_gl_internal_format(PixelFormat format)
+import :Texture;
+
+namespace Dreamhearth
 {
-	switch (format)
+	GLenum to_gl_internal_format(PixelFormat format)
 	{
-	case PixelFormat::RGBA_UNORM:
-		return GL_RGBA8;
-	case PixelFormat::RGB_UNORM:
-		return GL_RGB8;
-	case PixelFormat::RGBA_SRGB:
-		return GL_SRGB8_ALPHA8;
-	case PixelFormat::RGB_SRGB:
-		return GL_SRGB8;
-	default:
-		return 0;
+		switch (format)
+		{
+		case PixelFormat::RGBA_UNORM:
+			return GL_RGBA8;
+		case PixelFormat::RGB_UNORM:
+			return GL_RGB8;
+		case PixelFormat::RGBA_SRGB:
+			return GL_SRGB8_ALPHA8;
+		case PixelFormat::RGB_SRGB:
+			return GL_SRGB8;
+		default:
+			return 0;
+		}
 	}
-}
 
-GLenum to_gl_format(PixelFormat format)
-{
-	switch (format)
+	GLenum to_gl_format(PixelFormat format)
 	{
-	case PixelFormat::RGBA_UNORM:
-	case PixelFormat::RGBA_SRGB:
-		return GL_RGBA;
-	case PixelFormat::RGB_UNORM:
-	case PixelFormat::RGB_SRGB:
-		return GL_RGB;
-	default:
-		return 0;
+		switch (format)
+		{
+		case PixelFormat::RGBA_UNORM:
+		case PixelFormat::RGBA_SRGB:
+			return GL_RGBA;
+		case PixelFormat::RGB_UNORM:
+		case PixelFormat::RGB_SRGB:
+			return GL_RGB;
+		default:
+			return 0;
+		}
 	}
-}
 
-bool ImageData::IsValid() const
-{
-	return GetSize() > 0 && data != nullptr;
-}
+	bool ImageData::IsValid() const
+	{
+		return GetSize() > 0 && data != nullptr;
+	}
 
-std::uint64_t ImageData::GetSize() const
-{
-	return static_cast<std::uint64_t>(width * height * GetPixelSize(format));
-}
+	std::uint64_t ImageData::GetSize() const
+	{
+		return static_cast<std::uint64_t>(width * height * GetPixelSize(format));
+	}
 
-bool CubeImageData::IsValid() const
-{
-	return GetSize() > 0
-		&& std::ranges::all_of(data, [](std::uint8_t  const * data) { return data != nullptr; });
-}
+	bool CubeImageData::IsValid() const
+	{
+		return GetSize() > 0
+			&& std::ranges::all_of(data, [](std::uint8_t  const * data) { return data != nullptr; });
+	}
 
-std::uint64_t CubeImageData::GetSize() const
-{
-	return static_cast<std::uint64_t>(width * height * GetPixelSize(format));
-}
+	std::uint64_t CubeImageData::GetSize() const
+	{
+		return static_cast<std::uint64_t>(width * height * GetPixelSize(format));
+	}
 
-Image::~Image()
-{
-	if (m_id != 0)
-		glDeleteTextures(1, &m_id);
-}
-
-Image::Image(Image && other)
-{
-	*this = std::move(other);
-}
-
-Image & Image::operator=(Image && other)
-{
-	if (this != &other)
+	Image::~Image()
 	{
 		if (m_id != 0)
 			glDeleteTextures(1, &m_id);
-
-		std::swap(m_id, other.m_id);
 	}
-	return *this;
-}
 
-void Image::Create()
-{
-	glGenTextures(1, &m_id);
-}
-
-std::expected<void, GraphicsError> Texture::Create(GraphicsApi const & /*graphics_api*/, ImageData const & image_data, bool use_mip_map /*= true*/)
-{
-	if (!image_data.IsValid())
-		return std::unexpected{ GraphicsError{ "Texture() image_data not valid" } };
-
-	GLenum internal_format = to_gl_internal_format(image_data.format);
-	GLenum format = to_gl_format(image_data.format);
-	if (internal_format == 0 || format == 0)
-		return std::unexpected{ GraphicsError{ "Texture() Unsupported pixel format: " + std::to_string(format) } };
-
-	m_width = image_data.width;
-	m_height = image_data.height;
-
-	m_type = GL_TEXTURE_2D;
-	m_image.Create();
-	glBindTexture(m_type, m_image.GetId());
-
-	glTexParameteri(m_type, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(m_type, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(m_type, GL_TEXTURE_MIN_FILTER, use_mip_map ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
-	glTexParameteri(m_type, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	glTexImage2D(
-		m_type,
-		0 /*level*/,
-		internal_format,
-		m_width,
-		m_height,
-		0 /*border*/,
-		format,
-		GL_UNSIGNED_BYTE,
-		image_data.data);
-
-	if (use_mip_map)
-		glGenerateMipmap(m_type);
-
-	return {};
-}
-
-std::expected<void, GraphicsError> Texture::Create(GraphicsApi const & /*graphics_api*/, CubeImageData const & image_data)
-{
-	if (!image_data.IsValid())
-		return std::unexpected{ GraphicsError{ "Texture() image_data not valid" } };
-
-	GLenum internal_format = to_gl_internal_format(image_data.format);
-	GLenum format = to_gl_format(image_data.format);
-	if (internal_format == 0 || format == 0)
-		return std::unexpected{ GraphicsError{ "Texture() Unsupported pixel format: " + std::to_string(format) } };
-
-	m_width = image_data.width;
-	m_height = image_data.height;
-
-	m_type = GL_TEXTURE_CUBE_MAP;
-	m_image.Create();
-	glBindTexture(m_type, m_image.GetId());
-
-	glTexParameteri(m_type, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(m_type, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(m_type, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(m_type, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(m_type, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-	for (unsigned int i = 0; i < image_data.data.size(); i++)
+	Image::Image(Image && other)
 	{
+		*this = std::move(other);
+	}
+
+	Image & Image::operator=(Image && other)
+	{
+		if (this != &other)
+		{
+			if (m_id != 0)
+				glDeleteTextures(1, &m_id);
+
+			std::swap(m_id, other.m_id);
+		}
+		return *this;
+	}
+
+	void Image::Create()
+	{
+		glGenTextures(1, &m_id);
+	}
+
+	std::expected<void, GraphicsError> Texture::Create(GraphicsApi const & /*graphics_api*/, ImageData const & image_data, bool use_mip_map /*= true*/)
+	{
+		if (!image_data.IsValid())
+			return std::unexpected{ GraphicsError{ "Texture() image_data not valid" } };
+
+		GLenum internal_format = to_gl_internal_format(image_data.format);
+		GLenum format = to_gl_format(image_data.format);
+		if (internal_format == 0 || format == 0)
+			return std::unexpected{ GraphicsError{ "Texture() Unsupported pixel format: " + std::to_string(format) } };
+
+		m_width = image_data.width;
+		m_height = image_data.height;
+
+		m_type = GL_TEXTURE_2D;
+		m_image.Create();
+		glBindTexture(m_type, m_image.GetId());
+
+		glTexParameteri(m_type, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(m_type, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(m_type, GL_TEXTURE_MIN_FILTER, use_mip_map ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
+		glTexParameteri(m_type, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
 		glTexImage2D(
-			GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-			0,
+			m_type,
+			0 /*level*/,
 			internal_format,
 			m_width,
 			m_height,
-			0,
+			0 /*border*/,
 			format,
 			GL_UNSIGNED_BYTE,
-			image_data.data[i]);
+			image_data.data);
+
+		if (use_mip_map)
+			glGenerateMipmap(m_type);
+
+		return {};
 	}
 
-	return {};
-}
+	std::expected<void, GraphicsError> Texture::Create(GraphicsApi const & /*graphics_api*/, CubeImageData const & image_data)
+	{
+		if (!image_data.IsValid())
+			return std::unexpected{ GraphicsError{ "Texture() image_data not valid" } };
 
-bool Texture::IsValid() const
-{
-	return m_image.GetId() != 0 && m_type != 0 && m_width != 0 && m_height != 0;
-}
+		GLenum internal_format = to_gl_internal_format(image_data.format);
+		GLenum format = to_gl_format(image_data.format);
+		if (internal_format == 0 || format == 0)
+			return std::unexpected{ GraphicsError{ "Texture() Unsupported pixel format: " + std::to_string(format) } };
 
-// static
-void Texture::Bind(unsigned int id, unsigned int type, unsigned int binding)
-{
-	if (id == 0 || type == 0)
-		return;
+		m_width = image_data.width;
+		m_height = image_data.height;
 
-	glActiveTexture(GL_TEXTURE0 + binding);
-	glBindTexture(type, id);
-}
+		m_type = GL_TEXTURE_CUBE_MAP;
+		m_image.Create();
+		glBindTexture(m_type, m_image.GetId());
+
+		glTexParameteri(m_type, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(m_type, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(m_type, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(m_type, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(m_type, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+		for (unsigned int i = 0; i < image_data.data.size(); i++)
+		{
+			glTexImage2D(
+				GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+				0,
+				internal_format,
+				m_width,
+				m_height,
+				0,
+				format,
+				GL_UNSIGNED_BYTE,
+				image_data.data[i]);
+		}
+
+		return {};
+	}
+
+	bool Texture::IsValid() const
+	{
+		return m_image.GetId() != 0 && m_type != 0 && m_width != 0 && m_height != 0;
+	}
+
+	// static
+	void Texture::Bind(unsigned int id, unsigned int type, unsigned int binding)
+	{
+		if (id == 0 || type == 0)
+			return;
+
+		glActiveTexture(GL_TEXTURE0 + binding);
+		glBindTexture(type, id);
+	}
+} // namespace Dreamhearth

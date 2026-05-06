@@ -4,23 +4,26 @@ module;
 
 #include <glm/vec3.hpp>
 
-export module Renderer;
+export module Dreamhearth:Renderer;
 
-import GraphicsApi;
-import GraphicsError;
+import :GraphicsApi;
+import :GraphicsError;
 
-export class Renderer
+namespace Dreamhearth
 {
-public:
-	explicit Renderer(GraphicsApi const & graphics_api);
+	export class Renderer
+	{
+	public:
+		explicit Renderer(GraphicsApi const & graphics_api);
 
-	void BeginDraw() const;
-	void EndDraw() const;
+		void BeginDraw() const;
+		void EndDraw() const;
 
-	void SetClearColor(glm::vec3 const & color) { m_clear_color = color; }
+		void SetClearColor(glm::vec3 const & color) { m_clear_color = color; }
 
-private:
-	GraphicsApi const & m_graphics_api;
+	private:
+		GraphicsApi const & m_graphics_api;
 
-	glm::vec3 m_clear_color;
-};
+		glm::vec3 m_clear_color;
+	};
+} // namespace Dreamhearth

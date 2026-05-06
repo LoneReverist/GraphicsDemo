@@ -7,9 +7,11 @@ module;
 
 #include <glad/glad.h>
 
-module GraphicsApi;
+module Dreamhearth;
 
-namespace
+import :GraphicsApi;
+
+namespace Dreamhearth
 {
 	std::string type_to_string(GLenum type)
 	{
@@ -51,27 +53,27 @@ namespace
 		std::cout << std::format("OpenGL {3}: type - {1}, id - {2}\nMessage: {0}\n\n",
 			message, type_to_string(type), id, severity_to_string(severity));
 	}
-}
 
-GraphicsApi::GraphicsApi(LoadProcFn * load_proc_fn)
-{
-	if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(load_proc_fn)))
+	GraphicsApi::GraphicsApi(LoadProcFn * load_proc_fn)
 	{
-		std::cout << "Failed to initialize OpenGL context" << std::endl;
-		return;
+		if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(load_proc_fn)))
+		{
+			std::cout << "Failed to initialize OpenGL context" << std::endl;
+			return;
+		}
+	
+		glEnable(GL_DEBUG_OUTPUT);
+		glDebugMessageCallback(debug_message_callback, 0);
+	
+		glEnable(GL_FRAMEBUFFER_SRGB);
 	}
-
-	glEnable(GL_DEBUG_OUTPUT);
-	glDebugMessageCallback(debug_message_callback, 0);
-
-	glEnable(GL_FRAMEBUFFER_SRGB);
-}
-
-GraphicsApi::~GraphicsApi()
-{
-}
-
-void GraphicsApi::SetViewport(int width_pixels, int height_pixels) const
-{
-	glViewport(0, 0, width_pixels, height_pixels);
-}
+	
+	GraphicsApi::~GraphicsApi()
+	{
+	}
+	
+	void GraphicsApi::SetViewport(int width_pixels, int height_pixels) const
+	{
+		glViewport(0, 0, width_pixels, height_pixels);
+	}
+} // namespace Dreamhearth

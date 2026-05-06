@@ -7,99 +7,102 @@ module;
 #include <optional>
 #include <vector>
 
-export module PipelineBuilder;
+export module Dreamhearth:PipelineBuilder;
 
-import GraphicsApi;
-import GraphicsError;
-import GraphicsPipeline;
-import Texture;
-import VertexLayout;
+import :GraphicsApi;
+import :GraphicsError;
+import :GraphicsPipeline;
+import :Texture;
+import :VertexLayout;
 
-export class PipelineBuilder
+namespace Dreamhearth
 {
-public:
-	using PerFrameConstantsCallback = GraphicsPipeline::PerFrameConstantsCallback;
-	using PerObjectConstantsCallback = GraphicsPipeline::PerObjectConstantsCallback;
+	export class PipelineBuilder
+	{
+	public:
+		using PerFrameConstantsCallback = GraphicsPipeline::PerFrameConstantsCallback;
+		using PerObjectConstantsCallback = GraphicsPipeline::PerObjectConstantsCallback;
 
-	explicit PipelineBuilder(GraphicsApi const & /*graphics_api*/) {}
-	~PipelineBuilder();
+		explicit PipelineBuilder(GraphicsApi const & /*graphics_api*/) {}
+		~PipelineBuilder();
 
-	std::expected<void, GraphicsError> LoadShaders(std::filesystem::path const & vs_path, std::filesystem::path const & fs_path);
+		std::expected<void, GraphicsError> LoadShaders(std::filesystem::path const & vs_path, std::filesystem::path const & fs_path);
 
-	template <Vertex::VertexWithLayout VertexT>
-	void SetVertexType();
+		template <VertexWithLayout VertexT>
+		void SetVertexType();
 
-	template <typename ObjectDataVS = std::nullopt_t, typename ObjectDataFS = std::nullopt_t>
-	void SetObjectDataTypes();
+		template <typename ObjectDataVS = std::nullopt_t, typename ObjectDataFS = std::nullopt_t>
+		void SetObjectDataTypes();
+
+		template <typename... UniformTypes>
+		void SetVSUniformTypes();
+
+		template <typename... UniformTypes>
+		void SetFSUniformTypes();
+
+		void SetTexture(Texture const & texture) { m_texture = &texture; }
+		void SetDepthTestOptions(DepthTestOptions const & options) { m_depth_test_options = options; }
+		void SetCullMode(CullMode cull_mode) { m_cull_mode = cull_mode; }
+		void SetBlendOptions(BlendOptions const & options) { m_blend_options = options; }
+
+		void SetPerFrameConstantsCallback(PerFrameConstantsCallback callback) { m_per_frame_constants_callback = callback; }
+		void SetPerObjectConstantsCallback(PerObjectConstantsCallback callback) { m_per_object_constants_callback = callback; }
+
+		std::expected<GraphicsPipeline, GraphicsError> CreatePipeline() const;
+
+	private:
+		unsigned int m_vert_shader_id = 0;
+		unsigned int m_frag_shader_id = 0;
+
+		size_t m_vs_object_uniform_size = 0;
+		size_t m_fs_object_uniform_size = 0;
+		std::vector<size_t> m_vs_uniform_sizes;
+		std::vector<size_t> m_fs_uniform_sizes;
+		Texture const * m_texture = nullptr;
+
+		DepthTestOptions m_depth_test_options;
+		BlendOptions m_blend_options;
+
+		// PipelineBuilder does not have a default state for the cull mode, a null optional here means "not set yet".
+		// PipelineBuilder requires the cull mode to be set explicitly before calling CreatePipeline().
+		std::optional<CullMode> m_cull_mode;
+
+		PerFrameConstantsCallback m_per_frame_constants_callback;
+		PerObjectConstantsCallback m_per_object_constants_callback;
+	};
+
+	template <VertexWithLayout VertexT>
+	void PipelineBuilder::SetVertexType()
+	{
+		// In OpenGL, vertex attributes are set when binding the VAO for each mesh.
+	}
+
+	template <typename ObjectDataVS /*= std::nullopt_t*/, typename ObjectDataFS /*= std::nullopt_t*/>
+	void PipelineBuilder::SetObjectDataTypes()
+	{
+		static_assert(!std::same_as<ObjectDataVS, std::nullopt_t> || !std::same_as<ObjectDataFS, std::nullopt_t>,
+			"At least one object data type must be provided");
+
+		if constexpr (!std::same_as<ObjectDataVS, std::nullopt_t>)
+			m_vs_object_uniform_size = sizeof(ObjectDataVS);
+
+		if constexpr (!std::same_as<ObjectDataFS, std::nullopt_t>)
+			m_fs_object_uniform_size = sizeof(ObjectDataFS);
+	}
 
 	template <typename... UniformTypes>
-	void SetVSUniformTypes();
+	void PipelineBuilder::SetVSUniformTypes()
+	{
+		m_vs_uniform_sizes = {
+			sizeof(UniformTypes)...
+		};
+	}
 
 	template <typename... UniformTypes>
-	void SetFSUniformTypes();
-
-	void SetTexture(Texture const & texture) { m_texture = &texture; }
-	void SetDepthTestOptions(DepthTestOptions const & options) { m_depth_test_options = options; }
-	void SetCullMode(CullMode cull_mode) { m_cull_mode = cull_mode; }
-	void SetBlendOptions(BlendOptions const & options) { m_blend_options = options; }
-
-	void SetPerFrameConstantsCallback(PerFrameConstantsCallback callback) { m_per_frame_constants_callback = callback; }
-	void SetPerObjectConstantsCallback(PerObjectConstantsCallback callback) { m_per_object_constants_callback = callback; }
-
-	std::expected<GraphicsPipeline, GraphicsError> CreatePipeline() const;
-
-private:
-	unsigned int m_vert_shader_id = 0;
-	unsigned int m_frag_shader_id = 0;
-
-	size_t m_vs_object_uniform_size = 0;
-	size_t m_fs_object_uniform_size = 0;
-	std::vector<size_t> m_vs_uniform_sizes;
-	std::vector<size_t> m_fs_uniform_sizes;
-	Texture const * m_texture = nullptr;
-
-	DepthTestOptions m_depth_test_options;
-	BlendOptions m_blend_options;
-
-	// PipelineBuilder does not have a default state for the cull mode, a null optional here means "not set yet".
-	// PipelineBuilder requires the cull mode to be set explicitly before calling CreatePipeline().
-	std::optional<CullMode> m_cull_mode;
-
-	PerFrameConstantsCallback m_per_frame_constants_callback;
-	PerObjectConstantsCallback m_per_object_constants_callback;
-};
-
-template <Vertex::VertexWithLayout VertexT>
-void PipelineBuilder::SetVertexType()
-{
-	// In OpenGL, vertex attributes are set when binding the VAO for each mesh.
-}
-
-template <typename ObjectDataVS /*= std::nullopt_t*/, typename ObjectDataFS /*= std::nullopt_t*/>
-void PipelineBuilder::SetObjectDataTypes()
-{
-	static_assert(!std::same_as<ObjectDataVS, std::nullopt_t> || !std::same_as<ObjectDataFS, std::nullopt_t>,
-		"At least one object data type must be provided");
-
-	if constexpr (!std::same_as<ObjectDataVS, std::nullopt_t>)
-		m_vs_object_uniform_size = sizeof(ObjectDataVS);
-
-	if constexpr (!std::same_as<ObjectDataFS, std::nullopt_t>)
-		m_fs_object_uniform_size = sizeof(ObjectDataFS);
-}
-
-template <typename... UniformTypes>
-void PipelineBuilder::SetVSUniformTypes()
-{
-	m_vs_uniform_sizes = {
-		sizeof(UniformTypes)...
-	};
-}
-
-template <typename... UniformTypes>
-void PipelineBuilder::SetFSUniformTypes()
-{
-	m_fs_uniform_sizes = {
-		sizeof(UniformTypes)...
-	};
-}
+	void PipelineBuilder::SetFSUniformTypes()
+	{
+		m_fs_uniform_sizes = {
+			sizeof(UniformTypes)...
+		};
+	}
+} // namespace Dreamhearth

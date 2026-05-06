@@ -13,28 +13,26 @@ module;
 
 export module Scene;
 
+import Dreamhearth;
+
 import AssetPool;
 import Camera;
 import ColorPipeline;
 import FontAtlas;
-import GraphicsApi;
-import GraphicsError;
-import GraphicsPipeline;
 import Input;
 import LightsManager;
 import LightSourcePipeline;
-import Mesh;
 import MeshManager;
 import RainbowTextPipeline;
 import ReflectionPipeline;
-import Renderer;
 import RenderObject;
 import SkyboxPipeline;
 import TextMesh;
 import TextPipeline;
-import Texture;
 import TexturePipeline;
 import Vertex;
+
+using namespace Dreamhearth;
 
 template <typename Mesh, typename Pipeline>
 concept MeshIsCompatibleWithPipeline = std::same_as<typename Mesh::VertexT, typename Pipeline::VertexT>;

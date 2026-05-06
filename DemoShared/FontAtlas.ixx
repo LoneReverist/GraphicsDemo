@@ -18,11 +18,12 @@ module;
 
 export module FontAtlas;
 
+import Dreamhearth;
+
 import AssetPool;
-import GraphicsApi;
-import GraphicsError;
 import StbImage;
-import Texture;
+
+using namespace Dreamhearth;
 
 export class FontAtlas
 {

@@ -11,16 +11,15 @@ module;
 
 export module ReflectionPipeline;
 
+import Dreamhearth;
+
 import AssetPool;
 import Camera;
-import GraphicsApi;
-import GraphicsError;
-import GraphicsPipeline;
 import LightsManager;
-import PipelineBuilder;
 import RenderObject;
-import Texture;
 import Vertex;
+
+using namespace Dreamhearth;
 
 export class ReflectionPipeline
 {

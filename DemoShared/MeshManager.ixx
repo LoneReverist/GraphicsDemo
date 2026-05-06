@@ -8,12 +8,13 @@ module;
 
 export module MeshManager;
 
+import Dreamhearth;
+
 import AssetPool;
-import GraphicsApi;
-import GraphicsError;
-import Mesh;
 import ObjLoader;
 import Vertex;
+
+using namespace Dreamhearth;
 
 export template<IsVertex T>
 class MeshId : public AssetId

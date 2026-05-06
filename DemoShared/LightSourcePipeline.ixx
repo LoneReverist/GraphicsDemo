@@ -10,14 +10,14 @@ module;
 
 export module LightSourcePipeline;
 
+import Dreamhearth;
+
 import AssetPool;
 import Camera;
-import GraphicsApi;
-import GraphicsError;
-import GraphicsPipeline;
-import PipelineBuilder;
 import RenderObject;
 import Vertex;
+
+using namespace Dreamhearth;
 
 export class LightSourcePipeline
 {

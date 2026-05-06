@@ -2,17 +2,20 @@
 
 module;
 
-export module GraphicsApi;
+export module Dreamhearth:GraphicsApi;
 
-export class GraphicsApi
+namespace Dreamhearth
 {
-public:
-	using LoadProcFn = void * (char const *);
+	export class GraphicsApi
+	{
+	public:
+		using LoadProcFn = void * (char const *);
 
-	explicit GraphicsApi(LoadProcFn * load_proc_fn);
-	~GraphicsApi();
+		explicit GraphicsApi(LoadProcFn * load_proc_fn);
+		~GraphicsApi();
 
-	void SetViewport(int width_pixels, int height_pixels) const;
+		void SetViewport(int width_pixels, int height_pixels) const;
 
-	bool ShouldFlipScreenY() const { return false; }
-};
+		bool ShouldFlipScreenY() const { return false; }
+	};
+} // namespace Dreamhearth

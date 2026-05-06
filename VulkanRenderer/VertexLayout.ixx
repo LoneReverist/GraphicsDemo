@@ -7,9 +7,9 @@ module;
 
 #include <vulkan/vulkan_raii.hpp>
 
-export module VertexLayout;
+export module Dreamhearth:VertexLayout;
 
-namespace Vertex
+namespace Dreamhearth
 {
 	export enum class AttributeType
 	{
@@ -79,4 +79,4 @@ namespace Vertex
 		}
 		return attribs;
 	}
-}
+} // namespace Dreamhearth

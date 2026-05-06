@@ -10,122 +10,125 @@ module;
 
 #include <vulkan/vulkan_raii.hpp>
 
-export module PipelineBuilder;
+export module Dreamhearth:PipelineBuilder;
 
-import GraphicsApi;
-import GraphicsError;
-import GraphicsPipeline;
-import Texture;
-import VertexLayout;
+import :GraphicsApi;
+import :GraphicsError;
+import :GraphicsPipeline;
+import :Texture;
+import :VertexLayout;
 
-export class PipelineBuilder
+namespace Dreamhearth
 {
-public:
-	using PerFrameConstantsCallback = GraphicsPipeline::PerFrameConstantsCallback;
-	using PerObjectConstantsCallback = GraphicsPipeline::PerObjectConstantsCallback;
-
-	explicit PipelineBuilder(GraphicsApi const & graphics_api);
-
-	std::expected<void, GraphicsError> LoadShaders(std::filesystem::path const & vs_path, std::filesystem::path const & fs_path);
-
-	template <Vertex::VertexWithLayout VertexT>
-	void SetVertexType();
-
-	template <typename ObjectDataVS = std::nullopt_t, typename ObjectDataFS = std::nullopt_t>
-	void SetObjectDataTypes();
-
-	template <typename... UniformTypes>
-	void SetVSUniformTypes();
-
-	template <typename... UniformTypes>
-	void SetFSUniformTypes();
-
-	void SetTexture(Texture const & texture) { m_texture = &texture; }
-	void SetDepthTestOptions(DepthTestOptions const & options) { m_depth_test_options = options; }
-	void SetBlendOptions(BlendOptions const & options) { m_blend_options = options; }
-	void SetCullMode(CullMode cull_mode) { m_cull_mode = cull_mode; }
-
-	void SetPerFrameConstantsCallback(PerFrameConstantsCallback callback) { m_per_frame_constants_callback = callback; }
-	void SetPerObjectConstantsCallback(PerObjectConstantsCallback callback) { m_per_object_constants_callback = callback; }
-
-	std::expected<GraphicsPipeline, GraphicsError> CreatePipeline() const;
-
-private:
-	GraphicsApi const & m_graphics_api;
-
-	vk::raii::ShaderModule m_vert_shader_module = nullptr;
-	vk::raii::ShaderModule m_frag_shader_module = nullptr;
-
-	vk::VertexInputBindingDescription m_vert_binding_desc;
-	std::vector<vk::VertexInputAttributeDescription> m_vert_attrib_descs;
-
-	std::vector<vk::PushConstantRange> m_push_constants_ranges;
-	std::vector<vk::DeviceSize> m_vs_uniform_sizes;
-	std::vector<vk::DeviceSize> m_fs_uniform_sizes;
-	Texture const * m_texture = nullptr;
-
-	DepthTestOptions m_depth_test_options;
-	BlendOptions m_blend_options;
-
-	// PipelineBuilder does not have a default state for the cull mode, a null optional here means "not set yet".
-	// PipelineBuilder requires the cull mode to be set explicitly because it is a common source of errors.
-	std::optional<CullMode> m_cull_mode;
-
-	PerFrameConstantsCallback m_per_frame_constants_callback;
-	PerObjectConstantsCallback m_per_object_constants_callback;
-};
-
-template <Vertex::VertexWithLayout VertexT>
-void PipelineBuilder::SetVertexType()
-{
-	Vertex::LayoutDesc layout = VertexT::CreateLayout();
-	m_vert_binding_desc = Vertex::GetBindingDesc(layout);
-	m_vert_attrib_descs = Vertex::GetAttribDescs(layout);
-}
-
-template <typename ObjectDataVS /*= std::nullopt_t*/, typename ObjectDataFS /*= std::nullopt_t*/>
-void PipelineBuilder::SetObjectDataTypes()
-{
-	static_assert(!std::same_as<ObjectDataVS, std::nullopt_t> || !std::same_as<ObjectDataFS, std::nullopt_t>,
-		"At least one push constant data must be provided");
-
-	std::uint32_t offset = 0;
-
-	if constexpr (!std::same_as<ObjectDataVS, std::nullopt_t>)
+	export class PipelineBuilder
 	{
-		m_push_constants_ranges.emplace_back(
-			vk::PushConstantRange{
-				.stageFlags = vk::ShaderStageFlagBits::eVertex,
-				.offset = offset,
-				.size = static_cast<std::uint32_t>(sizeof(ObjectDataVS)),
-			});
+	public:
+		using PerFrameConstantsCallback = GraphicsPipeline::PerFrameConstantsCallback;
+		using PerObjectConstantsCallback = GraphicsPipeline::PerObjectConstantsCallback;
 
-		offset = static_cast<std::uint32_t>(sizeof(ObjectDataVS));
+		explicit PipelineBuilder(GraphicsApi const & graphics_api);
+
+		std::expected<void, GraphicsError> LoadShaders(std::filesystem::path const & vs_path, std::filesystem::path const & fs_path);
+
+		template <VertexWithLayout VertexT>
+		void SetVertexType();
+
+		template <typename ObjectDataVS = std::nullopt_t, typename ObjectDataFS = std::nullopt_t>
+		void SetObjectDataTypes();
+
+		template <typename... UniformTypes>
+		void SetVSUniformTypes();
+
+		template <typename... UniformTypes>
+		void SetFSUniformTypes();
+
+		void SetTexture(Texture const & texture) { m_texture = &texture; }
+		void SetDepthTestOptions(DepthTestOptions const & options) { m_depth_test_options = options; }
+		void SetBlendOptions(BlendOptions const & options) { m_blend_options = options; }
+		void SetCullMode(CullMode cull_mode) { m_cull_mode = cull_mode; }
+
+		void SetPerFrameConstantsCallback(PerFrameConstantsCallback callback) { m_per_frame_constants_callback = callback; }
+		void SetPerObjectConstantsCallback(PerObjectConstantsCallback callback) { m_per_object_constants_callback = callback; }
+
+		std::expected<GraphicsPipeline, GraphicsError> CreatePipeline() const;
+
+	private:
+		GraphicsApi const & m_graphics_api;
+
+		vk::raii::ShaderModule m_vert_shader_module = nullptr;
+		vk::raii::ShaderModule m_frag_shader_module = nullptr;
+
+		vk::VertexInputBindingDescription m_vert_binding_desc;
+		std::vector<vk::VertexInputAttributeDescription> m_vert_attrib_descs;
+
+		std::vector<vk::PushConstantRange> m_push_constants_ranges;
+		std::vector<vk::DeviceSize> m_vs_uniform_sizes;
+		std::vector<vk::DeviceSize> m_fs_uniform_sizes;
+		Texture const * m_texture = nullptr;
+
+		DepthTestOptions m_depth_test_options;
+		BlendOptions m_blend_options;
+
+		// PipelineBuilder does not have a default state for the cull mode, a null optional here means "not set yet".
+		// PipelineBuilder requires the cull mode to be set explicitly because it is a common source of errors.
+		std::optional<CullMode> m_cull_mode;
+
+		PerFrameConstantsCallback m_per_frame_constants_callback;
+		PerObjectConstantsCallback m_per_object_constants_callback;
+	};
+
+	template <VertexWithLayout VertexT>
+	void PipelineBuilder::SetVertexType()
+	{
+		LayoutDesc layout = VertexT::CreateLayout();
+		m_vert_binding_desc = GetBindingDesc(layout);
+		m_vert_attrib_descs = GetAttribDescs(layout);
 	}
 
-	if constexpr (!std::same_as<ObjectDataFS, std::nullopt_t>)
+	template <typename ObjectDataVS /*= std::nullopt_t*/, typename ObjectDataFS /*= std::nullopt_t*/>
+	void PipelineBuilder::SetObjectDataTypes()
 	{
-		m_push_constants_ranges.emplace_back(
-			vk::PushConstantRange{
-				.stageFlags = vk::ShaderStageFlagBits::eFragment,
-				.offset = offset,
-				.size = static_cast<std::uint32_t>(sizeof(ObjectDataFS)),
-			});
+		static_assert(!std::same_as<ObjectDataVS, std::nullopt_t> || !std::same_as<ObjectDataFS, std::nullopt_t>,
+			"At least one push constant data must be provided");
+
+		std::uint32_t offset = 0;
+
+		if constexpr (!std::same_as<ObjectDataVS, std::nullopt_t>)
+		{
+			m_push_constants_ranges.emplace_back(
+				vk::PushConstantRange{
+					.stageFlags = vk::ShaderStageFlagBits::eVertex,
+					.offset = offset,
+					.size = static_cast<std::uint32_t>(sizeof(ObjectDataVS)),
+				});
+
+			offset = static_cast<std::uint32_t>(sizeof(ObjectDataVS));
+		}
+
+		if constexpr (!std::same_as<ObjectDataFS, std::nullopt_t>)
+		{
+			m_push_constants_ranges.emplace_back(
+				vk::PushConstantRange{
+					.stageFlags = vk::ShaderStageFlagBits::eFragment,
+					.offset = offset,
+					.size = static_cast<std::uint32_t>(sizeof(ObjectDataFS)),
+				});
+		}
 	}
-}
 
-template <typename... UniformTypes>
-void PipelineBuilder::SetVSUniformTypes()
-{
-	m_vs_uniform_sizes = {
-		static_cast<vk::DeviceSize>(sizeof(UniformTypes))...
-	};
-}
+	template <typename... UniformTypes>
+	void PipelineBuilder::SetVSUniformTypes()
+	{
+		m_vs_uniform_sizes = {
+			static_cast<vk::DeviceSize>(sizeof(UniformTypes))...
+		};
+	}
 
-template <typename... UniformTypes>
-void PipelineBuilder::SetFSUniformTypes()
-{
-	m_fs_uniform_sizes = {
-		static_cast<vk::DeviceSize>(sizeof(UniformTypes))...
-	};
-}
+	template <typename... UniformTypes>
+	void PipelineBuilder::SetFSUniformTypes()
+	{
+		m_fs_uniform_sizes = {
+			static_cast<vk::DeviceSize>(sizeof(UniformTypes))...
+		};
+	}
+} // namespace Dreamhearth

@@ -7,9 +7,9 @@ module;
 
 #include <glad/glad.h>
 
-export module VertexLayout;
+export module Dreamhearth:VertexLayout;
 
-namespace Vertex
+namespace Dreamhearth
 {
 	export enum class AttributeType
 	{
@@ -71,4 +71,4 @@ namespace Vertex
 			glEnableVertexAttribArray(attr.location);
 		}
 	}
-}
+} // namespace Dreamhearth

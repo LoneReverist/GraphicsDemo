@@ -13,10 +13,11 @@ module;
 
 export module AssimpLoader;
 
-import GraphicsApi;
-import GraphicsError;
-import Mesh;
+import Dreamhearth;
+
 import Vertex;
+
+using namespace Dreamhearth;
 
 export namespace AssimpLoader
 {

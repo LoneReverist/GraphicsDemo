@@ -4,32 +4,35 @@ module;
 
 #include <vulkan/vulkan_raii.hpp>
 
-export module Buffer;
+export module Dreamhearth:Buffer;
 
-import GraphicsApi;
-import GraphicsError;
+import :GraphicsApi;
+import :GraphicsError;
 
-export class Buffer
+namespace Dreamhearth
 {
-public:
-	Buffer() = default;
+	export class Buffer
+	{
+	public:
+		Buffer() = default;
 
-	Buffer(Buffer &&) = default;
-	Buffer & operator=(Buffer &&) = default;
+		Buffer(Buffer &&) = default;
+		Buffer & operator=(Buffer &&) = default;
 
-	Buffer(Buffer const &) = delete;
-	Buffer & operator=(Buffer const &) = delete;
+		Buffer(Buffer const &) = delete;
+		Buffer & operator=(Buffer const &) = delete;
 
-	void Create(
-		GraphicsApi const & graphics_api,
-		vk::DeviceSize size,
-		vk::BufferUsageFlags usage,
-		vk::MemoryPropertyFlags properties);
+		void Create(
+			GraphicsApi const & graphics_api,
+			vk::DeviceSize size,
+			vk::BufferUsageFlags usage,
+			vk::MemoryPropertyFlags properties);
 
-	vk::raii::Buffer const & Get() const { return m_buffer; }
-	vk::raii::DeviceMemory const & GetMemory() const { return m_memory; }
+		vk::raii::Buffer const & Get() const { return m_buffer; }
+		vk::raii::DeviceMemory const & GetMemory() const { return m_memory; }
 
-private:
-	vk::raii::Buffer m_buffer = nullptr;
-	vk::raii::DeviceMemory m_memory = nullptr;
-};
+	private:
+		vk::raii::Buffer m_buffer = nullptr;
+		vk::raii::DeviceMemory m_memory = nullptr;
+	};
+} // namespace Dreamhearth

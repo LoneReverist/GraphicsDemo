@@ -6,23 +6,28 @@ module;
 
 #include <glm/gtc/matrix_transform.hpp>
 
-module Renderer;
+module Dreamhearth;
 
-Renderer::Renderer(GraphicsApi const & graphics_api)
-	: m_graphics_api(graphics_api)
+import :Renderer;
+
+namespace Dreamhearth
 {
-}
+	Renderer::Renderer(GraphicsApi const & graphics_api)
+		: m_graphics_api(graphics_api)
+	{
+	}
 
-void Renderer::BeginDraw() const
-{
-	glEnable(GL_DEPTH_TEST);
-	glDepthMask(GL_TRUE);
-	glDepthFunc(GL_LESS);
+	void Renderer::BeginDraw() const
+	{
+		glEnable(GL_DEPTH_TEST);
+		glDepthMask(GL_TRUE);
+		glDepthFunc(GL_LESS);
 
-	glClearColor(m_clear_color.r, m_clear_color.g, m_clear_color.b, 1.0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-}
+		glClearColor(m_clear_color.r, m_clear_color.g, m_clear_color.b, 1.0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	}
 
-void Renderer::EndDraw() const
-{
-}
+	void Renderer::EndDraw() const
+	{
+	}
+} // namespace Dreamhearth

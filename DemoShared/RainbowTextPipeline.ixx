@@ -11,14 +11,13 @@ module;
 
 export module RainbowTextPipeline;
 
+import Dreamhearth;
+
 import AssetPool;
-import GraphicsApi;
-import GraphicsError;
-import GraphicsPipeline;
-import PipelineBuilder;
 import RenderObject;
-import Texture;
 import Vertex;
+
+using namespace Dreamhearth;
 
 export class RainbowTextPipeline
 {

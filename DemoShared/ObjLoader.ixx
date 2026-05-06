@@ -7,8 +7,10 @@ module;
 
 export module ObjLoader;
 
-import Mesh;
+import Dreamhearth;
 import Vertex;
+
+using namespace Dreamhearth;
 
 export namespace ObjLoader
 {

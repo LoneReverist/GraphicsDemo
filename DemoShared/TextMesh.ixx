@@ -12,14 +12,14 @@ module;
 
 export module TextMesh;
 
+import Dreamhearth;
+
 import AssetPool;
 import FontAtlas;
-import GraphicsApi;
-import GraphicsError;
-import Mesh;
 import MeshManager;
-import Renderer;
 import Vertex;
+
+using namespace Dreamhearth;
 
 export class TextMesh
 {

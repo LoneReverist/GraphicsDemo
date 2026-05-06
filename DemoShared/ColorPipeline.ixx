@@ -11,15 +11,15 @@ module;
 
 export module ColorPipeline;
 
+import Dreamhearth;
+
 import AssetPool;
 import Camera;
-import GraphicsApi;
-import GraphicsError;
-import GraphicsPipeline;
 import LightsManager;
-import PipelineBuilder;
 import RenderObject;
 import Vertex;
+
+using namespace Dreamhearth;
 
 export class ColorPipeline
 {
