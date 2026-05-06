@@ -34,7 +34,10 @@ namespace Dreamhearth
 
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-		//glfwWindowHint(GLFW_DECORATED, GLFW_FALSE); // could use this with ImGui to get around Cosmic compositer issues
+#if defined(__linux__)
+		// The Cosmic compositor has issues with glfw and causes crashes
+		glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+#endif
 
 		m_window = glfwCreateWindow(
 			window_size_screen_coords.width,

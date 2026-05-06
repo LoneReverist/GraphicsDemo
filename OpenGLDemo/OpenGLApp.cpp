@@ -36,6 +36,11 @@ namespace Dreamhearth
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
+#if defined(__linux__)
+		// The Cosmic compositor has issues with glfw and causes crashes
+		glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+#endif
+
 		m_window = glfwCreateWindow(
 			window_size_screen_coords.width,
 			window_size_screen_coords.height,
