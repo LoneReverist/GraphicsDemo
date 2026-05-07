@@ -1,3 +1,155 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:82ae2c6f23e5a8cc163151705490eb3e63db5a6c2180e7e469c60d4e74199e20
-size 4059
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Configure Debug",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "-B",
+        "${workspaceFolder}/build-debug",
+        "-S",
+        "${workspaceFolder}",
+        "--preset",
+        "x64-linux",
+        "-DCMAKE_C_COMPILER=clang-19",
+        "-DCMAKE_CXX_COMPILER=clang++-19",
+        "-DCMAKE_CXX_COMPILER_CLANG_SCAN_DEPS=/usr/lib/llvm-19/bin/clang-scan-deps",
+        "-DCMAKE_CXX_COMPILER_CLANG_RESOURCE_DIR=/usr/lib/llvm-19/lib/clang/19",
+        "-DCMAKE_BUILD_TYPE=Debug"
+      ],
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Configure Release",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "-B",
+        "${workspaceFolder}/build-release",
+        "-S",
+        "${workspaceFolder}",
+        "--preset",
+        "x64-linux",
+        "-DCMAKE_C_COMPILER=clang-19",
+        "-DCMAKE_CXX_COMPILER=clang++-19",
+        "-DCMAKE_CXX_COMPILER_CLANG_SCAN_DEPS=/usr/lib/llvm-19/bin/clang-scan-deps",
+        "-DCMAKE_CXX_COMPILER_CLANG_RESOURCE_DIR=/usr/lib/llvm-19/lib/clang/19",
+        "-DCMAKE_BUILD_TYPE=Release"
+      ],
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Build Debug",
+      "type": "shell",
+      "command": "cmake",
+      "args": ["--build", "${workspaceFolder}/build-debug"],
+      "dependsOn": "Configure Debug",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": ["$gcc"],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Build OpenGLDemo Debug",
+      "type": "shell",
+      "command": "cmake",
+      "args": ["--build", "${workspaceFolder}/build-debug", "--target", "OpenGLDemo"],
+      "dependsOn": "Configure Debug",
+      "group": "build",
+      "problemMatcher": ["$gcc"],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Build VulkanDemo Debug",
+      "type": "shell",
+      "command": "cmake",
+      "args": ["--build", "${workspaceFolder}/build-debug", "--target", "VulkanDemo"],
+      "dependsOn": "Configure Debug",
+      "group": "build",
+      "problemMatcher": ["$gcc"],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Build Release",
+      "type": "shell",
+      "command": "cmake",
+      "args": ["--build", "${workspaceFolder}/build-release"],
+      "dependsOn": "Configure Release",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": ["$gcc"],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Build OpenGLDemo Release",
+      "type": "shell",
+      "command": "cmake",
+      "args": ["--build", "${workspaceFolder}/build-release", "--target", "OpenGLDemo"],
+      "dependsOn": "Configure Release",
+      "group": "build",
+      "problemMatcher": ["$gcc"],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Build VulkanDemo Release",
+      "type": "shell",
+      "command": "cmake",
+      "args": ["--build", "${workspaceFolder}/build-release", "--target", "VulkanDemo"],
+      "dependsOn": "Configure Release",
+      "group": "build",
+      "problemMatcher": ["$gcc"],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    }
+  ]
+}

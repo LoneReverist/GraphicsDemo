@@ -1,3 +1,4 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:1821bada0f7ac4d9a3b9155d40af31c79dd949cbf93be663e09d3d686b0bc3aa
-size 106
+{
+  "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+  "C_Cpp.errorSquiggles": "disabled"
+}

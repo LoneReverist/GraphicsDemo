@@ -1,3 +1,74 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:5f795fc23f97fdc99b1c095aaec41124fbb89251d94710612aa9a4c0e63af32b
-size 2615
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug OpenGLDemo",
+            "type": "cppdbg",
+            "request": "launch",
+            "preLaunchTask": "Build OpenGLDemo Debug",
+            "program": "${workspaceFolder}/build-debug/OpenGLDemo/OpenGLDemo",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": true,
+            "MIMode": "gdb",
+            "miDebuggerPath": "/usr/bin/gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "Debug VulkanDemo",
+            "type": "cppdbg",
+            "request": "launch",
+            "preLaunchTask": "Build VulkanDemo Debug",
+            "program": "${workspaceFolder}/build-debug/VulkanDemo/VulkanDemo",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": true,
+            "MIMode": "gdb",
+            "miDebuggerPath": "/usr/bin/gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "Release OpenGLDemo",
+            "type": "cppdbg",
+            "request": "launch",
+            "preLaunchTask": "Build OpenGLDemo Release",
+            "program": "${workspaceFolder}/build-release/OpenGLDemo/OpenGLDemo",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false
+        },
+        {
+            "name": "Release VulkanDemo",
+            "type": "cppdbg",
+            "request": "launch",
+            "preLaunchTask": "Build VulkanDemo Release",
+            "program": "${workspaceFolder}/build-release/VulkanDemo/VulkanDemo",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false
+        }
+    ]
+}
