@@ -5,6 +5,7 @@ option(BUILD_OPENGL "Build OpenGL renderer and demo projects" ON)
 option(BUILD_DEMOS "Build the demo executables in addition to the renderer libraries" ON)
 
 set(CMAKE_EXPERIMENTAL_CXX_MODULE_CMAKE_API ON) # still required for gcc
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # for vscode c++ extension, allows it to find the compile commands for better intellisense and error checking
 
 project(GraphicsDemo)
 
