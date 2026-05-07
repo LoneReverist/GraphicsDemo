@@ -17,11 +17,11 @@ Dreamhearth Engine is a cross-platform rendering engine showcasing modern graphi
 - OpenGLRenderer/ & VulkanRenderer/
 	- Static libraries implementing OpenGL and Vulkan rendering backends
 	- Abstractions for mesh, texture, pipeline, and renderer logic
-- OpenGLDemo/ & VulkanDemo/
-	- Demo applications utilizing OpenGLRenderer and VulkanRenderer
-	- Implements window creation, update/render loop and custom render pipelines
-- DemoShared/
-	- Core modules for the scene, input, mesh/font/image loading and utility functions
+- GlfwGLWindow/ & GlfwVkWindow/
+	- Static libraries implementing window creation and render context creation with GLFW
+- Demo/
+	- Demo application, can be built with either OpenGL or Vulkan
+	- Implements update/render loop and modules for the scene, input, asset loading, custom render pipelines, etc.
 - buildtools/
 	- Scripts for installing dependencies and running cmake, linux docker build
 - resources/

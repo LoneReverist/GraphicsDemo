@@ -54,5 +54,5 @@ if(BUILD_DEMOS)
 
     set(nlohmann-json_IMPLICIT_CONVERSIONS OFF)
 
-    add_subdirectory(DemoShared)
+    add_subdirectory(Demo)
 endif()
