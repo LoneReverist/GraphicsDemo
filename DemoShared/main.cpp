@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-import App;
+import DreamhearthWindow;
 
 #ifdef BUILD_VULKAN
 constexpr char const * AppName = "Vulkan Demo - Dreamhearth Engine";
@@ -18,11 +18,11 @@ int main()
 {
 	std::cout << "Initializing app..." << std::endl;
 
-	dh::App app(dh::WindowSize{ 1920, 1080 }, AppName);
-	if (!app.IsInitialized() || !app.HasWindow())
+	dh::Window window(dh::WindowSize{ 1920, 1080 }, AppName);
+	if (!window.IsValid())
 		return -1;
 
 	std::cout << "Running app..." << std::endl;
 
-	app.Run();
+	window.Run();
 }

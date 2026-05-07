@@ -6,6 +6,14 @@ export module Dreamhearth:GraphicsApi;
 
 namespace Dreamhearth
 {
+	// For compatibility with Vulkan implementation
+	export enum class DrawFrameResult
+	{
+		Success,
+		SwapChainOutOfDate,
+		SurfaceLost
+	};
+
 	export class GraphicsApi
 	{
 	public:
@@ -15,6 +23,9 @@ namespace Dreamhearth
 		~GraphicsApi();
 
 		void SetViewport(int width_pixels, int height_pixels) const;
+
+		// For compatibility with Vulkan implementation
+		void WaitForLastFrame() const {}
 
 		bool ShouldFlipScreenY() const { return false; }
 	};

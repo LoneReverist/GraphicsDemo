@@ -1,9 +1,10 @@
-// App.cpp
+// GlfwVkWindow.cpp
 
 module;
 
 #include <atomic>
 #include <cstdint>
+#include <functional>
 #include <iostream>
 #include <thread>
 
@@ -13,17 +14,13 @@ module;
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
-module App;
-
-import Dreamhearth;
+module DreamhearthWindow;
 
 import Scene;
 
-using namespace Dreamhearth;
-
 namespace Dreamhearth
 {
-	App::App(WindowSize window_size_screen_coords, std::string const & title)
+	Window::Window(WindowSize window_size_screen_coords, std::string const & title)
 		: m_title(title)
 	{
 		glfwSetErrorCallback([](int error, const char * description)
@@ -33,7 +30,7 @@ namespace Dreamhearth
 
 		if (!glfwInit())
 			return;
-		m_initialized = true;
+		m_glfw_initialized = true;
 
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
@@ -62,68 +59,81 @@ namespace Dreamhearth
 		glfwSetWindowUserPointer(m_window, this);
 		glfwSetFramebufferSizeCallback(m_window, [](GLFWwindow * window, int width_pixels, int height_pixels)
 			{
-				App * app = static_cast<App *>(glfwGetWindowUserPointer(window));
-				app->m_window_size_pixels.store(WindowSize{ width_pixels, height_pixels });
+				Window * win = static_cast<Window *>(glfwGetWindowUserPointer(window));
+				win->m_window_size_pixels.store(WindowSize{ width_pixels, height_pixels });
 			});
 		glfwSetWindowContentScaleCallback(m_window, [](GLFWwindow * window, float x_scale, float y_scale)
 			{
-				App * app = static_cast<App *>(glfwGetWindowUserPointer(window));
-				app->m_window_scale_factor.store(y_scale); // assume x and y scale are the same
+				Window * win = static_cast<Window *>(glfwGetWindowUserPointer(window));
+				win->m_window_scale_factor.store(y_scale); // assume x and y scale are the same
 			});
 		glfwSetKeyCallback(m_window, [](GLFWwindow * window, int key, int scan_code, int action, int mods)
 			{
-				App * app = static_cast<App *>(glfwGetWindowUserPointer(window));
-				app->OnKeyEvent(key, scan_code, action, mods);
+				Window * win = static_cast<Window *>(glfwGetWindowUserPointer(window));
+				win->OnKeyEvent(key, scan_code, action, mods);
 			});
 	}
 
-	App::~App()
+	Window::~Window()
 	{
-		if (IsInitialized())
+		if (m_glfw_initialized)
 			glfwTerminate();
 	}
 
-	void App::Run()
+	GraphicsApi Window::CreateRenderContext() const
 	{
-		if (!IsInitialized() || !HasWindow())
+		WindowSize size = m_window_size_pixels.load();
+
+		std::uint32_t extension_count = 0;
+		const char ** extensions = glfwGetRequiredInstanceExtensions(&extension_count);
+
+		auto create_surface_fn = [window = m_window](VkInstance instance) -> VkSurfaceKHR
+		{
+			VkSurfaceKHR surface = VK_NULL_HANDLE;
+			VkResult result = glfwCreateWindowSurface(instance, window, nullptr, &surface);
+			if (result != VK_SUCCESS)
+				throw GraphicsException("Failed to create vulkan surface.");
+			return surface;
+		};
+
+		return GraphicsApi{ size.width, size.height, m_title,
+			 extension_count, extensions, create_surface_fn };
+	}
+
+	DrawFrameResult Window::DrawFrame(GraphicsApi & graphics_api, std::function<void()> render_fn)
+	{
+		if (!graphics_api.SwapChainIsValid())
+			return DrawFrameResult::SwapChainOutOfDate;
+
+		return graphics_api.DrawFrame(render_fn);
+	}
+
+	void Window::Run()
+	{
+		if (!IsValid())
 			return;
 
 		std::jthread update_render_loop([this](std::stop_token s_token)
 			{
+				GraphicsApi graphics_api = CreateRenderContext();
+
 				WindowSize size = m_window_size_pixels.load();
 				float scale_factor = m_window_scale_factor.load();
-
-				std::uint32_t extension_count = 0;
-				const char ** extensions = glfwGetRequiredInstanceExtensions(&extension_count);
-
-				auto create_surface_fn = [window = m_window](VkInstance instance) -> VkSurfaceKHR
-				{
-					VkSurfaceKHR surface = VK_NULL_HANDLE;
-					VkResult result = glfwCreateWindowSurface(instance, window, nullptr, &surface);
-					if (result != VK_SUCCESS)
-						throw GraphicsException("Failed to create vulkan surface.");
-					return surface;
-				};
-
-				GraphicsApi graphics_api{ size.width, size.height, m_title,
-					 extension_count, extensions, create_surface_fn };
 
 				Scene scene{ graphics_api, m_title, scale_factor };
 				scene.OnViewportResized(size.width, size.height);
 
-				double last_update_time = glfwGetTime();
+				auto last_update_time = std::chrono::steady_clock::now();
 
 				while (!s_token.stop_requested())
 				{
-					double cur_time = glfwGetTime();
-					double delta_time = cur_time - last_update_time;
+					auto cur_time = std::chrono::steady_clock::now();
+					float delta_time = std::chrono::duration<float>(cur_time - last_update_time).count(); // seconds
 					last_update_time = cur_time;
 
 					scene.Update(delta_time, m_input);
 
-					DrawFrameResult draw_result = DrawFrameResult::SwapChainOutOfDate;
-					if (graphics_api.SwapChainIsValid())
-						draw_result = graphics_api.DrawFrame([&scene]() { scene.Render(); });
+					DrawFrameResult draw_result = DrawFrame(graphics_api, [&scene]() { scene.Render(); });
 
 					if (draw_result == DrawFrameResult::SurfaceLost)
 						break; // The Cosmic compositor has issues
@@ -151,7 +161,7 @@ namespace Dreamhearth
 			glfwPollEvents(); // must only be called from main thread
 	}
 
-	void App::OnKeyEvent(int key, int /*scan_code*/, int action, int /*mods*/)
+	void Window::OnKeyEvent(int key, int /*scan_code*/, int action, int /*mods*/)
 	{
 		if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 			glfwSetWindowShouldClose(m_window, true);
