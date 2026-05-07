@@ -7,6 +7,9 @@ module;
 #include <iostream>
 #include <thread>
 
+// include vulkan before glfw so it knows what graphics api we're using
+#include <vulkan/vulkan_raii.hpp>
+
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
@@ -93,7 +96,17 @@ namespace Dreamhearth
 				std::uint32_t extension_count = 0;
 				const char ** extensions = glfwGetRequiredInstanceExtensions(&extension_count);
 
-				GraphicsApi graphics_api{ m_window, size.width, size.height, m_title, extension_count, extensions };
+				auto create_surface_fn = [window = m_window](vk::raii::Instance const & instance) -> vk::raii::SurfaceKHR
+				{
+					VkSurfaceKHR surface = VK_NULL_HANDLE;
+					VkResult result = glfwCreateWindowSurface(*instance, window, nullptr, &surface);
+					if (result != VK_SUCCESS)
+						throw GraphicsException("Failed to create vulkan surface.");
+					return vk::raii::SurfaceKHR{ instance, surface };
+				};
+
+				GraphicsApi graphics_api{ size.width, size.height, m_title,
+					 extension_count, extensions, create_surface_fn };
 
 				Scene scene{ graphics_api, m_title, scale_factor };
 				scene.OnViewportResized(size.width, size.height);

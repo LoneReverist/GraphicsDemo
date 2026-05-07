@@ -12,9 +12,6 @@ module;
 
 #include <vulkan/vulkan_raii.hpp>
 
-#define GLFW_INCLUDE_NONE
-#include <GLFW/glfw3.h>
-
 module Dreamhearth;
 
 import :GraphicsApi;
@@ -69,16 +66,6 @@ namespace Dreamhearth
 		}
 
 		return vk::raii::Instance{ context, create_info };
-	}
-
-	vk::raii::SurfaceKHR create_surface(vk::raii::Instance const & instance, GLFWwindow * window)
-	{
-		VkSurfaceKHR surface = VK_NULL_HANDLE;
-		VkResult result = glfwCreateWindowSurface(*instance, window, nullptr, &surface);
-		if (result != VK_SUCCESS)
-			throw GraphicsException("Failed to create vulkan surface.");
-
-		return vk::raii::SurfaceKHR{ instance, surface };
 	}
 
 	std::uint32_t find_queue_family(vk::raii::PhysicalDevice const & device, vk::raii::SurfaceKHR const & surface)
@@ -394,12 +381,12 @@ namespace Dreamhearth
 	}
 
 	GraphicsApi::GraphicsApi(
-		GLFWwindow * window,
 		int width_pixels,
 		int height_pixels,
 		std::string const & app_title,
 		std::uint32_t extension_count,
-		char const ** extensions)
+		char const ** extensions,
+		CreateSurfaceFn create_surface_fn)
 	{
 		try
 		{
@@ -424,7 +411,7 @@ namespace Dreamhearth
 
 			m_instance = create_instance(m_context, app_title, extension_count, extensions, m_enable_validation_layers, m_validation_layers);
 
-			m_surface = create_surface(m_instance, window);
+			m_surface = create_surface_fn(m_instance);
 
 			m_phys_device_info = pick_physical_device(m_instance, m_surface, m_device_extensions);
 			m_logical_device = create_logical_device(m_phys_device_info, m_device_extensions);

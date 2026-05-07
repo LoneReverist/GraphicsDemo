@@ -1,6 +1,23 @@
+find_package(Vulkan REQUIRED)
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+	# On Linux the vcpkg Vulkan loader doesn't have wayland support, so we need to link against the system loader instead
+    find_library(VULKAN_SYSTEM_LOADER
+        NAMES vulkan
+        PATHS /usr/lib/x86_64-linux-gnu /usr/lib
+        NO_DEFAULT_PATH
+        REQUIRED)
+    set_target_properties(Vulkan::Vulkan PROPERTIES
+        IMPORTED_LOCATION ${VULKAN_SYSTEM_LOADER})
+endif()
+
 add_executable(VulkanDemo)
 
 target_compile_features(VulkanDemo PRIVATE cxx_std_23)
+
+target_compile_definitions(VulkanRenderer PUBLIC
+	VULKAN_HPP_NO_STRUCT_CONSTRUCTORS=1
+)
 
 target_compile_definitions(VulkanDemo PRIVATE BUILD_VULKAN)
 
@@ -73,6 +90,7 @@ source_group("DemoShared/Shaders" FILES ${SHADER_FILES})
 # Link dependencies (provided via vcpkg toolchain)
 target_link_libraries(VulkanDemo PRIVATE
 	VulkanRenderer
+	Vulkan::Vulkan
 	glfw
 	glm::glm
 	nlohmann_json::nlohmann_json

@@ -9,9 +9,6 @@ module;
 
 #include <vulkan/vulkan_raii.hpp>
 
-#define GLFW_INCLUDE_NONE
-#include <GLFW/glfw3.h>
-
 export module Dreamhearth:GraphicsApi;
 
 namespace Dreamhearth
@@ -48,14 +45,16 @@ namespace Dreamhearth
 	public:
 		constexpr static std::uint32_t m_max_frames_in_flight = 2;
 
+		using CreateSurfaceFn = std::function<vk::raii::SurfaceKHR(vk::raii::Instance const&)>;
+
 	public:
 		explicit GraphicsApi(
-			GLFWwindow * window, // Reminder: Do not call any glfw functions that require being on the main thread
 			int width_pixels,
 			int height_pixels,
 			std::string const & app_title,
 			std::uint32_t extension_count,
-			char const ** extensions);
+			char const ** extensions,
+			CreateSurfaceFn create_surface_fn);
 
 		bool SwapChainIsValid() const;
 		void RecreateSwapChain(int width_pixels, int height_pixels);
