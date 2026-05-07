@@ -411,7 +411,8 @@ namespace Dreamhearth
 
 			m_instance = create_instance(m_context, app_title, extension_count, extensions, m_enable_validation_layers, m_validation_layers);
 
-			m_surface = create_surface_fn(m_instance);
+			VkSurfaceKHR raw_surface = create_surface_fn(*m_instance);
+			m_surface = vk::raii::SurfaceKHR{ m_instance, raw_surface };
 
 			m_phys_device_info = pick_physical_device(m_instance, m_surface, m_device_extensions);
 			m_logical_device = create_logical_device(m_phys_device_info, m_device_extensions);

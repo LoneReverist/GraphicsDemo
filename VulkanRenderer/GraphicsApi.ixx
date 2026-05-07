@@ -45,7 +45,7 @@ namespace Dreamhearth
 	public:
 		constexpr static std::uint32_t m_max_frames_in_flight = 2;
 
-		using CreateSurfaceFn = std::function<vk::raii::SurfaceKHR(vk::raii::Instance const&)>;
+		using CreateSurfaceFn = std::function<VkSurfaceKHR(VkInstance)>;
 
 	public:
 		explicit GraphicsApi(
