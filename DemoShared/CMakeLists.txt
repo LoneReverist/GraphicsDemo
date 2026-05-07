@@ -1,0 +1,117 @@
+file(GLOB SHARED_MODULE_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.ixx")
+file(GLOB SHARED_SOURCE_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
+
+set(SHADER_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/shaders)
+file(GLOB SHADER_FILES "${SHADER_SOURCE_DIR}/*")
+
+# ---------------------------------------------------------------------------
+# VulkanDemo
+# ---------------------------------------------------------------------------
+if(BUILD_VULKAN)
+    add_executable(VulkanDemo)
+
+    target_compile_features(VulkanDemo PRIVATE cxx_std_23)
+    target_compile_definitions(VulkanDemo PRIVATE BUILD_VULKAN)
+    set_target_properties(VulkanDemo PROPERTIES CXX_SCAN_FOR_MODULES ON)
+
+    if(WIN32)
+        set(GLSLANG_VALIDATOR_EXECUTABLE ${CMAKE_SOURCE_DIR}/buildtools/glslangValidator.exe)
+    elseif(UNIX)
+        set(GLSLANG_VALIDATOR_EXECUTABLE glslangValidator)
+    endif()
+
+    set(SHADER_BINARY_DIR ${CMAKE_BINARY_DIR}/shaders)
+    file(MAKE_DIRECTORY ${SHADER_BINARY_DIR})
+
+    foreach(SHADER ${SHADER_FILES})
+        get_filename_component(FILE_NAME ${SHADER} NAME)
+        set(OUTPUT_FILE ${SHADER_BINARY_DIR}/${FILE_NAME}.spv)
+
+        add_custom_command(
+            OUTPUT ${OUTPUT_FILE}
+            COMMAND ${GLSLANG_VALIDATOR_EXECUTABLE} -V ${SHADER} -o ${OUTPUT_FILE} -DBUILD_VULKAN
+            DEPENDS ${SHADER}
+            COMMENT "Compiling ${FILE_NAME} to SPIR-V"
+            VERBATIM
+        )
+
+        list(APPEND COMPILED_SHADERS ${OUTPUT_FILE})
+    endforeach()
+
+    add_custom_target(VulkanShaders ALL
+        COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:VulkanDemo>/resources/shaders"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory "${SHADER_BINARY_DIR}" "$<TARGET_FILE_DIR:VulkanDemo>/resources/shaders"
+        DEPENDS ${COMPILED_SHADERS}
+        COMMENT "Copying Vulkan shaders to resources directory"
+    )
+    add_dependencies(VulkanDemo VulkanShaders)
+
+    target_sources(VulkanDemo
+        PRIVATE
+        FILE_SET CXX_MODULES TYPE CXX_MODULES
+        BASE_DIRS .
+        FILES ${SHARED_MODULE_FILES}
+        PRIVATE
+            ${SHARED_SOURCE_FILES}
+            ${SHADER_FILES}
+    )
+    source_group("DemoShared/Shaders" FILES ${SHADER_FILES})
+
+    target_link_libraries(VulkanDemo PRIVATE
+	    glm::glm
+        nlohmann_json::nlohmann_json
+        assimp::assimp
+	    VulkanRenderer
+        GlfwVkWindow
+    )
+
+    add_custom_command(TARGET VulkanDemo POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_SOURCE_DIR}/resources"
+        "$<TARGET_FILE_DIR:VulkanDemo>/resources"
+    )
+endif()
+
+# ---------------------------------------------------------------------------
+# OpenGLDemo
+# ---------------------------------------------------------------------------
+if(BUILD_OPENGL)
+    add_executable(OpenGLDemo)
+
+    target_compile_features(OpenGLDemo PRIVATE cxx_std_23)
+    target_compile_definitions(OpenGLDemo PRIVATE BUILD_OPENGL)
+    set_target_properties(OpenGLDemo PROPERTIES CXX_SCAN_FOR_MODULES ON)
+
+    add_custom_target(OpenGLShaders ALL
+        COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:OpenGLDemo>/resources/shaders"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory "${SHADER_SOURCE_DIR}" "$<TARGET_FILE_DIR:OpenGLDemo>/resources/shaders"
+        DEPENDS ${SHADER_FILES}
+        COMMENT "Copying OpenGL shaders to resources directory"
+    )
+    add_dependencies(OpenGLDemo OpenGLShaders)
+
+    target_sources(OpenGLDemo
+        PRIVATE
+        FILE_SET CXX_MODULES TYPE CXX_MODULES
+        BASE_DIRS .
+        FILES ${SHARED_MODULE_FILES}
+        PRIVATE
+            ${SHARED_SOURCE_FILES}
+            ${SHADER_FILES}
+    )
+    source_group("DemoShared/Shaders" FILES ${SHADER_FILES})
+
+    target_link_libraries(OpenGLDemo PRIVATE
+	    glm::glm
+        nlohmann_json::nlohmann_json
+        assimp::assimp
+	    OpenGLRenderer
+        GlfwGLWindow
+    )
+
+    add_custom_command(TARGET OpenGLDemo POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_SOURCE_DIR}/resources"
+        "$<TARGET_FILE_DIR:OpenGLDemo>/resources"
+    )
+endif()

@@ -138,6 +138,11 @@ namespace Dreamhearth
 		return graphics_api.DrawFrame(render_fn);
 	}
 
+	void Window::SetShouldClose(bool should_close) const
+	{
+		glfwSetWindowShouldClose(m_window, should_close);
+	}
+
 	bool Window::ShouldClose() const
 	{
 		return glfwWindowShouldClose(m_window);

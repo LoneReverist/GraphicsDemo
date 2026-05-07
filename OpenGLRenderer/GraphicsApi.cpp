@@ -54,7 +54,10 @@ namespace Dreamhearth
 			message, type_to_string(type), id, severity_to_string(severity));
 	}
 
-	GraphicsApi::GraphicsApi(LoadProcFn * load_proc_fn)
+	GraphicsApi::GraphicsApi(
+			int width_pixels,
+			int height_pixels,
+			LoadProcFn * load_proc_fn)
 	{
 		if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(load_proc_fn)))
 		{
@@ -66,13 +69,15 @@ namespace Dreamhearth
 		glDebugMessageCallback(debug_message_callback, 0);
 	
 		glEnable(GL_FRAMEBUFFER_SRGB);
+
+		SetViewportSize(width_pixels, height_pixels);
 	}
 	
 	GraphicsApi::~GraphicsApi()
 	{
 	}
 	
-	void GraphicsApi::SetViewport(int width_pixels, int height_pixels) const
+	void GraphicsApi::SetViewportSize(int width_pixels, int height_pixels) const
 	{
 		glViewport(0, 0, width_pixels, height_pixels);
 	}

@@ -1,62 +1,20 @@
-add_executable(OpenGLDemo)
+add_library(GlfwGLWindow STATIC)
 
-target_compile_features(OpenGLDemo PRIVATE cxx_std_23)
-
-target_compile_definitions(OpenGLDemo PRIVATE BUILD_OPENGL)
-
-set_target_properties(OpenGLDemo PROPERTIES CXX_SCAN_FOR_MODULES ON)
-
-set(DEMO_SHARED_DIR ${CMAKE_SOURCE_DIR}/DemoShared)
-
-set(SHADER_SOURCE_DIR ${DEMO_SHARED_DIR}/shaders)
-file(GLOB SHADER_FILES "${SHADER_SOURCE_DIR}/*")
-
-add_custom_target(OpenGLShaders ALL
-    COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:OpenGLDemo>/resources/shaders"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory "${SHADER_SOURCE_DIR}" "$<TARGET_FILE_DIR:OpenGLDemo>/resources/shaders"
-    DEPENDS ${SHADER_FILES}
-    COMMENT "Copying shaders to resources directory"
-)
-add_dependencies(OpenGLDemo OpenGLShaders)
+target_compile_features(GlfwGLWindow PUBLIC cxx_std_23)
+set_target_properties(GlfwGLWindow PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
 file(GLOB MODULE_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.ixx")
 file(GLOB SOURCE_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
-file(GLOB SHARED_MODULE_FILES CONFIGURE_DEPENDS "${DEMO_SHARED_DIR}/*.ixx")
-file(GLOB SHARED_SOURCE_FILES CONFIGURE_DEPENDS "${DEMO_SHARED_DIR}/*.cpp")
 
-# Target Source Files
-target_sources(OpenGLDemo
-	PRIVATE
-	FILE_SET cxx_modules TYPE CXX_MODULES
-	BASE_DIRS
-		.
-		${DEMO_SHARED_DIR}
-	FILES
-		${MODULE_FILES}
-		${SHARED_MODULE_FILES}
-
-	PRIVATE
-		${SOURCE_FILES}
-		${SHARED_SOURCE_FILES}
-
-	PRIVATE
-		${SHADER_FILES}
-)
-source_group("DemoShared" FILES ${SHARED_MODULE_FILES} ${SHARED_SOURCE_FILES})
-source_group("DemoShared/Shaders" FILES ${SHADER_FILES})
-
-# Link dependencies (provided via vcpkg toolchain)
-target_link_libraries(OpenGLDemo PRIVATE
-	OpenGLRenderer
-	glfw
-	glm::glm
-	nlohmann_json::nlohmann_json
-	assimp::assimp
+target_sources(GlfwGLWindow
+    PUBLIC
+    FILE_SET CXX_MODULES TYPE CXX_MODULES
+    BASE_DIRS .
+    FILES ${MODULE_FILES}
+    PRIVATE ${SOURCE_FILES}
 )
 
-# Copy resources into output folder
-add_custom_command(TARGET OpenGLDemo POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-    "${CMAKE_SOURCE_DIR}/resources"
-    "$<TARGET_FILE_DIR:OpenGLDemo>/resources"
+target_link_libraries(GlfwGLWindow PUBLIC
+    glfw
+    OpenGLRenderer
 )

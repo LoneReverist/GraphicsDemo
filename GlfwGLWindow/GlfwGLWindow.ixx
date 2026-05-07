@@ -48,6 +48,7 @@ namespace Dreamhearth
 
 		DrawFrameResult DrawFrame(GraphicsApi & graphics_api, std::function<void()> render_fn);
 
+		void SetShouldClose(bool should_close) const;
 		bool ShouldClose() const;
 		void PollEvents() const;
 

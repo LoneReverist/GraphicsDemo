@@ -86,7 +86,7 @@ int main()
 				dh::WindowSize new_size = window_size_pixels.load();
 				if (draw_result == dh::DrawFrameResult::SwapChainOutOfDate || new_size != size)
 				{
-					graphics_api.RecreateSwapChain(new_size.width, new_size.height);
+					graphics_api.SetViewportSize(new_size.width, new_size.height);
 					scene.OnViewportResized(new_size.width, new_size.height);
 					size = new_size;
 				}
@@ -100,6 +100,7 @@ int main()
 			}
 
 			graphics_api.WaitForLastFrame();
+			window.SetShouldClose(true); // signal main thread to exit
 		}); // the GraphicsApi and Scene are destroyed in the reverse order they were created
 
 	while (!window.ShouldClose())

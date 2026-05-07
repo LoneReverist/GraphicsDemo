@@ -110,12 +110,12 @@ namespace Dreamhearth
 			});
 	}
 
-	GraphicsApi Window::CreateRenderContext(WindowSize /*size*/) const
+	GraphicsApi Window::CreateRenderContext(WindowSize size) const
 	{
 		glfwMakeContextCurrent(m_window);
 		glfwSwapInterval(0); // vsync is sometimes on by default, disable it for more accurate timing measurements
 
-		return GraphicsApi{ reinterpret_cast<GraphicsApi::LoadProcFn *>(glfwGetProcAddress) };
+		return GraphicsApi{ size.width, size.height, reinterpret_cast<GraphicsApi::LoadProcFn *>(glfwGetProcAddress) };
 	}
 
 	DrawFrameResult Window::DrawFrame(GraphicsApi & /*graphics_api*/, std::function<void()> render_fn)
@@ -123,6 +123,11 @@ namespace Dreamhearth
 		render_fn();
 		glfwSwapBuffers(m_window);
 		return DrawFrameResult::Success;
+	}
+
+	void Window::SetShouldClose(bool should_close) const
+	{
+		glfwSetWindowShouldClose(m_window, should_close);
 	}
 
 	bool Window::ShouldClose() const
