@@ -431,9 +431,11 @@ void Scene::OnDPIScalingFactorChanged(float dpi_scale_factor)
 	m_title_label.rainbow_width = 200.0f * dpi_scale_factor;
 }
 
-void Scene::Update(double delta_time, Input const & input)
+bool Scene::Update(float dt, Input const & input)
 {
-	const float dt = static_cast<float>(delta_time);
+	if (input.KeyIsPressed(Input::Key::Esc))
+		return false;
+
 	m_timer += dt;
 
 	m_frame_timer += dt;
@@ -446,7 +448,7 @@ void Scene::Update(double delta_time, Input const & input)
 		m_frame_count = 0;
 	}
 
-	m_camera.Update(delta_time, input);
+	m_camera.Update(dt, input);
 
 	glm::vec3 bg_color;
 	bg_color.r = std::sin(m_timer) / 2.0f + 0.5f;
@@ -482,6 +484,8 @@ void Scene::Update(double delta_time, Input const & input)
 		});
 
 	m_title_label.time = m_timer;
+
+	return true;
 }
 
 void Scene::Render() const

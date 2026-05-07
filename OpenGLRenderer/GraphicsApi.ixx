@@ -25,8 +25,8 @@ namespace Dreamhearth
 		void SetViewport(int width_pixels, int height_pixels) const;
 
 		// For compatibility with Vulkan implementation
+		void RecreateSwapChain(int width_pixels, int height_pixels) {}
 		void WaitForLastFrame() const {}
-
-		bool ShouldFlipScreenY() const { return false; }
+		bool ShouldFlipScreenY() const { return false; } // glm expects opengl style screen coordinates
 	};
 } // namespace Dreamhearth

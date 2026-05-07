@@ -31,7 +31,7 @@ public:
 	void Init(glm::vec3 const & pos, glm::vec3 const & dir);
 	void OnViewportResized(int width, int height);
 
-	void Update(double delta_time, Input const & input);
+	void Update(float dt, Input const & input);
 
 	CameraPosUniform const & GetPosUniform() const { return m_pos_uniform; }
 	glm::vec3 const & GetDir() const { return m_dir; }
@@ -69,10 +69,8 @@ void Camera::OnViewportResized(int width, int height)
 		m_view_proj_uniform.proj[1][1] *= -1; // account for vulkan having flipped y-axis compared to opengl
 }
 
-void Camera::Update(double delta_time, Input const & input)
+void Camera::Update(float dt, Input const & input)
 {
-	const float dt = static_cast<float>(delta_time);
-
 	glm::vec3 right_dir = glm::cross(m_dir, m_up_dir);
 	glm::vec3 forward_dir = glm::cross(m_up_dir, right_dir);
 

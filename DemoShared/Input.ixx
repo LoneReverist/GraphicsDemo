@@ -12,10 +12,17 @@ export class Input
 public:
 	enum class Key : int
 	{
+		Esc     = 256, // GLFW_KEY_ESCAPE
 		Right   = 262, // GLFW_KEY_RIGHT
 		Left    = 263, // GLFW_KEY_LEFT
 		Down    = 264, // GLFW_KEY_DOWN
 		Up      = 265  // GLFW_KEY_UP
+	};
+
+	enum class Action : int
+	{
+		Press   = 1, // GLFW_PRESS
+		Release = 0  // GLFW_RELEASE
 	};
 
 	void SetKey(int key, bool pressed)

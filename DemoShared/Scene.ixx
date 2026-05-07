@@ -60,7 +60,7 @@ public:
 	void OnViewportResized(int width, int height);
 	void OnDPIScalingFactorChanged(float dpi_scale_factor);
 
-	void Update(double delta_time, Input const & input);
+	bool Update(float dt, Input const & input);
 	void Render() const;
 
 private:

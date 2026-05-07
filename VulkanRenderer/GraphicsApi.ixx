@@ -89,7 +89,7 @@ namespace Dreamhearth
 		void CopyBufferToImage(vk::Buffer buffer, vk::Image image, std::uint32_t width, std::uint32_t height, std::uint32_t layers) const;
 		void TransitionImageLayout(vk::Image image, std::uint32_t layers, vk::Format format, vk::ImageLayout old_layout, vk::ImageLayout new_layout) const;
 
-		// glm expects opengl style screen coordinates, so we need to flip the Y axis
+		// glm expects opengl style screen coordinates, so we need to flip the Y axis in vulkan
 		bool ShouldFlipScreenY() const { return true; }
 
 		vk::raii::Device const & GetDevice() const { return m_logical_device; }
