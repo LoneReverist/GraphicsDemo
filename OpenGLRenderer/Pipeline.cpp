@@ -1,4 +1,4 @@
-// GraphicsPipeline.cpp
+// Pipeline.cpp
 
 module;
 
@@ -10,7 +10,7 @@ module;
 
 module Dreamhearth;
 
-import :GraphicsPipeline;
+import :Pipeline;
 import :GraphicsError;
 
 namespace Dreamhearth
@@ -45,7 +45,7 @@ namespace Dreamhearth
 		m_id = glCreateProgram();
 	}
 
-	GraphicsPipeline::GraphicsPipeline(
+	Pipeline::Pipeline(
 		PerFrameConstantsCallback per_frame_constants_callback,
 		PerObjectConstantsCallback per_object_constants_callback)
 		: m_per_frame_constants_callback(per_frame_constants_callback)
@@ -53,7 +53,7 @@ namespace Dreamhearth
 	{
 	}
 
-	std::expected<void, GraphicsError> GraphicsPipeline::Create(
+	std::expected<void, GraphicsError> Pipeline::Create(
 		unsigned int vert_shader_id,
 		unsigned int frag_shader_id,
 		size_t vs_object_uniform_size,
@@ -122,7 +122,7 @@ namespace Dreamhearth
 		return {};
 	}
 
-	void GraphicsPipeline::Activate() const
+	void Pipeline::Activate() const
 	{
 		if (m_program.GetId() == 0)
 			return;
@@ -164,13 +164,13 @@ namespace Dreamhearth
 			Texture::Bind(m_descriptor_set.texture_id, m_descriptor_set.texture_type, m_descriptor_set.texture_binding);
 	}
 
-	void GraphicsPipeline::UpdatePerFrameConstants() const
+	void Pipeline::UpdatePerFrameConstants() const
 	{
 		if (m_per_frame_constants_callback)
 			m_per_frame_constants_callback(*this);
 	}
 
-	void GraphicsPipeline::UpdatePerObjectConstants(void const * object_data) const
+	void Pipeline::UpdatePerObjectConstants(void const * object_data) const
 	{
 		if (m_per_object_constants_callback)
 			m_per_object_constants_callback(*this, object_data);

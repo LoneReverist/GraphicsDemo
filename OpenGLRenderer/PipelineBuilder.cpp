@@ -88,7 +88,7 @@ namespace Dreamhearth
 		return {};
 	}
 
-	std::expected<GraphicsPipeline, GraphicsError> PipelineBuilder::CreatePipeline() const
+	std::expected<Pipeline, GraphicsError> PipelineBuilder::CreatePipeline() const
 	{
 		if (m_vert_shader_id == 0)
 			return std::unexpected{ GraphicsError{ "Vertex shader not loaded" } };
@@ -97,7 +97,7 @@ namespace Dreamhearth
 		if (!m_cull_mode.has_value())
 			return std::unexpected{ GraphicsError{ "Cull mode not set" } };
 
-		GraphicsPipeline pipeline{
+		Pipeline pipeline{
 			m_per_frame_constants_callback,
 			m_per_object_constants_callback
 		};

@@ -21,7 +21,7 @@ export class SkyboxPipeline
 public:
 	using VertexT = PositionVertex;
 
-	static std::expected<GraphicsPipeline, GraphicsError> CreateGraphicsPipeline(
+	static std::expected<Pipeline, GraphicsError> CreatePipeline(
 		GraphicsApi const & graphics_api,
 		std::filesystem::path const & shaders_path,
 		Camera const & camera,
@@ -37,7 +37,7 @@ private:
 	AssetId m_asset_id;
 };
 
-std::expected<GraphicsPipeline, GraphicsError> SkyboxPipeline::CreateGraphicsPipeline(
+std::expected<Pipeline, GraphicsError> SkyboxPipeline::CreatePipeline(
 	GraphicsApi const & graphics_api,
 	std::filesystem::path const & shaders_path,
 	Camera const & camera,
@@ -46,7 +46,7 @@ std::expected<GraphicsPipeline, GraphicsError> SkyboxPipeline::CreateGraphicsPip
 {
 	Texture const * texture = texture_pool.Get(texture_id);
 	if (!texture)
-		return std::unexpected{ GraphicsError{ "SkyboxPipeline::CreateGraphicsPipeline: invalid texture" } };
+		return std::unexpected{ GraphicsError{ "SkyboxPipeline::CreatePipeline: invalid texture" } };
 
 	PipelineBuilder builder{ graphics_api };
 
@@ -67,7 +67,7 @@ std::expected<GraphicsPipeline, GraphicsError> SkyboxPipeline::CreateGraphicsPip
 	builder.SetCullMode(CullMode::BACK);
 
 	builder.SetPerFrameConstantsCallback(
-		[&camera](GraphicsPipeline const & pipeline)
+		[&camera](Pipeline const & pipeline)
 		{
 			pipeline.SetUniform(0 /*binding*/, camera.GetViewProjUniform());
 		});

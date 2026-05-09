@@ -31,7 +31,7 @@ public:
 		glm::mat4 model{ 1.0 };
 	};
 
-	static std::expected<GraphicsPipeline, GraphicsError> CreateGraphicsPipeline(
+	static std::expected<Pipeline, GraphicsError> CreatePipeline(
 		GraphicsApi const & graphics_api,
 		std::filesystem::path const & shaders_path,
 		Camera const & camera,
@@ -48,7 +48,7 @@ private:
 	AssetId m_asset_id;
 };
 
-std::expected<GraphicsPipeline, GraphicsError> ReflectionPipeline::CreateGraphicsPipeline(
+std::expected<Pipeline, GraphicsError> ReflectionPipeline::CreatePipeline(
 	GraphicsApi const & graphics_api,
 	std::filesystem::path const & shaders_path,
 	Camera const & camera,
@@ -63,7 +63,7 @@ std::expected<GraphicsPipeline, GraphicsError> ReflectionPipeline::CreateGraphic
 
 	Texture const * texture = texture_pool.Get(texture_id);
 	if (!texture)
-		return std::unexpected{ GraphicsError{ "ReflectionPipeline::CreateGraphicsPipeline: invalid texture" } };
+		return std::unexpected{ GraphicsError{ "ReflectionPipeline::CreatePipeline: invalid texture" } };
 
 	PipelineBuilder builder{ graphics_api };
 
@@ -81,14 +81,14 @@ std::expected<GraphicsPipeline, GraphicsError> ReflectionPipeline::CreateGraphic
 	builder.SetCullMode(CullMode::BACK);
 
 	builder.SetPerFrameConstantsCallback(
-		[&camera, &lights](GraphicsPipeline const & pipeline)
+		[&camera, &lights](Pipeline const & pipeline)
 		{
 			pipeline.SetUniform(0 /*binding*/, camera.GetViewProjUniform());
 			pipeline.SetUniform(1 /*binding*/, lights.GetLightsUniform());
 			pipeline.SetUniform(2 /*binding*/, camera.GetPosUniform());
 		});
 	builder.SetPerObjectConstantsCallback(
-		[](GraphicsPipeline const & pipeline, void const * object_data)
+		[](Pipeline const & pipeline, void const * object_data)
 		{
 			if (!object_data)
 			{

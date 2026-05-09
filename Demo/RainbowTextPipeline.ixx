@@ -35,7 +35,7 @@ public:
 		float slant_factor = -1.0f;
 	};
 
-	static std::expected<GraphicsPipeline, GraphicsError> CreateGraphicsPipeline(
+	static std::expected<Pipeline, GraphicsError> CreatePipeline(
 		GraphicsApi const & graphics_api,
 		std::filesystem::path const & shaders_path,
 		AssetPool<Texture> const & texture_pool,
@@ -50,7 +50,7 @@ private:
 	AssetId m_asset_id;
 };
 
-std::expected<GraphicsPipeline, GraphicsError> RainbowTextPipeline::CreateGraphicsPipeline(
+std::expected<Pipeline, GraphicsError> RainbowTextPipeline::CreatePipeline(
 	GraphicsApi const & graphics_api,
 	std::filesystem::path const & shaders_path,
 	AssetPool<Texture> const & texture_pool,
@@ -67,7 +67,7 @@ std::expected<GraphicsPipeline, GraphicsError> RainbowTextPipeline::CreateGraphi
 
 	Texture const * texture = texture_pool.Get(texture_id);
 	if (!texture)
-		return std::unexpected{ GraphicsError{ "TextPipeline::CreateGraphicsPipeline: invalid texture" } };
+		return std::unexpected{ GraphicsError{ "TextPipeline::CreatePipeline: invalid texture" } };
 
 	PipelineBuilder builder{ graphics_api };
 
@@ -93,7 +93,7 @@ std::expected<GraphicsPipeline, GraphicsError> RainbowTextPipeline::CreateGraphi
 	builder.SetCullMode(CullMode::BACK);
 
 	builder.SetPerObjectConstantsCallback(
-		[](GraphicsPipeline const & pipeline, void const * object_data)
+		[](Pipeline const & pipeline, void const * object_data)
 		{
 			if (!object_data)
 			{

@@ -494,7 +494,7 @@ void Scene::Render() const
 
 	for (PipelineRenderObjects const & pipeline_r_objs : m_active_render_objects)
 	{
-		GraphicsPipeline const * pipeline = m_pipeline_pool.Get(pipeline_r_objs.pipeline_id);
+		Pipeline const * pipeline = m_pipeline_pool.Get(pipeline_r_objs.pipeline_id);
 		if (!pipeline)
 		{
 			std::cout << "Scene::Render: No pipeline found in pool for pipeline ID: " << pipeline_r_objs.pipeline_id.GetIndex() << std::endl;

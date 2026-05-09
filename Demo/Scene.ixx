@@ -34,15 +34,15 @@ import Vertex;
 
 using namespace Dreamhearth;
 
-template <typename Mesh, typename Pipeline>
-concept MeshIsCompatibleWithPipeline = std::same_as<typename Mesh::VertexT, typename Pipeline::VertexT>;
+template <typename MeshT, typename PipelineT>
+concept MeshIsCompatibleWithPipeline = std::same_as<typename MeshT::VertexT, typename PipelineT::VertexT>;
 
-template <typename Pipeline>
-concept PipelineHasObjectData = requires { typename Pipeline::ObjectData; };
+template <typename PipelineT>
+concept PipelineHasObjectData = requires { typename PipelineT::ObjectData; };
 
-template <typename ObjectData, typename Pipeline>
-concept ObjectDataIsCompatibleWithPipeline = std::same_as<ObjectData, typename Pipeline::ObjectData>
-|| (!PipelineHasObjectData<Pipeline> && std::same_as<ObjectData, std::nullopt_t>);
+template <typename ObjectDataT, typename PipelineT>
+concept ObjectDataIsCompatibleWithPipeline = std::same_as<ObjectDataT, typename PipelineT::ObjectData>
+|| (!PipelineHasObjectData<PipelineT> && std::same_as<ObjectDataT, std::nullopt_t>);
 
 // Keeps track of which render objects are using the associated pipeline,
 // this allows the render objects to be grouped by pipeline for more efficient rendering
@@ -70,13 +70,13 @@ private:
 	template <typename PipelineT, typename... Args>
 	PipelineT create_pipeline(Args &&... args);
 
-	template <IsVertex VertexT, typename Pipeline, typename ObjectData = std::nullopt_t>
-		requires MeshIsCompatibleWithPipeline<MeshId<VertexT>, Pipeline> && ObjectDataIsCompatibleWithPipeline<ObjectData, Pipeline>
+	template <IsVertex VertexT, typename PipelineT, typename ObjectDataT = std::nullopt_t>
+		requires MeshIsCompatibleWithPipeline<MeshId<VertexT>, PipelineT> && ObjectDataIsCompatibleWithPipeline<ObjectDataT, PipelineT>
 	AssetId create_render_object(
 		std::string const & name,
 		MeshId<VertexT> const & mesh_id,
-		Pipeline const & pipeline,
-		ObjectData const & object_data = std::nullopt);
+		PipelineT const & pipeline,
+		ObjectDataT const & object_data = std::nullopt);
 
 	AssetId create_texture(
 		std::filesystem::path const & filepath,
@@ -106,7 +106,7 @@ private:
 	LightsManager m_lights;
 
 	MeshManager m_mesh_manager;
-	AssetPool<GraphicsPipeline> m_pipeline_pool;
+	AssetPool<Pipeline> m_pipeline_pool;
 	AssetPool<RenderObject> m_render_object_pool;
 	AssetPool<Texture> m_texture_pool;
 
@@ -151,8 +151,8 @@ PipelineT Scene::create_pipeline(Args &&... args)
 {
 	std::filesystem::path shaders_path = m_resources_path / "shaders";
 
-	std::expected<GraphicsPipeline, GraphicsError> pipeline
-		= PipelineT::CreateGraphicsPipeline(m_graphics_api, shaders_path, std::forward<Args>(args)...);
+	std::expected<Pipeline, GraphicsError> pipeline
+		= PipelineT::CreatePipeline(m_graphics_api, shaders_path, std::forward<Args>(args)...);
 	if (!pipeline.has_value())
 	{
 		std::cout << "Failed to create " << typeid(PipelineT).name()
@@ -167,13 +167,13 @@ PipelineT Scene::create_pipeline(Args &&... args)
 	return PipelineT{ pipeline_id };
 }
 
-template <IsVertex VertexT, typename Pipeline, typename ObjectData /*= std::nullopt_t*/>
-	requires MeshIsCompatibleWithPipeline<MeshId<VertexT>, Pipeline> && ObjectDataIsCompatibleWithPipeline<ObjectData, Pipeline>
+template <IsVertex VertexT, typename PipelineT, typename ObjectDataT /*= std::nullopt_t*/>
+	requires MeshIsCompatibleWithPipeline<MeshId<VertexT>, PipelineT> && ObjectDataIsCompatibleWithPipeline<ObjectDataT, PipelineT>
 AssetId Scene::create_render_object(
 	std::string const & name,
 	MeshId<VertexT> const & mesh_id,
-	Pipeline const & pipeline,
-	ObjectData const & object_data /*= std::nullopt*/)
+	PipelineT const & pipeline,
+	ObjectDataT const & object_data /*= std::nullopt*/)
 {
 	if (!mesh_id.IsValid())
 	{
@@ -187,7 +187,7 @@ AssetId Scene::create_render_object(
 	}
 
 	RenderObject obj{ name, mesh_id, pipeline.GetAssetId() };
-	if constexpr (!std::same_as<ObjectData, std::nullopt_t>)
+	if constexpr (!std::same_as<ObjectDataT, std::nullopt_t>)
 		obj.SetObjectData(&object_data);
 
 	AssetId obj_id = m_render_object_pool.Add(std::move(obj));

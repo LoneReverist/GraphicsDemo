@@ -1,4 +1,4 @@
-// GraphicsPipeline.cpp
+// Pipeline.cpp
 
 module;
 
@@ -12,7 +12,7 @@ module;
 
 module Dreamhearth;
 
-import :GraphicsPipeline;
+import :Pipeline;
 
 namespace Dreamhearth
 {
@@ -363,7 +363,7 @@ namespace Dreamhearth
 		return vk::raii::Pipeline(device, nullptr, pipeline_info.get<vk::GraphicsPipelineCreateInfo>());
 	}
 
-	GraphicsPipeline::GraphicsPipeline(GraphicsApi const & graphics_api,
+	Pipeline::Pipeline(GraphicsApi const & graphics_api,
 		PerFrameConstantsCallback per_frame_constants_callback,
 		PerObjectConstantsCallback per_object_constants_callback)
 		: m_graphics_api(graphics_api)
@@ -373,7 +373,7 @@ namespace Dreamhearth
 	{
 	}
 
-	std::expected<void, GraphicsError> GraphicsPipeline::Create(
+	std::expected<void, GraphicsError> Pipeline::Create(
 		std::vector<vk::PipelineShaderStageCreateInfo> shader_stages,
 		vk::VertexInputBindingDescription const & binding_desc,
 		std::vector<vk::VertexInputAttributeDescription> const & attrib_descs,
@@ -414,7 +414,7 @@ namespace Dreamhearth
 		return {};
 	}
 
-	void GraphicsPipeline::Activate() const
+	void Pipeline::Activate() const
 	{
 		if (m_pipeline == nullptr)
 			return;
@@ -432,13 +432,13 @@ namespace Dreamhearth
 		);
 	}
 
-	void GraphicsPipeline::UpdatePerFrameConstants() const
+	void Pipeline::UpdatePerFrameConstants() const
 	{
 		if (m_per_frame_constants_callback)
 			m_per_frame_constants_callback(*this);
 	}
 
-	void GraphicsPipeline::UpdatePerObjectConstants(void const * object_data) const
+	void Pipeline::UpdatePerObjectConstants(void const * object_data) const
 	{
 		if (m_per_object_constants_callback)
 			m_per_object_constants_callback(*this, object_data);

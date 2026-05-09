@@ -14,7 +14,7 @@ export module Dreamhearth:PipelineBuilder;
 
 import :GraphicsApi;
 import :GraphicsError;
-import :GraphicsPipeline;
+import :Pipeline;
 import :Texture;
 import :VertexLayout;
 
@@ -23,8 +23,8 @@ namespace Dreamhearth
 	export class PipelineBuilder
 	{
 	public:
-		using PerFrameConstantsCallback = GraphicsPipeline::PerFrameConstantsCallback;
-		using PerObjectConstantsCallback = GraphicsPipeline::PerObjectConstantsCallback;
+		using PerFrameConstantsCallback = Pipeline::PerFrameConstantsCallback;
+		using PerObjectConstantsCallback = Pipeline::PerObjectConstantsCallback;
 
 		explicit PipelineBuilder(GraphicsApi const & graphics_api);
 
@@ -50,7 +50,7 @@ namespace Dreamhearth
 		void SetPerFrameConstantsCallback(PerFrameConstantsCallback callback) { m_per_frame_constants_callback = callback; }
 		void SetPerObjectConstantsCallback(PerObjectConstantsCallback callback) { m_per_object_constants_callback = callback; }
 
-		std::expected<GraphicsPipeline, GraphicsError> CreatePipeline() const;
+		std::expected<Pipeline, GraphicsError> CreatePipeline() const;
 
 	private:
 		GraphicsApi const & m_graphics_api;

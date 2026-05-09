@@ -80,7 +80,7 @@ namespace Dreamhearth
 		return {};
 	}
 
-	std::expected<GraphicsPipeline, GraphicsError> PipelineBuilder::CreatePipeline() const
+	std::expected<Pipeline, GraphicsError> PipelineBuilder::CreatePipeline() const
 	{
 		if (m_vert_shader_module == VK_NULL_HANDLE)
 			return std::unexpected{ GraphicsError{ "Vertex shader not loaded" } };
@@ -104,7 +104,7 @@ namespace Dreamhearth
 			}
 		};
 
-		GraphicsPipeline pipeline{
+		Pipeline pipeline{
 			m_graphics_api,
 			m_per_frame_constants_callback,
 			m_per_object_constants_callback

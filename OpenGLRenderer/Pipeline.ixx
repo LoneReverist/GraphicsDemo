@@ -1,4 +1,4 @@
-// GraphicsPipeline.ixx
+// Pipeline.ixx
 
 module;
 
@@ -10,7 +10,7 @@ module;
 
 #include <glad/glad.h>
 
-export module Dreamhearth:GraphicsPipeline;
+export module Dreamhearth:Pipeline;
 
 import :Buffer;
 import :GraphicsError;
@@ -104,22 +104,22 @@ namespace Dreamhearth
 		unsigned int m_id = 0;
 	};
 
-	export class GraphicsPipeline
+	export class Pipeline
 	{
 	public:
-		using PerFrameConstantsCallback = std::function<void(GraphicsPipeline const & pipeline)>;
-		using PerObjectConstantsCallback = std::function<void(GraphicsPipeline const & pipeline, void const * object_data)>;
+		using PerFrameConstantsCallback = std::function<void(Pipeline const & pipeline)>;
+		using PerObjectConstantsCallback = std::function<void(Pipeline const & pipeline, void const * object_data)>;
 
-		explicit GraphicsPipeline(
+		explicit Pipeline(
 			PerFrameConstantsCallback per_frame_constants_callback,
 			PerObjectConstantsCallback per_object_constants_callback);
-		~GraphicsPipeline() = default;
+		~Pipeline() = default;
 
-		GraphicsPipeline(GraphicsPipeline && other) = default;
-		GraphicsPipeline & operator=(GraphicsPipeline && other) = default;
+		Pipeline(Pipeline && other) = default;
+		Pipeline & operator=(Pipeline && other) = default;
 
-		GraphicsPipeline(GraphicsPipeline const &) = delete;
-		GraphicsPipeline & operator=(GraphicsPipeline const &) = delete;
+		Pipeline(Pipeline const &) = delete;
+		Pipeline & operator=(Pipeline const &) = delete;
 
 		std::expected<void, GraphicsError> Create(
 			unsigned int vert_shader_id,
@@ -181,7 +181,7 @@ namespace Dreamhearth
 	}
 
 	template <typename UniformData>
-	void GraphicsPipeline::SetUniform(std::uint32_t binding, UniformData const & data) const
+	void Pipeline::SetUniform(std::uint32_t binding, UniformData const & data) const
 	{
 		if (binding >= m_descriptor_set.uniform_buffers.size())
 		{
@@ -194,7 +194,7 @@ namespace Dreamhearth
 	}
 
 	template <typename ObjectDataVS /*= std::nullopt_t*/, typename ObjectDataFS /*= std::nullopt_t*/>
-	void GraphicsPipeline::SetObjectData(ObjectDataVS const & vs_data, ObjectDataFS const & fs_data) const
+	void Pipeline::SetObjectData(ObjectDataVS const & vs_data, ObjectDataFS const & fs_data) const
 	{
 		static_assert(!std::same_as<ObjectDataVS, std::nullopt_t> || !std::same_as<ObjectDataFS, std::nullopt_t>,
 			"At least one object data must be provided");
