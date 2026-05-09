@@ -10,7 +10,7 @@ module;
 
 export module Dreamhearth:Texture;
 
-import :GraphicsApi;
+import :RenderContext;
 import :GraphicsError;
 
 namespace Dreamhearth
@@ -59,8 +59,8 @@ namespace Dreamhearth
 		Texture(Texture const &) = delete;
 		Texture & operator=(Texture const &) = delete;
 
-		std::expected<void, GraphicsError> Create(GraphicsApi const & graphics_api, ImageData const & image_data, bool use_mip_map = true);
-		std::expected<void, GraphicsError> Create(GraphicsApi const & graphics_api, CubeImageData const & image_data);
+		std::expected<void, GraphicsError> Create(RenderContext const & render_context, ImageData const & image_data, bool use_mip_map = true);
+		std::expected<void, GraphicsError> Create(RenderContext const & render_context, CubeImageData const & image_data);
 
 		bool IsValid() const;
 

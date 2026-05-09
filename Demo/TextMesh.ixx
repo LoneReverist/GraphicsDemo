@@ -29,7 +29,7 @@ public:
 	using UpdateMeshCallbackT = std::function<void(AssetId, Mesh)>;
 
 	explicit TextMesh(
-		GraphicsApi const & graphics_api,
+		RenderContext const & render_context,
 		std::string const & text,
 		FontAtlas const & font_atlas,
 		std::uint32_t font_tex_width,
@@ -54,7 +54,7 @@ public:
 	float GetScreenPxRange() const { return m_screen_px_range; }
 
 private:
-	GraphicsApi const & m_graphics_api;
+	RenderContext const & m_render_context;
 	MeshId<VertexT> m_mesh_id;
 	UpdateMeshCallbackT m_update_mesh_callback;
 
@@ -71,7 +71,7 @@ private:
 };
 
 TextMesh::TextMesh(
-	GraphicsApi const & graphics_api,
+	RenderContext const & render_context,
 	std::string const & text,
 	FontAtlas const & font_atlas,
 	std::uint32_t font_tex_width,
@@ -80,7 +80,7 @@ TextMesh::TextMesh(
 	glm::vec2 origin,
 	int viewport_width,
 	int viewport_height)
-	: m_graphics_api(graphics_api)
+	: m_render_context(render_context)
 	, m_text(text)
 	, m_font_atlas(font_atlas)
 	, m_font_tex_width(font_tex_width)
@@ -99,7 +99,7 @@ std::expected<Mesh, GraphicsError> TextMesh::CreateMesh() const
 		|| m_viewport_width == 0 || m_viewport_height == 0
 		|| m_text.empty())
 	{
-		return Mesh{ m_graphics_api }; // an empty mesh is an expected result here
+		return Mesh{ m_render_context }; // an empty mesh is an expected result here
 	}
 
 	std::vector<VertexT> verts;
@@ -156,13 +156,13 @@ std::expected<Mesh, GraphicsError> TextMesh::CreateMesh() const
 
 	// Vulkan screen coordinates are different from OpenGL, the y-axis is -1 at the top instead of the bottom of the screen.
 	// We could create a projection matrix that flips the y-axis and pass that into the 2d shaders, but for now we'll do this
-	if (m_graphics_api.ShouldFlipScreenY())
+	if (m_render_context.ShouldFlipScreenY())
 	{
 		for (VertexT & v : verts)
 			v.pos.y = -v.pos.y;
 	}
 
-	Mesh mesh{ m_graphics_api };
+	Mesh mesh{ m_render_context };
 	std::expected<void, GraphicsError> result = mesh.Create(verts, indices);
 	if (!result.has_value())
 		return std::unexpected{ result.error().AddToMessage(" TextMesh::CreateMesh: Failed to create mesh.") };

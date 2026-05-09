@@ -1,4 +1,4 @@
-// GraphicsApi.cpp
+// RenderContext.cpp
 
 module;
 
@@ -9,7 +9,7 @@ module;
 
 module Dreamhearth;
 
-import :GraphicsApi;
+import :RenderContext;
 
 namespace Dreamhearth
 {
@@ -54,7 +54,7 @@ namespace Dreamhearth
 			message, type_to_string(type), id, severity_to_string(severity));
 	}
 
-	GraphicsApi::GraphicsApi(
+	RenderContext::RenderContext(
 			int width_pixels,
 			int height_pixels,
 			LoadProcFn * load_proc_fn)
@@ -73,11 +73,11 @@ namespace Dreamhearth
 		SetViewportSize(width_pixels, height_pixels);
 	}
 	
-	GraphicsApi::~GraphicsApi()
+	RenderContext::~RenderContext()
 	{
 	}
 	
-	void GraphicsApi::SetViewportSize(int width_pixels, int height_pixels) const
+	void RenderContext::SetViewportSize(int width_pixels, int height_pixels) const
 	{
 		glViewport(0, 0, width_pixels, height_pixels);
 	}

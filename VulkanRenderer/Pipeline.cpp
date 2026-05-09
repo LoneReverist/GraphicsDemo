@@ -16,8 +16,8 @@ import :Pipeline;
 
 namespace Dreamhearth
 {
-	DescriptorSets::DescriptorSets(GraphicsApi const & graphics_api)
-		: m_graphics_api(graphics_api)
+	DescriptorSets::DescriptorSets(RenderContext const & render_context)
+		: m_render_context(render_context)
 	{
 	}
 
@@ -191,12 +191,12 @@ namespace Dreamhearth
 	}
 
 	void create_uniform_buffer(
-		GraphicsApi const & graphics_api,
+		RenderContext const & render_context,
 		vk::DeviceSize buffer_size,
 		UniformBuffer & out_uniform_buffer)
 	{
 		out_uniform_buffer.buffer.Create(
-			graphics_api,
+			render_context,
 			buffer_size,
 			vk::BufferUsageFlagBits::eUniformBuffer,
 			vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
@@ -209,7 +209,7 @@ namespace Dreamhearth
 		std::vector<vk::DeviceSize> const & fs_uniform_sizes,
 		Texture const * texture)
 	{
-		vk::raii::Device const & device = m_graphics_api.get().GetDevice();
+		vk::raii::Device const & device = m_render_context.get().GetDevice();
 		bool has_texture = texture != nullptr && texture->IsValid();
 
 		m_descriptor_set_layout = create_descriptor_set_layout(device,
@@ -222,25 +222,25 @@ namespace Dreamhearth
 
 		m_descriptor_pool = create_descriptor_pool(device,
 			static_cast<std::uint32_t>(uniform_sizes.size()) /*descriptor_count*/,
-			GraphicsApi::m_max_frames_in_flight /*descriptor_set_count*/,
+			RenderContext::m_max_frames_in_flight /*descriptor_set_count*/,
 			has_texture);
 
-		std::array<std::vector<vk::Buffer>, GraphicsApi::m_max_frames_in_flight> uniform_buffers;
-		for (size_t frame = 0; frame < GraphicsApi::m_max_frames_in_flight; ++frame)
+		std::array<std::vector<vk::Buffer>, RenderContext::m_max_frames_in_flight> uniform_buffers;
+		for (size_t frame = 0; frame < RenderContext::m_max_frames_in_flight; ++frame)
 		{
 			m_descriptor_sets[frame].uniform_buffers.reserve(uniform_sizes.size());
 			for (int binding = 0; binding < uniform_sizes.size(); ++binding)
 			{
 				UniformBuffer & uniform = m_descriptor_sets[frame].uniform_buffers.emplace_back();
-				create_uniform_buffer(m_graphics_api, uniform_sizes[binding], uniform);
+				create_uniform_buffer(m_render_context, uniform_sizes[binding], uniform);
 				uniform_buffers[frame].push_back(*uniform.buffer.Get());
 			}
 		}
 
-		std::vector<vk::raii::DescriptorSet> descriptor_sets = create_descriptor_sets<GraphicsApi::m_max_frames_in_flight>(
+		std::vector<vk::raii::DescriptorSet> descriptor_sets = create_descriptor_sets<RenderContext::m_max_frames_in_flight>(
 			device, m_descriptor_set_layout, m_descriptor_pool, uniform_buffers, uniform_sizes, texture);
 
-		for (size_t frame = 0; frame < GraphicsApi::m_max_frames_in_flight; ++frame)
+		for (size_t frame = 0; frame < RenderContext::m_max_frames_in_flight; ++frame)
 			m_descriptor_sets[frame].descriptor_set = std::move(descriptor_sets[frame]);
 	}
 
@@ -363,11 +363,11 @@ namespace Dreamhearth
 		return vk::raii::Pipeline(device, nullptr, pipeline_info.get<vk::GraphicsPipelineCreateInfo>());
 	}
 
-	Pipeline::Pipeline(GraphicsApi const & graphics_api,
+	Pipeline::Pipeline(RenderContext const & render_context,
 		PerFrameConstantsCallback per_frame_constants_callback,
 		PerObjectConstantsCallback per_object_constants_callback)
-		: m_graphics_api(graphics_api)
-		, m_descriptor_sets(graphics_api)
+		: m_render_context(render_context)
+		, m_descriptor_sets(render_context)
 		, m_per_frame_constants_callback(per_frame_constants_callback)
 		, m_per_object_constants_callback(per_object_constants_callback)
 	{
@@ -390,18 +390,18 @@ namespace Dreamhearth
 			m_descriptor_sets.Create(vs_uniform_sizes, fs_uniform_sizes, texture);
 
 			m_pipeline_layout = create_pipeline_layout(
-				m_graphics_api.get().GetDevice(),
+				m_render_context.get().GetDevice(),
 				m_descriptor_sets.GetLayout(),
 				push_constants_ranges);
 
 			m_pipeline = create_pipeline(
-				m_graphics_api.get().GetDevice(),
+				m_render_context.get().GetDevice(),
 				m_pipeline_layout,
 				shader_stages,
 				binding_desc,
 				attrib_descs,
-				m_graphics_api.get().GetSwapChainImageFormat(),
-				m_graphics_api.get().GetDepthImageFormat(),
+				m_render_context.get().GetSwapChainImageFormat(),
+				m_render_context.get().GetDepthImageFormat(),
 				depth_options,
 				blend_options,
 				cull_mode);
@@ -419,7 +419,7 @@ namespace Dreamhearth
 		if (m_pipeline == nullptr)
 			return;
 
-		vk::raii::CommandBuffer const & command_buffer = m_graphics_api.get().GetCurCommandBuffer();
+		vk::raii::CommandBuffer const & command_buffer = m_render_context.get().GetCurCommandBuffer();
 
 		command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *m_pipeline);
 

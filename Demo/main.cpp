@@ -62,9 +62,9 @@ int main()
 			dh::WindowSize size = window_size_pixels.load();
 			float scale_factor = window_scale_factor.load();
 
-			dh::GraphicsApi graphics_api = window.CreateRenderContext(size);
+			dh::RenderContext render_context = window.CreateRenderContext(size);
 
-			Scene scene{ graphics_api, AppName, scale_factor };
+			Scene scene{ render_context, AppName, scale_factor };
 			scene.OnViewportResized(size.width, size.height);
 
 			auto last_update_time = std::chrono::steady_clock::now();
@@ -78,7 +78,7 @@ int main()
 				if (!scene.Update(dt, input))
 					break;
 
-				dh::DrawFrameResult draw_result = window.DrawFrame(graphics_api, [&scene]() { scene.Render(); });
+				dh::DrawFrameResult draw_result = window.DrawFrame(render_context, [&scene]() { scene.Render(); });
 
 				if (draw_result == dh::DrawFrameResult::SurfaceLost)
 					break; // The Cosmic compositor has issues
@@ -86,7 +86,7 @@ int main()
 				dh::WindowSize new_size = window_size_pixels.load();
 				if (draw_result == dh::DrawFrameResult::SwapChainOutOfDate || new_size != size)
 				{
-					graphics_api.SetViewportSize(new_size.width, new_size.height);
+					render_context.SetViewportSize(new_size.width, new_size.height);
 					scene.OnViewportResized(new_size.width, new_size.height);
 					size = new_size;
 				}
@@ -99,9 +99,9 @@ int main()
 				}
 			}
 
-			graphics_api.WaitForLastFrame();
+			render_context.WaitForLastFrame();
 			window.SetShouldClose(true); // signal main thread to exit
-		}); // the GraphicsApi and Scene are destroyed in the reverse order they were created
+		}); // the RenderContext and Scene are destroyed in the reverse order they were created
 
 	while (!window.ShouldClose())
 		window.PollEvents(); // must only be called from main thread

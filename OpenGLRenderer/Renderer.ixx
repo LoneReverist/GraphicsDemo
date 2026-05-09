@@ -6,7 +6,7 @@ module;
 
 export module Dreamhearth:Renderer;
 
-import :GraphicsApi;
+import :RenderContext;
 import :GraphicsError;
 
 namespace Dreamhearth
@@ -14,7 +14,7 @@ namespace Dreamhearth
 	export class Renderer
 	{
 	public:
-		explicit Renderer(GraphicsApi const & graphics_api);
+		explicit Renderer(RenderContext const & render_context);
 
 		void BeginDraw() const;
 		void EndDraw() const;
@@ -22,7 +22,7 @@ namespace Dreamhearth
 		void SetClearColor(glm::vec3 const & color) { m_clear_color = color; }
 
 	private:
-		GraphicsApi const & m_graphics_api;
+		RenderContext const & m_render_context;
 
 		glm::vec3 m_clear_color;
 	};

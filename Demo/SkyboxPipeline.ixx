@@ -22,7 +22,7 @@ public:
 	using VertexT = PositionVertex;
 
 	static std::expected<Pipeline, GraphicsError> CreatePipeline(
-		GraphicsApi const & graphics_api,
+		RenderContext const & render_context,
 		std::filesystem::path const & shaders_path,
 		Camera const & camera,
 		AssetPool<Texture> const & texture_pool,
@@ -38,7 +38,7 @@ private:
 };
 
 std::expected<Pipeline, GraphicsError> SkyboxPipeline::CreatePipeline(
-	GraphicsApi const & graphics_api,
+	RenderContext const & render_context,
 	std::filesystem::path const & shaders_path,
 	Camera const & camera,
 	AssetPool<Texture> const & texture_pool,
@@ -48,7 +48,7 @@ std::expected<Pipeline, GraphicsError> SkyboxPipeline::CreatePipeline(
 	if (!texture)
 		return std::unexpected{ GraphicsError{ "SkyboxPipeline::CreatePipeline: invalid texture" } };
 
-	PipelineBuilder builder{ graphics_api };
+	PipelineBuilder builder{ render_context };
 
 	std::expected<void, GraphicsError> load_shaders_result = builder.LoadShaders(
 		shaders_path / "skybox.vert",

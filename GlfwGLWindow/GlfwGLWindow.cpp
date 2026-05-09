@@ -110,15 +110,15 @@ namespace Dreamhearth
 			});
 	}
 
-	GraphicsApi Window::CreateRenderContext(WindowSize size) const
+	RenderContext Window::CreateRenderContext(WindowSize size) const
 	{
 		glfwMakeContextCurrent(m_window);
 		glfwSwapInterval(0); // vsync is sometimes on by default, disable it for more accurate timing measurements
 
-		return GraphicsApi{ size.width, size.height, reinterpret_cast<GraphicsApi::LoadProcFn *>(glfwGetProcAddress) };
+		return RenderContext{ size.width, size.height, reinterpret_cast<RenderContext::LoadProcFn *>(glfwGetProcAddress) };
 	}
 
-	DrawFrameResult Window::DrawFrame(GraphicsApi & /*graphics_api*/, std::function<void()> render_fn)
+	DrawFrameResult Window::DrawFrame(RenderContext & /*render_context*/, std::function<void()> render_fn)
 	{
 		render_fn();
 		glfwSwapBuffers(m_window);

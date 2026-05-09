@@ -36,7 +36,7 @@ public:
 	};
 
 	static std::expected<Pipeline, GraphicsError> CreatePipeline(
-		GraphicsApi const & graphics_api,
+		RenderContext const & render_context,
 		std::filesystem::path const & shaders_path,
 		AssetPool<Texture> const & texture_pool,
 		AssetId texture_id);
@@ -51,7 +51,7 @@ private:
 };
 
 std::expected<Pipeline, GraphicsError> RainbowTextPipeline::CreatePipeline(
-	GraphicsApi const & graphics_api,
+	RenderContext const & render_context,
 	std::filesystem::path const & shaders_path,
 	AssetPool<Texture> const & texture_pool,
 	AssetId texture_id)
@@ -69,7 +69,7 @@ std::expected<Pipeline, GraphicsError> RainbowTextPipeline::CreatePipeline(
 	if (!texture)
 		return std::unexpected{ GraphicsError{ "TextPipeline::CreatePipeline: invalid texture" } };
 
-	PipelineBuilder builder{ graphics_api };
+	PipelineBuilder builder{ render_context };
 
 	std::expected<void, GraphicsError> load_shaders_result = builder.LoadShaders(
 		shaders_path / "msdf_text.vert",

@@ -27,7 +27,7 @@ namespace Dreamhearth
 		if (!IsInitialized())
 			return;
 
-		vk::raii::CommandBuffer const & command_buffer = m_graphics_api.get().GetCurCommandBuffer();
+		vk::raii::CommandBuffer const & command_buffer = m_render_context.get().GetCurCommandBuffer();
 
 		command_buffer.bindVertexBuffers(0 /*firstBinding*/, *m_vertex_buffer.Get(), vk::DeviceSize{ 0 } /*offsets*/);
 

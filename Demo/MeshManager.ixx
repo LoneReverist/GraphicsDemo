@@ -26,8 +26,8 @@ public:
 export class MeshManager
 {
 public:
-	MeshManager(GraphicsApi const & graphics_api)
-		: m_graphics_api{ graphics_api }
+	MeshManager(RenderContext const & render_context)
+		: m_render_context{ render_context }
 	{}
 
 	template<IsVertex VertexT>
@@ -48,7 +48,7 @@ public:
 	Mesh * Get(AssetId id) { return m_mesh_pool.Get(id); }
 
 private:
-	GraphicsApi const & m_graphics_api;
+	RenderContext const & m_render_context;
 	AssetPool<Mesh> m_mesh_pool;
 };
 
@@ -67,7 +67,7 @@ std::expected<MeshId<VertexT>, GraphicsError> MeshManager::CreateMesh(
 	std::vector<VertexT> const & vertices,
 	std::vector<Mesh::IndexT> const & indices)
 {
-	Mesh mesh{ m_graphics_api };
+	Mesh mesh{ m_render_context };
 	std::expected<void, GraphicsError> result = mesh.Create(vertices, indices);
 	if (!result.has_value())
 		return std::unexpected{ result.error().AddToMessage(" MeshManager::CreateMesh: Failed to create mesh.") };

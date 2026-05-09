@@ -55,7 +55,7 @@ struct PipelineRenderObjects
 export class Scene
 {
 public:
-	explicit Scene(GraphicsApi const & graphics_api, std::string const & title, float dpi_scale_factor);
+	explicit Scene(RenderContext const & render_context, std::string const & title, float dpi_scale_factor);
 
 	void OnViewportResized(int width, int height);
 	void OnDPIScalingFactorChanged(float dpi_scale_factor);
@@ -97,7 +97,7 @@ private:
 		int viewport_height);
 
 private:
-	GraphicsApi const & m_graphics_api;
+	RenderContext const & m_render_context;
 	std::filesystem::path const m_resources_path;
 	std::string const m_title;
 
@@ -152,7 +152,7 @@ PipelineT Scene::create_pipeline(Args &&... args)
 	std::filesystem::path shaders_path = m_resources_path / "shaders";
 
 	std::expected<Pipeline, GraphicsError> pipeline
-		= PipelineT::CreatePipeline(m_graphics_api, shaders_path, std::forward<Args>(args)...);
+		= PipelineT::CreatePipeline(m_render_context, shaders_path, std::forward<Args>(args)...);
 	if (!pipeline.has_value())
 	{
 		std::cout << "Failed to create " << typeid(PipelineT).name()

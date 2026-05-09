@@ -1,4 +1,4 @@
-// GraphicsApi.ixx
+// RenderContext.ixx
 
 module;
 
@@ -9,7 +9,7 @@ module;
 
 #include <vulkan/vulkan_raii.hpp>
 
-export module Dreamhearth:GraphicsApi;
+export module Dreamhearth:RenderContext;
 
 namespace Dreamhearth
 {
@@ -40,7 +40,7 @@ namespace Dreamhearth
 		SurfaceLost
 	};
 
-	export class GraphicsApi
+	export class RenderContext
 	{
 	public:
 		constexpr static std::uint32_t m_max_frames_in_flight = 2;
@@ -48,7 +48,7 @@ namespace Dreamhearth
 		using CreateSurfaceFn = std::function<VkSurfaceKHR(VkInstance)>;
 
 	public:
-		explicit GraphicsApi(
+		explicit RenderContext(
 			int width_pixels,
 			int height_pixels,
 			std::string const & app_title,

@@ -97,7 +97,7 @@ namespace Dreamhearth
 		glGenTextures(1, &m_id);
 	}
 
-	std::expected<void, GraphicsError> Texture::Create(GraphicsApi const & /*graphics_api*/, ImageData const & image_data, bool use_mip_map /*= true*/)
+	std::expected<void, GraphicsError> Texture::Create(RenderContext const & /*render_context*/, ImageData const & image_data, bool use_mip_map /*= true*/)
 	{
 		if (!image_data.IsValid())
 			return std::unexpected{ GraphicsError{ "Texture() image_data not valid" } };
@@ -136,7 +136,7 @@ namespace Dreamhearth
 		return {};
 	}
 
-	std::expected<void, GraphicsError> Texture::Create(GraphicsApi const & /*graphics_api*/, CubeImageData const & image_data)
+	std::expected<void, GraphicsError> Texture::Create(RenderContext const & /*render_context*/, CubeImageData const & image_data)
 	{
 		if (!image_data.IsValid())
 			return std::unexpected{ GraphicsError{ "Texture() image_data not valid" } };

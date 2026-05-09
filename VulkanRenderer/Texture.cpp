@@ -58,7 +58,7 @@ namespace Dreamhearth
 	}
 
 	Buffer load_image_into_buffer(
-		GraphicsApi const & graphics_api,
+		RenderContext const & render_context,
 		ImageData const & image_data)
 	{
 		std::uint64_t input_size = image_data.GetSize();
@@ -85,7 +85,7 @@ namespace Dreamhearth
 
 		Buffer out_buffer;
 		out_buffer.Create(
-			graphics_api,
+			render_context,
 			buffer_size,
 			vk::BufferUsageFlagBits::eTransferSrc,
 			vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
@@ -98,7 +98,7 @@ namespace Dreamhearth
 	}
 
 	Buffer load_cube_image_into_buffer(
-		GraphicsApi const & graphics_api,
+		RenderContext const & render_context,
 		CubeImageData const & image_data)
 	{
 		std::uint64_t image_size = image_data.GetSize();
@@ -106,12 +106,12 @@ namespace Dreamhearth
 
 		Buffer out_buffer;
 		out_buffer.Create(
-			graphics_api,
+			render_context,
 			buffer_size,
 			vk::BufferUsageFlagBits::eTransferSrc,
 			vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
 
-		VkDevice device = *graphics_api.GetDevice();
+		VkDevice device = *render_context.GetDevice();
 
 		void * buffer_data = out_buffer.GetMemory().mapMemory(0, buffer_size);
 		for (std::uint8_t const * data : image_data.data)
@@ -124,9 +124,9 @@ namespace Dreamhearth
 		return out_buffer;
 	}
 
-	vk::raii::Sampler create_sampler(GraphicsApi const & graphics_api)
+	vk::raii::Sampler create_sampler(RenderContext const & render_context)
 	{
-		vk::PhysicalDeviceProperties const & props = graphics_api.GetPhysicalDeviceInfo().properties;
+		vk::PhysicalDeviceProperties const & props = render_context.GetPhysicalDeviceInfo().properties;
 
 		vk::SamplerCreateInfo sampler_info{
 			.magFilter = vk::Filter::eLinear,
@@ -146,10 +146,10 @@ namespace Dreamhearth
 			.unnormalizedCoordinates = vk::False
 		};
 
-		return vk::raii::Sampler{ graphics_api.GetDevice(), sampler_info };
+		return vk::raii::Sampler{ render_context.GetDevice(), sampler_info };
 	}
 
-	std::expected<void, GraphicsError> Texture::Create(GraphicsApi const & graphics_api, ImageData const & image_data, bool use_mip_map /*= true*/)
+	std::expected<void, GraphicsError> Texture::Create(RenderContext const & render_context, ImageData const & image_data, bool use_mip_map /*= true*/)
 	{
 		if (!image_data.IsValid())
 			return std::unexpected{ GraphicsError{ "create_2d_image: image_data not valid" } };
@@ -160,11 +160,11 @@ namespace Dreamhearth
 
 		try
 		{
-			Buffer staging_buffer = load_image_into_buffer(graphics_api, image_data);
+			Buffer staging_buffer = load_image_into_buffer(render_context, image_data);
 
 			constexpr std::uint32_t layers = 1;
 
-			m_image = graphics_api.Create2dImage(
+			m_image = render_context.Create2dImage(
 				image_data.width,
 				image_data.height,
 				layers,
@@ -173,20 +173,20 @@ namespace Dreamhearth
 				vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
 				vk::ImageCreateFlags{});
 
-			m_image_memory = graphics_api.CreateImageMemory(m_image, vk::MemoryPropertyFlagBits::eDeviceLocal);
+			m_image_memory = render_context.CreateImageMemory(m_image, vk::MemoryPropertyFlagBits::eDeviceLocal);
 
-			graphics_api.TransitionImageLayout(*m_image, layers, format, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
-			graphics_api.CopyBufferToImage(*staging_buffer.Get(), *m_image, image_data.width, image_data.height, layers);
-			graphics_api.TransitionImageLayout(*m_image, layers, format, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
+			render_context.TransitionImageLayout(*m_image, layers, format, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
+			render_context.CopyBufferToImage(*staging_buffer.Get(), *m_image, image_data.width, image_data.height, layers);
+			render_context.TransitionImageLayout(*m_image, layers, format, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
 
-			m_image_view = graphics_api.CreateImageView(
+			m_image_view = render_context.CreateImageView(
 				*m_image,
 				vk::ImageViewType::e2D,
 				format,
 				vk::ImageAspectFlagBits::eColor,
 				layers);
 
-			m_sampler = create_sampler(graphics_api);
+			m_sampler = create_sampler(render_context);
 		}
 		catch (vk::SystemError & err)
 		{
@@ -199,7 +199,7 @@ namespace Dreamhearth
 		return {};
 	}
 
-	std::expected<void, GraphicsError> Texture::Create(GraphicsApi const & graphics_api, CubeImageData const & image_data)
+	std::expected<void, GraphicsError> Texture::Create(RenderContext const & render_context, CubeImageData const & image_data)
 	{
 		if (!image_data.IsValid())
 			return std::unexpected{ GraphicsError{ "create_cube_image: image_data not valid" } };
@@ -210,11 +210,11 @@ namespace Dreamhearth
 
 		try
 		{
-			Buffer staging_buffer = load_cube_image_into_buffer(graphics_api, image_data);
+			Buffer staging_buffer = load_cube_image_into_buffer(render_context, image_data);
 
 			constexpr std::uint32_t layers = 6;
 
-			m_image = graphics_api.Create2dImage(
+			m_image = render_context.Create2dImage(
 				image_data.width,
 				image_data.height,
 				layers,
@@ -223,20 +223,20 @@ namespace Dreamhearth
 				vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
 				vk::ImageCreateFlagBits::eCubeCompatible);
 
-			m_image_memory = graphics_api.CreateImageMemory(m_image, vk::MemoryPropertyFlagBits::eDeviceLocal);
+			m_image_memory = render_context.CreateImageMemory(m_image, vk::MemoryPropertyFlagBits::eDeviceLocal);
 
-			graphics_api.TransitionImageLayout(*m_image, layers, format, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
-			graphics_api.CopyBufferToImage(*staging_buffer.Get(), *m_image, image_data.width, image_data.height, layers);
-			graphics_api.TransitionImageLayout(*m_image, layers, format, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
+			render_context.TransitionImageLayout(*m_image, layers, format, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
+			render_context.CopyBufferToImage(*staging_buffer.Get(), *m_image, image_data.width, image_data.height, layers);
+			render_context.TransitionImageLayout(*m_image, layers, format, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
 
-			m_image_view = graphics_api.CreateImageView(
+			m_image_view = render_context.CreateImageView(
 				*m_image,
 				vk::ImageViewType::eCube,
 				format,
 				vk::ImageAspectFlagBits::eColor,
 				layers);
 
-			m_sampler = create_sampler(graphics_api);
+			m_sampler = create_sampler(render_context);
 		}
 		catch (vk::SystemError & err)
 		{

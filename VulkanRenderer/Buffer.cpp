@@ -13,7 +13,7 @@ import :Buffer;
 namespace Dreamhearth
 {
 	void Buffer::Create(
-		GraphicsApi const & graphics_api,
+		RenderContext const & render_context,
 		vk::DeviceSize size,
 		vk::BufferUsageFlags usage,
 		vk::MemoryPropertyFlags properties)
@@ -21,7 +21,7 @@ namespace Dreamhearth
 		m_memory.clear();
 		m_buffer.clear();
 
-		vk::raii::Device const & device = graphics_api.GetDevice();
+		vk::raii::Device const & device = render_context.GetDevice();
 
 		vk::BufferCreateInfo buffer_info{
 			.size = size,
@@ -32,7 +32,7 @@ namespace Dreamhearth
 		m_buffer = vk::raii::Buffer{ device, buffer_info };
 
 		vk::MemoryRequirements mem_requirements = m_buffer.getMemoryRequirements();
-		std::uint32_t mem_type_index = graphics_api.FindMemoryType(mem_requirements.memoryTypeBits, properties);
+		std::uint32_t mem_type_index = render_context.FindMemoryType(mem_requirements.memoryTypeBits, properties);
 
 		vk::MemoryAllocateInfo alloc_info{
 			.allocationSize = mem_requirements.size,

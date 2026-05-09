@@ -32,7 +32,7 @@ public:
 	};
 
 	static std::expected<Pipeline, GraphicsError> CreatePipeline(
-		GraphicsApi const & graphics_api,
+		RenderContext const & render_context,
 		std::filesystem::path const & shaders_path,
 		Camera const & camera,
 		LightsManager const & lights,
@@ -49,7 +49,7 @@ private:
 };
 
 std::expected<Pipeline, GraphicsError> ReflectionPipeline::CreatePipeline(
-	GraphicsApi const & graphics_api,
+	RenderContext const & render_context,
 	std::filesystem::path const & shaders_path,
 	Camera const & camera,
 	LightsManager const & lights,
@@ -65,7 +65,7 @@ std::expected<Pipeline, GraphicsError> ReflectionPipeline::CreatePipeline(
 	if (!texture)
 		return std::unexpected{ GraphicsError{ "ReflectionPipeline::CreatePipeline: invalid texture" } };
 
-	PipelineBuilder builder{ graphics_api };
+	PipelineBuilder builder{ render_context };
 
 	std::expected<void, GraphicsError> load_shaders_result = builder.LoadShaders(
 		shaders_path / "reflection.vert",

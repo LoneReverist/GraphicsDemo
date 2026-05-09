@@ -11,7 +11,7 @@ module;
 export module Dreamhearth:Mesh;
 
 import :Buffer;
-import :GraphicsApi;
+import :RenderContext;
 import :GraphicsError;
 import :VertexLayout;
 
@@ -42,7 +42,7 @@ namespace Dreamhearth
 	public:
 		using IndexT = std::uint16_t;
 
-		explicit Mesh(GraphicsApi const & graphics_api);
+		explicit Mesh(RenderContext const & render_context);
 		~Mesh() = default;
 
 		Mesh(Mesh && other) = default;
@@ -61,7 +61,7 @@ namespace Dreamhearth
 		void Render() const;
 
 	private:
-		std::reference_wrapper<GraphicsApi const> m_graphics_api;
+		std::reference_wrapper<RenderContext const> m_render_context;
 
 		Buffer m_vertex_buffer;
 		Buffer m_element_buffer;
@@ -70,8 +70,8 @@ namespace Dreamhearth
 		GLsizei m_index_count = 0;
 	};
 
-	Mesh::Mesh(GraphicsApi const & graphics_api)
-		: m_graphics_api{ graphics_api }
+	Mesh::Mesh(RenderContext const & render_context)
+		: m_render_context{ render_context }
 	{
 	}
 

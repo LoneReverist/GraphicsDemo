@@ -10,8 +10,8 @@ import :Renderer;
 
 namespace Dreamhearth
 {
-	Renderer::Renderer(GraphicsApi const & graphics_api)
-		: m_graphics_api(graphics_api)
+	Renderer::Renderer(RenderContext const & render_context)
+		: m_render_context(render_context)
 	{
 	}
 
@@ -56,13 +56,13 @@ namespace Dreamhearth
 
 	void Renderer::BeginDraw() const
 	{
-		vk::raii::CommandBuffer const & command_buffer = m_graphics_api.GetCurCommandBuffer();
+		vk::raii::CommandBuffer const & command_buffer = m_render_context.GetCurCommandBuffer();
 
 		command_buffer.begin({});
 
 		transition_image_layout(
 			command_buffer,
-			m_graphics_api.GetCurSwapChainImage(),
+			m_render_context.GetCurSwapChainImage(),
 			vk::ImageLayout::eUndefined,
 			vk::ImageLayout::eColorAttachmentOptimal,
 			{},                                                        // src_access_mask (no need to wait for previous operations)
@@ -73,7 +73,7 @@ namespace Dreamhearth
 
 		transition_image_layout(
 			command_buffer,
-			*m_graphics_api.GetDepthImage(),
+			*m_render_context.GetDepthImage(),
 			vk::ImageLayout::eUndefined,
 			vk::ImageLayout::eDepthAttachmentOptimal,
 			vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
@@ -83,7 +83,7 @@ namespace Dreamhearth
 			vk::ImageAspectFlagBits::eDepth);
 
 		vk::RenderingAttachmentInfo attachment_info = {
-			.imageView = m_graphics_api.GetCurSwapChainImageView(),
+			.imageView = m_render_context.GetCurSwapChainImageView(),
 			.imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
 			.loadOp = vk::AttachmentLoadOp::eClear,
 			.storeOp = vk::AttachmentStoreOp::eStore,
@@ -91,14 +91,14 @@ namespace Dreamhearth
 		};
 
 		vk::RenderingAttachmentInfo depth_attachment_info = {
-			.imageView = m_graphics_api.GetDepthImageView(),
+			.imageView = m_render_context.GetDepthImageView(),
 			.imageLayout = vk::ImageLayout::eDepthAttachmentOptimal,
 			.loadOp = vk::AttachmentLoadOp::eClear,
 			.storeOp = vk::AttachmentStoreOp::eDontCare,
 			.clearValue = vk::ClearDepthStencilValue(1.0f, 0)
 		};
 
-		vk::Extent2D swap_chain_extent = m_graphics_api.GetSwapChainExtent();
+		vk::Extent2D swap_chain_extent = m_render_context.GetSwapChainExtent();
 		vk::RenderingInfo rendering_info = {
 			.renderArea = { .offset = { 0, 0 }, .extent = swap_chain_extent },
 			.layerCount = 1,
@@ -116,13 +116,13 @@ namespace Dreamhearth
 
 	void Renderer::EndDraw() const
 	{
-		vk::raii::CommandBuffer const & command_buffer = m_graphics_api.GetCurCommandBuffer();
+		vk::raii::CommandBuffer const & command_buffer = m_render_context.GetCurCommandBuffer();
 
 		command_buffer.endRendering();
 
 		transition_image_layout(
 			command_buffer,
-			m_graphics_api.GetCurSwapChainImage(),
+			m_render_context.GetCurSwapChainImage(),
 			vk::ImageLayout::eColorAttachmentOptimal,
 			vk::ImageLayout::ePresentSrcKHR,
 			vk::AccessFlagBits2::eColorAttachmentWrite,             // src_access_mask

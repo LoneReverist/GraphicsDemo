@@ -112,7 +112,7 @@ namespace Dreamhearth
 			});
 	}
 
-	GraphicsApi Window::CreateRenderContext(WindowSize size) const
+	RenderContext Window::CreateRenderContext(WindowSize size) const
 	{
 		std::uint32_t extension_count = 0;
 		const char ** extensions = glfwGetRequiredInstanceExtensions(&extension_count);
@@ -126,16 +126,16 @@ namespace Dreamhearth
 			return surface;
 		};
 
-		return GraphicsApi{ size.width, size.height, m_title,
+		return RenderContext{ size.width, size.height, m_title,
 			 extension_count, extensions, create_surface_fn };
 	}
 
-	DrawFrameResult Window::DrawFrame(GraphicsApi & graphics_api, std::function<void()> render_fn)
+	DrawFrameResult Window::DrawFrame(RenderContext & render_context, std::function<void()> render_fn)
 	{
-		if (!graphics_api.SwapChainIsValid())
+		if (!render_context.SwapChainIsValid())
 			return DrawFrameResult::SwapChainOutOfDate;
 
-		return graphics_api.DrawFrame(render_fn);
+		return render_context.DrawFrame(render_fn);
 	}
 
 	void Window::SetShouldClose(bool should_close) const

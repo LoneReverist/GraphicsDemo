@@ -54,8 +54,8 @@ namespace Dreamhearth
 		return vk::raii::ShaderModule(device, create_info);
 	}
 
-	PipelineBuilder::PipelineBuilder(GraphicsApi const & graphics_api)
-		: m_graphics_api(graphics_api)
+	PipelineBuilder::PipelineBuilder(RenderContext const & render_context)
+		: m_render_context(render_context)
 	{
 	}
 
@@ -64,13 +64,13 @@ namespace Dreamhearth
 		// In Vulkan, the shaders are precompiled to SPIR-V
 		std::filesystem::path vert_spirv_path = vs_path;
 		vert_spirv_path.replace_extension(".vert.spv");
-		std::expected<vk::raii::ShaderModule, GraphicsError> vert_shader_result = load_shader(vert_spirv_path, m_graphics_api.GetDevice());
+		std::expected<vk::raii::ShaderModule, GraphicsError> vert_shader_result = load_shader(vert_spirv_path, m_render_context.GetDevice());
 		if (!vert_shader_result.has_value())
 			return std::unexpected{ vert_shader_result.error() };
 
 		std::filesystem::path frag_spirv_path = fs_path;
 		frag_spirv_path.replace_extension(".frag.spv");
-		std::expected<vk::raii::ShaderModule, GraphicsError> frag_shader_result = load_shader(frag_spirv_path, m_graphics_api.GetDevice());
+		std::expected<vk::raii::ShaderModule, GraphicsError> frag_shader_result = load_shader(frag_spirv_path, m_render_context.GetDevice());
 		if (!frag_shader_result.has_value())
 			return std::unexpected{ frag_shader_result.error() };
 
@@ -105,7 +105,7 @@ namespace Dreamhearth
 		};
 
 		Pipeline pipeline{
-			m_graphics_api,
+			m_render_context,
 			m_per_frame_constants_callback,
 			m_per_object_constants_callback
 		};

@@ -6,7 +6,7 @@ module;
 
 export module Dreamhearth:Buffer;
 
-import :GraphicsApi;
+import :RenderContext;
 import :GraphicsError;
 
 namespace Dreamhearth
@@ -23,7 +23,7 @@ namespace Dreamhearth
 		Buffer & operator=(Buffer const &) = delete;
 
 		void Create(
-			GraphicsApi const & graphics_api,
+			RenderContext const & render_context,
 			vk::DeviceSize size,
 			vk::BufferUsageFlags usage,
 			vk::MemoryPropertyFlags properties);

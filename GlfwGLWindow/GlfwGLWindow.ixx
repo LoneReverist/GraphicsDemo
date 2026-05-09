@@ -44,9 +44,9 @@ namespace Dreamhearth
 		void SetOnScaleFactorChanged(OnScaleFactorChangedFn on_scale_factor_changed);
 		void SetOnKeyEvent(OnKeyEventFn on_key_event);
 
-		GraphicsApi CreateRenderContext(WindowSize size) const;
+		RenderContext CreateRenderContext(WindowSize size) const;
 
-		DrawFrameResult DrawFrame(GraphicsApi & graphics_api, std::function<void()> render_fn);
+		DrawFrameResult DrawFrame(RenderContext & render_context, std::function<void()> render_fn);
 
 		void SetShouldClose(bool should_close) const;
 		bool ShouldClose() const;

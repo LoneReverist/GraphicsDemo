@@ -21,7 +21,7 @@ import AssimpLoader;
 
 AssetId create_texture(
 	AssetPool<Texture> & texture_pool,
-	GraphicsApi const & graphics_api,
+	RenderContext const & render_context,
 	std::filesystem::path const & filepath,
 	PixelFormat format = PixelFormat::RGBA_SRGB,
 	bool flip_vertically = false,
@@ -36,7 +36,7 @@ AssetId create_texture(
 
 	Texture texture;
 	std::expected<void, GraphicsError> result = texture.Create(
-		graphics_api,
+		render_context,
 		ImageData{
 			.data = image.GetData(),
 			.format = format,
@@ -62,12 +62,12 @@ AssetId Scene::create_texture(
 	bool flip_vertically /*= false*/,
 	bool use_mip_map /*= true*/)
 {
-	return ::create_texture(m_texture_pool, m_graphics_api, filepath, format, flip_vertically, use_mip_map);
+	return ::create_texture(m_texture_pool, m_render_context, filepath, format, flip_vertically, use_mip_map);
 }
 
 AssetId create_cubemap_texture(
 	AssetPool<Texture> & texture_pool,
-	GraphicsApi const & graphics_api,
+	RenderContext const & render_context,
 	std::array<std::filesystem::path, 6> const & filepaths)
 {
 	PixelFormat format = PixelFormat::RGBA_SRGB;
@@ -101,7 +101,7 @@ AssetId create_cubemap_texture(
 
 	Texture texture;
 	std::expected<void, GraphicsError> result = texture.Create(
-		graphics_api,
+		render_context,
 		CubeImageData{
 			.data = data,
 			.format = format,
@@ -123,7 +123,7 @@ AssetId create_cubemap_texture(
 
 AssetId Scene::create_cubemap_texture(std::array<std::filesystem::path, 6> const & filepaths)
 {
-	return ::create_cubemap_texture(m_texture_pool, m_graphics_api, filepaths);
+	return ::create_cubemap_texture(m_texture_pool, m_render_context, filepaths);
 }
 
 MeshId<PositionVertex> Scene::create_skybox_mesh()
@@ -180,7 +180,7 @@ MeshId<TextureVertex> Scene::create_ground_mesh()
 
 std::vector<MeshId<ColorVertex>> Scene::create_tree_meshes()
 {
-	std::vector<Mesh> tree_meshes = AssimpLoader::LoadObjWithColorMaterial(m_graphics_api, m_resources_path / "objects" / "tree_with_material.obj");
+	std::vector<Mesh> tree_meshes = AssimpLoader::LoadObjWithColorMaterial(m_render_context, m_resources_path / "objects" / "tree_with_material.obj");
 	if (tree_meshes.empty())
 	{
 		std::cout << "Failed to load tree_with_material.obj with Assimp" << std::endl;
@@ -218,7 +218,7 @@ std::unique_ptr<TextMesh> Scene::create_text_mesh(
 		font_tex_height = font_tex->GetHeight();
 	}
 
-	auto text_mesh = std::make_unique<TextMesh>(m_graphics_api, text,
+	auto text_mesh = std::make_unique<TextMesh>(m_render_context, text,
 		font_atlas, font_tex_width, font_tex_height, font_size, origin, viewport_width, viewport_height);
 	text_mesh->SetUpdateMeshCallback([&mesh_manager = m_mesh_manager](AssetId id, Mesh new_mesh)
 		{
@@ -308,13 +308,13 @@ void update_gem_transform(glm::mat4 & transform, float delta_time)
 	transform = glm::rotate(glm::mat4(1.0), delta_time * 0.5f, glm::vec3(0.0, 0.0, 1.0)) * transform;
 }
 
-Scene::Scene(GraphicsApi const & graphics_api, std::string const & title, float dpi_scale_factor)
-	: m_graphics_api{ graphics_api }
+Scene::Scene(RenderContext const & render_context, std::string const & title, float dpi_scale_factor)
+	: m_render_context{ render_context }
 	, m_resources_path{ PlatformUtils::GetExecutableDir() / "resources" }
 	, m_title{ title }
-	, m_renderer{ graphics_api }
-	, m_camera{ graphics_api.ShouldFlipScreenY() }
-	, m_mesh_manager{ graphics_api }
+	, m_renderer{ render_context }
+	, m_camera{ render_context.ShouldFlipScreenY() }
+	, m_mesh_manager{ render_context }
 {
 	float label_font_size = 18.0f * dpi_scale_factor;
 	float title_font_size = 32.0f * dpi_scale_factor;

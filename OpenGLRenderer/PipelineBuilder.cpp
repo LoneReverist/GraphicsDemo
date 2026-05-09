@@ -12,7 +12,7 @@ module;
 module Dreamhearth;
 
 import :PipelineBuilder;
-import :GraphicsApi;
+import :RenderContext;
 import :GraphicsError;
 
 namespace Dreamhearth

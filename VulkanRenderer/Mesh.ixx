@@ -13,7 +13,7 @@ module;
 export module Dreamhearth:Mesh;
 
 import :Buffer;
-import :GraphicsApi;
+import :RenderContext;
 import :GraphicsError;
 import :VertexLayout;
 
@@ -24,7 +24,7 @@ namespace Dreamhearth
 	public:
 		using IndexT = std::uint16_t;
 
-		explicit Mesh(GraphicsApi const & graphics_api);
+		explicit Mesh(RenderContext const & render_context);
 		~Mesh() = default;
 
 		Mesh(Mesh && other) = default;
@@ -43,7 +43,7 @@ namespace Dreamhearth
 		void Render() const;
 
 	private:
-		std::reference_wrapper<GraphicsApi const> m_graphics_api;
+		std::reference_wrapper<RenderContext const> m_render_context;
 
 		Buffer m_vertex_buffer;
 		Buffer m_index_buffer;
@@ -51,21 +51,21 @@ namespace Dreamhearth
 		std::uint32_t m_index_count = 0;
 	};
 
-	Mesh::Mesh(GraphicsApi const & graphics_api)
-		: m_graphics_api{ graphics_api }
+	Mesh::Mesh(RenderContext const & render_context)
+		: m_render_context{ render_context }
 	{
 	}
 
 	template <typename T>
 	Buffer create_buffer(
-		GraphicsApi const & graphics_api,
+		RenderContext const & render_context,
 		std::vector<T> objects,
 		vk::BufferUsageFlagBits buffer_usage)
 	{
 		VkDeviceSize buffer_size = sizeof(objects[0]) * objects.size();
 		Buffer staging_buffer;
 		staging_buffer.Create(
-			graphics_api,
+			render_context,
 			buffer_size,
 			vk::BufferUsageFlagBits::eTransferSrc,
 			vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
@@ -76,12 +76,12 @@ namespace Dreamhearth
 		
 		Buffer out_buffer;
 		out_buffer.Create(
-			graphics_api,
+			render_context,
 			buffer_size,
 			vk::BufferUsageFlagBits::eTransferDst | buffer_usage,
 			vk::MemoryPropertyFlagBits::eDeviceLocal);
 
-		graphics_api.CopyBuffer(staging_buffer.Get(), out_buffer.Get(), buffer_size);
+		render_context.CopyBuffer(staging_buffer.Get(), out_buffer.Get(), buffer_size);
 
 		return out_buffer;
 	}
@@ -97,12 +97,12 @@ namespace Dreamhearth
 		try
 		{
 			m_vertex_buffer = create_buffer(
-				m_graphics_api.get(),
+				m_render_context.get(),
 				vertices,
 				vk::BufferUsageFlagBits::eVertexBuffer);
 
 			m_index_buffer = create_buffer(
-				m_graphics_api.get(),
+				m_render_context.get(),
 				indices,
 				vk::BufferUsageFlagBits::eIndexBuffer);
 		}

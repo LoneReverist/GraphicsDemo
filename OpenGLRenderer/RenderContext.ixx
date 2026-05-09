@@ -1,8 +1,8 @@
-// GraphicsApi.ixx
+// RenderContext.ixx
 
 module;
 
-export module Dreamhearth:GraphicsApi;
+export module Dreamhearth:RenderContext;
 
 namespace Dreamhearth
 {
@@ -14,16 +14,16 @@ namespace Dreamhearth
 		SurfaceLost
 	};
 
-	export class GraphicsApi
+	export class RenderContext
 	{
 	public:
 		using LoadProcFn = void * (char const *);
 
-		explicit GraphicsApi(
+		explicit RenderContext(
 			int width_pixels,
 			int height_pixels,
 			LoadProcFn * load_proc_fn);
-		~GraphicsApi();
+		~RenderContext();
 
 		void SetViewportSize(int width_pixels, int height_pixels) const;
 

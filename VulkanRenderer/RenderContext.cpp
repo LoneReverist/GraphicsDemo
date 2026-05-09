@@ -1,4 +1,4 @@
-// GraphicsApi.cpp
+// RenderContext.cpp
 
 module;
 
@@ -14,7 +14,7 @@ module;
 
 module Dreamhearth;
 
-import :GraphicsApi;
+import :RenderContext;
 import :GraphicsError;
 
 namespace Dreamhearth
@@ -380,7 +380,7 @@ namespace Dreamhearth
 		return vk::raii::CommandBuffers{ device, alloc_info };
 	}
 
-	GraphicsApi::GraphicsApi(
+	RenderContext::RenderContext(
 		int width_pixels,
 		int height_pixels,
 		std::string const & app_title,
@@ -448,7 +448,7 @@ namespace Dreamhearth
 		}
 	}
 
-	void GraphicsApi::create_depth_resources()
+	void RenderContext::create_depth_resources()
 	{
 		constexpr std::uint32_t layers = 1;
 
@@ -471,7 +471,7 @@ namespace Dreamhearth
 			layers);
 	}
 
-	void GraphicsApi::destroy_swap_chain()
+	void RenderContext::destroy_swap_chain()
 	{
 		m_depth_image_view.clear();
 		m_depth_image_memory.clear();
@@ -484,12 +484,12 @@ namespace Dreamhearth
 		m_swap_chain_extent = vk::Extent2D{ 0, 0 };
 	}
 
-	bool GraphicsApi::SwapChainIsValid() const
+	bool RenderContext::SwapChainIsValid() const
 	{
 		return *m_swap_chain != VK_NULL_HANDLE && !m_swap_chain_image_views.empty();
 	}
 
-	void GraphicsApi::SetViewportSize(int width_pixels, int height_pixels)
+	void RenderContext::SetViewportSize(int width_pixels, int height_pixels)
 	{
 		WaitForLastFrame();
 
@@ -519,7 +519,7 @@ namespace Dreamhearth
 		}
 	}
 
-	DrawFrameResult GraphicsApi::DrawFrame(std::function<void()> render_fn)
+	DrawFrameResult RenderContext::DrawFrame(std::function<void()> render_fn)
 	{
 		DrawFrameResult result = DrawFrameResult::Success;
 
@@ -593,12 +593,12 @@ namespace Dreamhearth
 		return result;
 	}
 
-	void GraphicsApi::WaitForLastFrame() const
+	void RenderContext::WaitForLastFrame() const
 	{
 		m_logical_device.waitIdle();
 	}
 
-	std::uint32_t GraphicsApi::FindMemoryType(std::uint32_t type_filter, vk::MemoryPropertyFlags properties) const
+	std::uint32_t RenderContext::FindMemoryType(std::uint32_t type_filter, vk::MemoryPropertyFlags properties) const
 	{
 		vk::PhysicalDeviceMemoryProperties const & mem_properties = m_phys_device_info.mem_properties;
 		for (std::uint32_t i = 0; i < mem_properties.memoryTypeCount; i++)
@@ -610,7 +610,7 @@ namespace Dreamhearth
 		throw GraphicsException("failed to find suitable memory type!");
 	}
 
-	vk::raii::Image GraphicsApi::Create2dImage(
+	vk::raii::Image RenderContext::Create2dImage(
 		std::uint32_t width,
 		std::uint32_t height,
 		std::uint32_t layers,
@@ -640,7 +640,7 @@ namespace Dreamhearth
 		return vk::raii::Image{ m_logical_device, image_info };
 	}
 
-	vk::raii::DeviceMemory GraphicsApi::CreateImageMemory(
+	vk::raii::DeviceMemory RenderContext::CreateImageMemory(
 		vk::raii::Image const & image,
 		vk::MemoryPropertyFlags properties) const
 	{
@@ -661,7 +661,7 @@ namespace Dreamhearth
 		return image_memory;
 	}
 
-	vk::raii::ImageView GraphicsApi::CreateImageView(
+	vk::raii::ImageView RenderContext::CreateImageView(
 		vk::Image image,
 		vk::ImageViewType view_type,
 		vk::Format format,
@@ -682,7 +682,7 @@ namespace Dreamhearth
 		return vk::raii::ImageView{ m_logical_device, create_info };
 	}
 
-	void GraphicsApi::DoOneTimeCommand(std::function<void(vk::raii::CommandBuffer const &)> command_fn) const
+	void RenderContext::DoOneTimeCommand(std::function<void(vk::raii::CommandBuffer const &)> command_fn) const
 	{
 		vk::raii::CommandBuffers command_buffers = create_command_buffers(m_logical_device, m_command_pool, 1);
 		vk::raii::CommandBuffer const & command_buffer = command_buffers[0];
@@ -705,7 +705,7 @@ namespace Dreamhearth
 		m_queue.waitIdle();
 	}
 
-	void GraphicsApi::CopyBuffer(
+	void RenderContext::CopyBuffer(
 		vk::Buffer src_buffer,
 		vk::Buffer dst_buffer,
 		vk::DeviceSize size) const
@@ -722,7 +722,7 @@ namespace Dreamhearth
 			});
 	}
 
-	void GraphicsApi::CopyBufferToImage(vk::Buffer buffer, vk::Image image, std::uint32_t width, std::uint32_t height, std::uint32_t layers) const
+	void RenderContext::CopyBufferToImage(vk::Buffer buffer, vk::Image image, std::uint32_t width, std::uint32_t height, std::uint32_t layers) const
 	{
 		DoOneTimeCommand([buffer, image, width, height, layers](vk::raii::CommandBuffer const & command_buffer)
 			{
@@ -744,7 +744,7 @@ namespace Dreamhearth
 			});
 	}
 
-	void GraphicsApi::TransitionImageLayout(vk::Image image, std::uint32_t layers, vk::Format format, vk::ImageLayout old_layout, vk::ImageLayout new_layout) const
+	void RenderContext::TransitionImageLayout(vk::Image image, std::uint32_t layers, vk::Format format, vk::ImageLayout old_layout, vk::ImageLayout new_layout) const
 	{
 		DoOneTimeCommand([image, layers, format, old_layout, new_layout](vk::raii::CommandBuffer const & command_buffer)
 			{

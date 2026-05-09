@@ -22,7 +22,7 @@ using namespace Dreamhearth;
 export namespace AssimpLoader
 {
 	std::vector<Mesh> LoadObjWithColorMaterial(
-		GraphicsApi const & graphics_api,
+		RenderContext const & render_context,
 		std::filesystem::path const & filepath)
 	{
 		Assimp::Importer importer;
@@ -66,7 +66,7 @@ export namespace AssimpLoader
 				}
 			}
 
-			Mesh mesh{ graphics_api };
+			Mesh mesh{ render_context };
 			std::expected<void, GraphicsError> result = mesh.Create(verts, indices);
 			if (!result)
 			{

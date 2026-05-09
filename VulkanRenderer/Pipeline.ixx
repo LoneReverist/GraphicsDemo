@@ -14,7 +14,7 @@ module;
 export module Dreamhearth:Pipeline;
 
 import :Buffer;
-import :GraphicsApi;
+import :RenderContext;
 import :GraphicsError;
 import :Texture;
 
@@ -35,7 +35,7 @@ namespace Dreamhearth
 	class DescriptorSets
 	{
 	public:
-		explicit DescriptorSets(GraphicsApi const & graphics_api);
+		explicit DescriptorSets(RenderContext const & render_context);
 
 		DescriptorSets(DescriptorSets && other) = default;
 		DescriptorSets & operator=(DescriptorSets && other) = default;
@@ -48,17 +48,17 @@ namespace Dreamhearth
 			std::vector<VkDeviceSize> const & fs_uniform_sizes,
 			Texture const * texture);
 
-		DescriptorSet const & GetCurrent() const { return m_descriptor_sets[m_graphics_api.get().GetCurFrameIndex()]; }
+		DescriptorSet const & GetCurrent() const { return m_descriptor_sets[m_render_context.get().GetCurFrameIndex()]; }
 		vk::raii::DescriptorSetLayout const & GetLayout() const { return m_descriptor_set_layout; }
 		vk::raii::DescriptorPool const & GetPool() const { return m_descriptor_pool; }
 
 	private:
-		std::reference_wrapper<GraphicsApi const> m_graphics_api;
+		std::reference_wrapper<RenderContext const> m_render_context;
 
 		vk::raii::DescriptorSetLayout m_descriptor_set_layout = nullptr;
 		vk::raii::DescriptorPool m_descriptor_pool = nullptr;
 
-		std::array<DescriptorSet, GraphicsApi::m_max_frames_in_flight> m_descriptor_sets;
+		std::array<DescriptorSet, RenderContext::m_max_frames_in_flight> m_descriptor_sets;
 	};
 
 	export enum class DepthCompareOp : std::uint8_t
@@ -121,7 +121,7 @@ namespace Dreamhearth
 		using PerObjectConstantsCallback = std::function<void(Pipeline const & pipeline, void const * object_data)>;
 
 		explicit Pipeline(
-			GraphicsApi const & graphics_api,
+			RenderContext const & render_context,
 			PerFrameConstantsCallback per_frame_constants_callback,
 			PerObjectConstantsCallback per_object_constants_callback);
 		~Pipeline() = default;
@@ -155,7 +155,7 @@ namespace Dreamhearth
 		void SetObjectData(ObjectDataVS const & vs_data, ObjectDataFS const & fs_data) const;
 
 	private:
-		std::reference_wrapper<GraphicsApi const> m_graphics_api;
+		std::reference_wrapper<RenderContext const> m_render_context;
 
 		vk::raii::PipelineLayout m_pipeline_layout = nullptr;
 		vk::raii::Pipeline m_pipeline = nullptr;
@@ -179,7 +179,7 @@ namespace Dreamhearth
 		static_assert(!std::same_as<ObjectDataVS, std::nullopt_t> || !std::same_as<ObjectDataFS, std::nullopt_t>,
 			"At least one push constant data must be provided");
 
-		vk::raii::CommandBuffer const & command_buffer = m_graphics_api.get().GetCurCommandBuffer();
+		vk::raii::CommandBuffer const & command_buffer = m_render_context.get().GetCurCommandBuffer();
 		std::uint32_t offset = 0;
 
 		if constexpr (!std::same_as<ObjectDataVS, std::nullopt_t>)

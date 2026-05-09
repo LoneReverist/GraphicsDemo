@@ -12,7 +12,7 @@ module;
 
 export module Dreamhearth:PipelineBuilder;
 
-import :GraphicsApi;
+import :RenderContext;
 import :GraphicsError;
 import :Pipeline;
 import :Texture;
@@ -26,7 +26,7 @@ namespace Dreamhearth
 		using PerFrameConstantsCallback = Pipeline::PerFrameConstantsCallback;
 		using PerObjectConstantsCallback = Pipeline::PerObjectConstantsCallback;
 
-		explicit PipelineBuilder(GraphicsApi const & graphics_api);
+		explicit PipelineBuilder(RenderContext const & render_context);
 
 		std::expected<void, GraphicsError> LoadShaders(std::filesystem::path const & vs_path, std::filesystem::path const & fs_path);
 
@@ -53,7 +53,7 @@ namespace Dreamhearth
 		std::expected<Pipeline, GraphicsError> CreatePipeline() const;
 
 	private:
-		GraphicsApi const & m_graphics_api;
+		RenderContext const & m_render_context;
 
 		vk::raii::ShaderModule m_vert_shader_module = nullptr;
 		vk::raii::ShaderModule m_frag_shader_module = nullptr;

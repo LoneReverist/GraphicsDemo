@@ -31,7 +31,7 @@ public:
 	};
 
 	static std::expected<Pipeline, GraphicsError> CreatePipeline(
-		GraphicsApi const & graphics_api,
+		RenderContext const & render_context,
 		std::filesystem::path const & shaders_path,
 		Camera const & camera);
 
@@ -45,7 +45,7 @@ private:
 };
 
 std::expected<Pipeline, GraphicsError> LightSourcePipeline::CreatePipeline(
-	GraphicsApi const & graphics_api,
+	RenderContext const & render_context,
 	std::filesystem::path const & shaders_path,
 	Camera const & camera)
 {
@@ -58,7 +58,7 @@ std::expected<Pipeline, GraphicsError> LightSourcePipeline::CreatePipeline(
 		alignas(16) glm::vec3 color;
 	};
 
-	PipelineBuilder builder{ graphics_api };
+	PipelineBuilder builder{ render_context };
 
 	std::expected<void, GraphicsError> load_shaders_result = builder.LoadShaders(
 		shaders_path / "light_source.vert",

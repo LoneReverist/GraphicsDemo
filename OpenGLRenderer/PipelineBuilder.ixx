@@ -9,7 +9,7 @@ module;
 
 export module Dreamhearth:PipelineBuilder;
 
-import :GraphicsApi;
+import :RenderContext;
 import :GraphicsError;
 import :Pipeline;
 import :Texture;
@@ -23,7 +23,7 @@ namespace Dreamhearth
 		using PerFrameConstantsCallback = Pipeline::PerFrameConstantsCallback;
 		using PerObjectConstantsCallback = Pipeline::PerObjectConstantsCallback;
 
-		explicit PipelineBuilder(GraphicsApi const & /*graphics_api*/) {}
+		explicit PipelineBuilder(RenderContext const & /*render_context*/) {}
 		~PipelineBuilder();
 
 		std::expected<void, GraphicsError> LoadShaders(std::filesystem::path const & vs_path, std::filesystem::path const & fs_path);

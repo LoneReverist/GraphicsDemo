@@ -12,8 +12,8 @@ import :Renderer;
 
 namespace Dreamhearth
 {
-	Renderer::Renderer(GraphicsApi const & graphics_api)
-		: m_graphics_api(graphics_api)
+	Renderer::Renderer(RenderContext const & render_context)
+		: m_render_context(render_context)
 	{
 	}
 
