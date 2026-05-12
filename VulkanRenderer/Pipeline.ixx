@@ -134,7 +134,7 @@ namespace Dreamhearth
 
 		std::expected<void, GraphicsError> Create(
 			std::vector<vk::PipelineShaderStageCreateInfo> shader_stages,
-			vk::VertexInputBindingDescription const & binding_desc,
+			std::vector<vk::VertexInputBindingDescription> const & binding_descs,
 			std::vector<vk::VertexInputAttributeDescription> const & attrib_descs,
 			std::vector<vk::PushConstantRange> const & push_constants_ranges,
 			std::vector<vk::DeviceSize> const & vs_uniform_sizes,

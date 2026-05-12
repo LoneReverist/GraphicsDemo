@@ -262,7 +262,7 @@ namespace Dreamhearth
 		vk::raii::Device const & device,
 		vk::raii::PipelineLayout const & pipeline_layout,
 		std::vector<vk::PipelineShaderStageCreateInfo> const & shader_stages,
-		vk::VertexInputBindingDescription const & binding_desc,
+		std::vector<vk::VertexInputBindingDescription> const & binding_descs,
 		std::vector<vk::VertexInputAttributeDescription> const & attrib_descs,
 		vk::Format swapchain_image_format,
 		vk::Format depth_image_format,
@@ -286,8 +286,8 @@ namespace Dreamhearth
 		};
 
 		vk::PipelineVertexInputStateCreateInfo vertex_input_info{
-			.vertexBindingDescriptionCount = 1,
-			.pVertexBindingDescriptions = &binding_desc,
+			.vertexBindingDescriptionCount = static_cast<std::uint32_t>(binding_descs.size()),
+			.pVertexBindingDescriptions = binding_descs.data(),
 			.vertexAttributeDescriptionCount = static_cast<std::uint32_t>(attrib_descs.size()),
 			.pVertexAttributeDescriptions = attrib_descs.data()
 		};
@@ -375,7 +375,7 @@ namespace Dreamhearth
 
 	std::expected<void, GraphicsError> Pipeline::Create(
 		std::vector<vk::PipelineShaderStageCreateInfo> shader_stages,
-		vk::VertexInputBindingDescription const & binding_desc,
+		std::vector<vk::VertexInputBindingDescription> const & binding_descs,
 		std::vector<vk::VertexInputAttributeDescription> const & attrib_descs,
 		std::vector<vk::PushConstantRange> const & push_constants_ranges,
 		std::vector<vk::DeviceSize> const & vs_uniform_sizes,
@@ -398,7 +398,7 @@ namespace Dreamhearth
 				m_render_context.get().GetDevice(),
 				m_pipeline_layout,
 				shader_stages,
-				binding_desc,
+				binding_descs,
 				attrib_descs,
 				m_render_context.get().GetSwapChainImageFormat(),
 				m_render_context.get().GetDepthImageFormat(),

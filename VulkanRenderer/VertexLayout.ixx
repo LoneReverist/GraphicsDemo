@@ -11,7 +11,7 @@ export module Dreamhearth:VertexLayout;
 
 namespace Dreamhearth
 {
-	export enum class AttributeType
+	export enum class AttributeType : std::uint8_t
 	{
 		Float,
 		Float2,
@@ -19,16 +19,25 @@ namespace Dreamhearth
 		Float4,
 	};
 
+	export enum class InputRate : std::uint8_t
+	{
+		Vertex = static_cast<std::uint8_t>(vk::VertexInputRate::eVertex),
+		Instance = static_cast<std::uint8_t>(vk::VertexInputRate::eInstance)
+	};
+
 	export struct AttributeDesc
 	{
-		AttributeType type;
-		std::size_t offset;
-		std::uint32_t location; // shader location
+		AttributeType type = AttributeType::Float;
+		std::size_t offset = 0;
+		std::uint32_t location = 0; // shader location
 	};
 
 	export struct LayoutDesc
 	{
-		std::size_t stride;
+		std::uint32_t binding = 0;
+		std::size_t stride = 0;
+		InputRate input_rate = InputRate::Vertex;
+
 		std::vector<AttributeDesc> attributes;
 	};
 
@@ -58,9 +67,9 @@ namespace Dreamhearth
 	export vk::VertexInputBindingDescription GetBindingDesc(LayoutDesc const & layout)
 	{
 		return vk::VertexInputBindingDescription{
-			.binding = 0,
+			.binding = layout.binding,
 			.stride = static_cast<std::uint32_t>(layout.stride),
-			.inputRate = vk::VertexInputRate::eVertex
+			.inputRate = static_cast<vk::VertexInputRate>(layout.input_rate)
 		};
 	}
 
@@ -72,7 +81,7 @@ namespace Dreamhearth
 		{
 			attribs.emplace_back(vk::VertexInputAttributeDescription{
 				.location = attr.location,
-				.binding = 0,
+				.binding = layout.binding,
 				.format = attribute_type_to_vkformat(attr.type),
 				.offset = static_cast<std::uint32_t>(attr.offset)
 				});

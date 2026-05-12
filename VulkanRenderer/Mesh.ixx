@@ -38,6 +38,12 @@ namespace Dreamhearth
 			std::vector<VertexT> const & vertices,
 			std::vector<IndexT> const & indices);
 
+		template <VertexWithLayout VertexT, typename InstanceDataT>
+		std::expected<void, GraphicsError> Create(
+			std::vector<VertexT> const & vertices,
+			std::vector<IndexT> const & indices,
+			std::vector<InstanceDataT> const & instance_data);
+
 		bool IsInitialized() const;
 
 		void Render() const;
@@ -47,8 +53,10 @@ namespace Dreamhearth
 
 		Buffer m_vertex_buffer;
 		Buffer m_index_buffer;
+		Buffer m_instance_buffer;
 
 		std::uint32_t m_index_count = 0;
+		std::uint32_t m_instance_count = 1;
 	};
 
 	Mesh::Mesh(RenderContext const & render_context)
@@ -112,6 +120,44 @@ namespace Dreamhearth
 		}
 
 		m_index_count = static_cast<std::uint32_t>(indices.size());
+		m_instance_count = 1;
+
+		return {};
+	}
+
+	template <VertexWithLayout VertexT, typename InstanceDataT>
+	std::expected<void, GraphicsError> Mesh::Create(
+		std::vector<VertexT> const & vertices,
+		std::vector<IndexT> const & indices,
+		std::vector<InstanceDataT> const & instance_data)
+	{
+		if (vertices.empty() || indices.empty() || instance_data.empty())
+			return std::unexpected{ GraphicsError{ "Mesh::Create: invalid vertices, indices, or instance data." } };
+
+		try
+		{
+			m_vertex_buffer = create_buffer(
+				m_render_context.get(),
+				vertices,
+				vk::BufferUsageFlagBits::eVertexBuffer);
+
+			m_index_buffer = create_buffer(
+				m_render_context.get(),
+				indices,
+				vk::BufferUsageFlagBits::eIndexBuffer);
+
+			m_instance_buffer = create_buffer(
+				m_render_context.get(),
+				instance_data,
+				vk::BufferUsageFlagBits::eVertexBuffer);
+		}
+		catch (vk::SystemError const & err)
+		{
+			return std::unexpected{ GraphicsError{ "Mesh::Create: failed to create buffers. code: " + std::to_string(err.code().value()) } };
+		}
+
+		m_index_count = static_cast<std::uint32_t>(indices.size());
+		m_instance_count = static_cast<std::uint32_t>(instance_data.size());
 
 		return {};
 	}

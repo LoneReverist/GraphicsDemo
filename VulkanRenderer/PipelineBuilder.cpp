@@ -86,7 +86,7 @@ namespace Dreamhearth
 			return std::unexpected{ GraphicsError{ "Vertex shader not loaded" } };
 		if (m_frag_shader_module == VK_NULL_HANDLE)
 			return std::unexpected{ GraphicsError{ "Fragment shader not loaded" } };
-		if (m_vert_attrib_descs.empty())
+		if (m_binding_descs.empty() || m_attrib_descs.empty())
 			return std::unexpected{ GraphicsError{ "Vertex input not set" } };
 		if (!m_cull_mode.has_value())
 			return std::unexpected{ GraphicsError{ "Cull mode not set" } };
@@ -112,8 +112,8 @@ namespace Dreamhearth
 
 		std::expected<void, GraphicsError> result = pipeline.Create(
 			shader_stages,
-			m_vert_binding_desc,
-			m_vert_attrib_descs,
+			m_binding_descs,
+			m_attrib_descs,
 			m_push_constants_ranges,
 			m_vs_uniform_sizes,
 			m_fs_uniform_sizes,

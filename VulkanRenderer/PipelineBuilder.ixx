@@ -33,6 +33,9 @@ namespace Dreamhearth
 		template <VertexWithLayout VertexT>
 		void SetVertexType();
 
+		template <typename InstanceDataT>
+		void SetInstanceType();
+
 		template <typename ObjectDataVS = std::nullopt_t, typename ObjectDataFS = std::nullopt_t>
 		void SetObjectDataTypes();
 
@@ -58,8 +61,8 @@ namespace Dreamhearth
 		vk::raii::ShaderModule m_vert_shader_module = nullptr;
 		vk::raii::ShaderModule m_frag_shader_module = nullptr;
 
-		vk::VertexInputBindingDescription m_vert_binding_desc;
-		std::vector<vk::VertexInputAttributeDescription> m_vert_attrib_descs;
+		std::vector<vk::VertexInputBindingDescription> m_binding_descs;
+		std::vector<vk::VertexInputAttributeDescription> m_attrib_descs;
 
 		std::vector<vk::PushConstantRange> m_push_constants_ranges;
 		std::vector<vk::DeviceSize> m_vs_uniform_sizes;
@@ -81,8 +84,18 @@ namespace Dreamhearth
 	void PipelineBuilder::SetVertexType()
 	{
 		LayoutDesc layout = VertexT::CreateLayout();
-		m_vert_binding_desc = GetBindingDesc(layout);
-		m_vert_attrib_descs = GetAttribDescs(layout);
+		m_binding_descs.push_back(GetBindingDesc(layout));
+		auto vertex_attrib_descs = GetAttribDescs(layout);
+		m_attrib_descs.insert(m_attrib_descs.end(), vertex_attrib_descs.begin(), vertex_attrib_descs.end());
+	}
+
+	template <typename InstanceDataT>
+	void PipelineBuilder::SetInstanceType()
+	{
+		LayoutDesc layout = InstanceDataT::CreateLayout();
+		m_binding_descs.push_back(GetBindingDesc(layout));
+		auto vertex_attrib_descs = GetAttribDescs(layout);
+		m_attrib_descs.insert(m_attrib_descs.end(), vertex_attrib_descs.begin(), vertex_attrib_descs.end());
 	}
 
 	template <typename ObjectDataVS /*= std::nullopt_t*/, typename ObjectDataFS /*= std::nullopt_t*/>
