@@ -11,7 +11,7 @@ export module Dreamhearth:VertexLayout;
 
 namespace Dreamhearth
 {
-	export enum class AttributeType
+	export enum class AttributeType : std::uint8_t
 	{
 		Float,
 		Float2,
@@ -19,16 +19,25 @@ namespace Dreamhearth
 		Float4,
 	};
 
+	export enum class InputRate : std::uint8_t
+	{
+		Vertex,
+		Instance,
+	};
+
 	export struct AttributeDesc
 	{
-		AttributeType type;
-		std::size_t offset;
-		uint32_t location; // shader location
+		AttributeType type = AttributeType::Float;
+		std::size_t offset = 0;
+		uint32_t location = 0; // shader location
 	};
 
 	export struct LayoutDesc
 	{
-		std::size_t stride;
+		std::uint32_t binding = 0; // for compatibility with Vulkan, not used in OpenGL
+		std::size_t stride = 0;
+		InputRate input_rate = InputRate::Vertex;
+
 		std::vector<AttributeDesc> attributes;
 	};
 
@@ -61,6 +70,7 @@ namespace Dreamhearth
 				break;
 			}
 
+			glEnableVertexAttribArray(attr.location);
 			glVertexAttribPointer(
 				attr.location,
 				size,
@@ -68,7 +78,11 @@ namespace Dreamhearth
 				normalize,
 				static_cast<GLsizei>(layout.stride),
 				reinterpret_cast<const void *>(attr.offset));
-			glEnableVertexAttribArray(attr.location);
+
+			if (layout.input_rate == InputRate::Instance)
+				glVertexAttribDivisor(attr.location, 1);
+			else
+				glVertexAttribDivisor(attr.location, 0);
 		}
 	}
 } // namespace Dreamhearth

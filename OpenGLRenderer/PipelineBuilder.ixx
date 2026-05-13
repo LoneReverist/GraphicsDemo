@@ -31,6 +31,9 @@ namespace Dreamhearth
 		template <VertexWithLayout VertexT>
 		void SetVertexType();
 
+		template <typename InstanceDataT>
+		void SetInstanceType();
+
 		template <typename ObjectDataVS = std::nullopt_t, typename ObjectDataFS = std::nullopt_t>
 		void SetObjectDataTypes();
 
@@ -75,6 +78,12 @@ namespace Dreamhearth
 	void PipelineBuilder::SetVertexType()
 	{
 		// In OpenGL, vertex attributes are set when binding the VAO for each mesh.
+	}
+
+	template <typename InstanceDataT>
+	void PipelineBuilder::SetInstanceType()
+	{
+		// In OpenGL, instance attributes are set when binding the VAO for each mesh.
 	}
 
 	template <typename ObjectDataVS /*= std::nullopt_t*/, typename ObjectDataFS /*= std::nullopt_t*/>

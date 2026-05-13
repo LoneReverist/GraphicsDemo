@@ -60,6 +60,6 @@ namespace Dreamhearth
 
 		static_assert(std::is_same_v<IndexT, std::uint16_t>,
 			"Mesh::Render only supports 16-bit indices");
-		glDrawElements(GL_TRIANGLES, m_index_count, GL_UNSIGNED_SHORT, nullptr);
+		glDrawElementsInstanced(GL_TRIANGLES, m_index_count, GL_UNSIGNED_SHORT, nullptr, m_instance_count);
 	}
 } // namespace Dreamhearth
