@@ -39,6 +39,10 @@ namespace Dreamhearth
 		if (!m_window)
 			return;
 
+		WindowRect & r = m_stored_win_rect;
+		glfwGetWindowPos(m_window, &r.x, &r.y);
+		glfwGetWindowSize(m_window, &r.w, &r.h);
+
 		glfwSetWindowUserPointer(m_window, this);
 	}
 
@@ -107,7 +111,35 @@ namespace Dreamhearth
 			{
 				Window * self = static_cast<Window *>(glfwGetWindowUserPointer(window));
 				self->on_key_event(key, scan_code, action, mods);
+
+				if (key == GLFW_KEY_ENTER && mods & GLFW_MOD_ALT && action == GLFW_PRESS)
+					self->ToggleFullscreen();
 			});
+	}
+
+	void Window::ToggleFullscreen()
+	{
+		if (m_is_fullscreen)
+		{
+			m_is_fullscreen = false;
+
+			WindowRect & r = m_stored_win_rect;
+			glfwSetWindowMonitor(m_window, NULL, r.x, r.y, r.w, r.h, GLFW_DONT_CARE); // must only be called from main thread
+		}
+		else
+		{
+			m_is_fullscreen = true;
+
+			WindowRect r;
+			glfwGetWindowPos(m_window, &r.x, &r.y);
+			glfwGetWindowSize(m_window, &r.w, &r.h);
+			if (r.w > 0 && r.h > 0)
+				m_stored_win_rect = r;
+
+			GLFWmonitor * monitor = glfwGetPrimaryMonitor();
+			const GLFWvidmode * mode = glfwGetVideoMode(monitor);
+			glfwSetWindowMonitor(m_window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate); // must only be called from main thread
+		}
 	}
 
 	RenderContext Window::CreateRenderContext(WindowSize size) const

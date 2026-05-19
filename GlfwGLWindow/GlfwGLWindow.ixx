@@ -22,6 +22,14 @@ namespace Dreamhearth
 		auto operator<=>(WindowSize const &) const = default;
 	};
 
+	struct WindowRect
+	{
+		int x = 0;
+		int y = 0;
+		int w = 0;
+		int h = 0;
+	};
+
 	export class Window
 	{
 	public:
@@ -36,13 +44,15 @@ namespace Dreamhearth
 
 		bool IsValid() const { return m_glfw_initialized && m_window != nullptr; }
 
-		WindowSize GetWindowSizePixels() const;
-		float GetWindowScaleFactor() const;
+		WindowSize GetWindowSizePixels() const; // must only be called from main thread
+		float GetWindowScaleFactor() const; // must only be called from main thread
 
 		void SetOnError(OnErrorFn on_error);
 		void SetOnSizeChanged(OnSizeChangedFn on_size_changed);
 		void SetOnScaleFactorChanged(OnScaleFactorChangedFn on_scale_factor_changed);
 		void SetOnKeyEvent(OnKeyEventFn on_key_event);
+
+		void ToggleFullscreen(); // must only be called from main thread
 
 		RenderContext CreateRenderContext(WindowSize size) const;
 
@@ -61,6 +71,9 @@ namespace Dreamhearth
 		bool m_glfw_initialized = false;
 		GLFWwindow * m_window = nullptr;
 		std::string const m_title;
+
+		bool m_is_fullscreen = false;
+		WindowRect m_stored_win_rect;
 
 		OnSizeChangedFn m_on_size_changed;
 		OnScaleFactorChangedFn m_on_scale_factor_changed;
