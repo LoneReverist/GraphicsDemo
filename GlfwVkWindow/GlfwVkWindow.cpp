@@ -162,7 +162,7 @@ namespace Dreamhearth
 			 extension_count, extensions, create_surface_fn };
 	}
 
-	DrawFrameResult Window::DrawFrame(RenderContext & render_context, std::function<void()> render_fn)
+	DrawFrameResult Window::DrawFrame(RenderContext & render_context, std::function<void()> render_fn) const
 	{
 		if (!render_context.SwapChainIsValid())
 			return DrawFrameResult::SwapChainOutOfDate;

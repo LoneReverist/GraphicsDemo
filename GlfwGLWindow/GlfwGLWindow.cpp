@@ -150,7 +150,7 @@ namespace Dreamhearth
 		return RenderContext{ size.width, size.height, reinterpret_cast<RenderContext::LoadProcFn *>(glfwGetProcAddress) };
 	}
 
-	DrawFrameResult Window::DrawFrame(RenderContext & /*render_context*/, std::function<void()> render_fn)
+	DrawFrameResult Window::DrawFrame(RenderContext & /*render_context*/, std::function<void()> render_fn) const
 	{
 		render_fn();
 		glfwSwapBuffers(m_window);

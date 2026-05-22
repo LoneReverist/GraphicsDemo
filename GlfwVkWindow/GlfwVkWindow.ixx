@@ -56,7 +56,7 @@ namespace Dreamhearth
 
 		RenderContext CreateRenderContext(WindowSize size) const;
 
-		DrawFrameResult DrawFrame(RenderContext & render_context, std::function<void()> render_fn);
+		DrawFrameResult DrawFrame(RenderContext & render_context, std::function<void()> render_fn) const;
 
 		void SetShouldClose(bool should_close) const;
 		bool ShouldClose() const;
