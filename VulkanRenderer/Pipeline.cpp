@@ -317,8 +317,8 @@ namespace Dreamhearth
 			.srcColorBlendFactor = static_cast<vk::BlendFactor>(blend_options.src_factor),
 			.dstColorBlendFactor = static_cast<vk::BlendFactor>(blend_options.dst_factor),
 			.colorBlendOp = vk::BlendOp::eAdd,
-			.srcAlphaBlendFactor = static_cast<vk::BlendFactor>(blend_options.src_factor),
-			.dstAlphaBlendFactor = static_cast<vk::BlendFactor>(blend_options.dst_factor),
+			.srcAlphaBlendFactor = vk::BlendFactor::eOne,
+			.dstAlphaBlendFactor = vk::BlendFactor::eZero,
 			.alphaBlendOp = vk::BlendOp::eAdd,
 			.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA
 		};
