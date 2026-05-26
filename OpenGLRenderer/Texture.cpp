@@ -180,14 +180,4 @@ namespace Dreamhearth
 	{
 		return m_image.GetId() != 0 && m_type != 0 && m_width != 0 && m_height != 0;
 	}
-
-	// static
-	void Texture::Bind(unsigned int id, unsigned int type, unsigned int binding)
-	{
-		if (id == 0 || type == 0)
-			return;
-
-		glActiveTexture(GL_TEXTURE0 + binding);
-		glBindTexture(type, id);
-	}
 } // namespace Dreamhearth

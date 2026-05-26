@@ -116,7 +116,6 @@ namespace Dreamhearth
 		{
 			m_descriptor_set.texture_binding = uniform_sizes.size();
 			m_descriptor_set.texture_id = texture->GetId();
-			m_descriptor_set.texture_type = texture->GetType();
 		}
 
 		return {};
@@ -161,7 +160,7 @@ namespace Dreamhearth
 		glUseProgram(m_program.GetId());
 
 		if (m_descriptor_set.texture_id != 0)
-			Texture::Bind(m_descriptor_set.texture_id, m_descriptor_set.texture_type, m_descriptor_set.texture_binding);
+			glBindTextureUnit(m_descriptor_set.texture_binding, m_descriptor_set.texture_id);
 	}
 
 	void Pipeline::UpdatePerFrameConstants() const

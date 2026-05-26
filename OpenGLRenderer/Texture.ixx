@@ -88,8 +88,6 @@ namespace Dreamhearth
 		std::uint32_t GetWidth() const { return m_width; }
 		std::uint32_t GetHeight() const { return m_height; }
 
-		static void Bind(unsigned int id, unsigned int type, unsigned int binding);
-
 	private:
 		unsigned int m_type = 0;
 		Image m_image;

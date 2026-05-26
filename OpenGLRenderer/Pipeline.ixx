@@ -29,7 +29,6 @@ namespace Dreamhearth
 		std::vector<UniformBuffer> uniform_buffers;
 		unsigned int texture_binding = 0;
 		unsigned int texture_id = 0;
-		unsigned int texture_type = 0;
 	};
 
 	export enum class DepthCompareOp
