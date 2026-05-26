@@ -1,6 +1,7 @@
 #version 450
+#extension GL_KHR_vulkan_glsl : enable
 
-layout(binding = 1) uniform samplerCube cube_map_sampler;
+layout(set = 1, binding = 0) uniform samplerCube cube_map_sampler;
 
 layout(location = 0) in vec3 in_tex_coord;
 

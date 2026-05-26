@@ -43,7 +43,7 @@ namespace Dreamhearth
 		template <typename... UniformTypes>
 		void SetFSUniformTypes();
 
-		void SetTexture(Texture const & texture) { m_texture = &texture; }
+		void SetHasTexture(bool has_texture) { m_has_texture = has_texture; }
 		void SetDepthTestOptions(DepthTestOptions const & options) { m_depth_test_options = options; }
 		void SetCullMode(CullMode cull_mode) { m_cull_mode = cull_mode; }
 		void SetBlendOptions(BlendOptions const & options) { m_blend_options = options; }
@@ -61,7 +61,7 @@ namespace Dreamhearth
 		size_t m_fs_object_uniform_size = 0;
 		std::vector<size_t> m_vs_uniform_sizes;
 		std::vector<size_t> m_fs_uniform_sizes;
-		Texture const * m_texture = nullptr;
+		bool m_has_texture = false;
 
 		DepthTestOptions m_depth_test_options;
 		BlendOptions m_blend_options;

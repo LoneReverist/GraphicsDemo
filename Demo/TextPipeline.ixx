@@ -33,9 +33,7 @@ public:
 
 	static std::expected<Pipeline, GraphicsError> CreatePipeline(
 		RenderContext const & render_context,
-		std::filesystem::path const & shaders_path,
-		AssetPool<Texture> const & texture_pool,
-		AssetId texture_id);
+		std::filesystem::path const & shaders_path);
 
 	TextPipeline() = default;
 	explicit TextPipeline(AssetId asset_id) : m_asset_id(asset_id) {}
@@ -48,9 +46,7 @@ private:
 
 std::expected<Pipeline, GraphicsError> TextPipeline::CreatePipeline(
 	RenderContext const & render_context,
-	std::filesystem::path const & shaders_path,
-	AssetPool<Texture> const & texture_pool,
-	AssetId texture_id)
+	std::filesystem::path const & shaders_path)
 {
 	struct ObjectDataFS
 	{
@@ -58,10 +54,6 @@ std::expected<Pipeline, GraphicsError> TextPipeline::CreatePipeline(
 		alignas(16) glm::vec4 bg_color;
 		alignas(16) glm::vec4 text_color;
 	};
-
-	Texture const * texture = texture_pool.Get(texture_id);
-	if (!texture)
-		return std::unexpected{ GraphicsError{ "TextPipeline::CreatePipeline: invalid texture" } };
 
 	PipelineBuilder builder{ render_context };
 
@@ -73,7 +65,7 @@ std::expected<Pipeline, GraphicsError> TextPipeline::CreatePipeline(
 
 	builder.SetVertexType<VertexT>();
 	builder.SetObjectDataTypes<std::nullopt_t, ObjectDataFS>();
-	builder.SetTexture(*texture);
+	builder.SetHasTexture(true);
 	builder.SetDepthTestOptions(DepthTestOptions{
 		.enable_depth_test = false,
 		.enable_depth_write = false,

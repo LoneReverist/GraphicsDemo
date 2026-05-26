@@ -75,6 +75,7 @@ private:
 	AssetId create_render_object(
 		std::string const & name,
 		MeshId<VertexT> const & mesh_id,
+		AssetId texture_id,
 		PipelineT const & pipeline,
 		ObjectDataT const & object_data = std::nullopt);
 
@@ -172,6 +173,7 @@ template <IsVertex VertexT, typename PipelineT, typename ObjectDataT /*= std::nu
 AssetId Scene::create_render_object(
 	std::string const & name,
 	MeshId<VertexT> const & mesh_id,
+	AssetId texture_id,
 	PipelineT const & pipeline,
 	ObjectDataT const & object_data /*= std::nullopt*/)
 {
@@ -186,7 +188,7 @@ AssetId Scene::create_render_object(
 		return AssetId{};
 	}
 
-	RenderObject obj{ name, mesh_id, pipeline.GetAssetId() };
+	RenderObject obj{ name, mesh_id, pipeline.GetAssetId(), texture_id };
 	if constexpr (!std::same_as<ObjectDataT, std::nullopt_t>)
 		obj.SetObjectData(&object_data);
 

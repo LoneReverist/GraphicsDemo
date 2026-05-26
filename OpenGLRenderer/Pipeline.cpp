@@ -60,7 +60,7 @@ namespace Dreamhearth
 		size_t fs_object_uniform_size,
 		std::vector<size_t> vs_uniform_sizes,
 		std::vector<size_t> fs_uniform_sizes,
-		Texture const * texture,
+		bool /*has_texture*/, // for vulkan compatibility, not used in OpenGL
 		DepthTestOptions const & depth_options,
 		BlendOptions const & blend_options,
 		CullMode cull_mode)
@@ -112,12 +112,6 @@ namespace Dreamhearth
 		}
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-		if (texture && texture->IsValid())
-		{
-			m_descriptor_set.texture_binding = uniform_sizes.size();
-			m_descriptor_set.texture_id = texture->GetId();
-		}
-
 		return {};
 	}
 
@@ -158,9 +152,6 @@ namespace Dreamhearth
 		}
 
 		glUseProgram(m_program.GetId());
-
-		if (m_descriptor_set.texture_id != 0)
-			glBindTextureUnit(m_descriptor_set.texture_binding, m_descriptor_set.texture_id);
 	}
 
 	void Pipeline::UpdatePerFrameConstants() const
@@ -173,5 +164,11 @@ namespace Dreamhearth
 	{
 		if (m_per_object_constants_callback)
 			m_per_object_constants_callback(*this, object_data);
+	}
+
+	void Pipeline::BindTexture(Texture const & texture) const
+	{
+		if (texture.GetId() != 0)
+			glBindTextureUnit(0, texture.GetId());
 	}
 } // namespace Dreamhearth

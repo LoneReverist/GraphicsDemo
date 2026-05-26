@@ -21,14 +21,13 @@ namespace Dreamhearth
 	{
 	}
 
-	vk::raii::DescriptorSetLayout create_descriptor_set_layout(
+	vk::raii::DescriptorSetLayout create_uniform_layout(
 		vk::raii::Device const & device,
 		std::uint32_t vs_descriptor_set_count,
-		std::uint32_t fs_descriptor_set_count,
-		bool has_texture)
+		std::uint32_t fs_descriptor_set_count)
 	{
 		std::vector<vk::DescriptorSetLayoutBinding> layout_bindings;
-		layout_bindings.reserve(vs_descriptor_set_count + fs_descriptor_set_count + (has_texture ? 1 : 0));
+		layout_bindings.reserve(vs_descriptor_set_count + fs_descriptor_set_count);
 
 		for (std::uint32_t i = 0; i < vs_descriptor_set_count; ++i)
 		{
@@ -53,18 +52,6 @@ namespace Dreamhearth
 				});
 		}
 
-		if (has_texture)
-		{
-			layout_bindings.emplace_back(
-				vk::DescriptorSetLayoutBinding{
-					.binding = static_cast<std::uint32_t>(layout_bindings.size()),
-					.descriptorType = vk::DescriptorType::eCombinedImageSampler,
-					.descriptorCount = 1,
-					.stageFlags = vk::ShaderStageFlagBits::eFragment,
-					.pImmutableSamplers = nullptr
-				});
-		}
-
 		vk::DescriptorSetLayoutCreateInfo layout_info{
 			.bindingCount = static_cast<std::uint32_t>(layout_bindings.size()),
 			.pBindings = layout_bindings.data()
@@ -73,11 +60,26 @@ namespace Dreamhearth
 		return vk::raii::DescriptorSetLayout{ device, layout_info };
 	}
 
+	vk::raii::DescriptorSetLayout create_texture_layout(vk::raii::Device const & device)
+	{
+		vk::DescriptorSetLayoutBinding binding{
+			.binding = 0,
+			.descriptorType = vk::DescriptorType::eCombinedImageSampler,
+			.descriptorCount = 1,
+			.stageFlags = vk::ShaderStageFlagBits::eFragment,
+		};
+		vk::DescriptorSetLayoutCreateInfo layout_info{
+			.flags = vk::DescriptorSetLayoutCreateFlagBits::ePushDescriptorKHR,
+			.bindingCount = 1,
+			.pBindings = &binding,
+		};
+		return vk::raii::DescriptorSetLayout{ device, layout_info };
+	}
+
 	vk::raii::DescriptorPool create_descriptor_pool(
 		vk::raii::Device const & device,
 		std::uint32_t uniform_count,
-		std::uint32_t descriptor_set_count,
-		bool has_texture)
+		std::uint32_t descriptor_set_count)
 	{
 		std::vector<vk::DescriptorPoolSize> pool_sizes;
 		if (uniform_count > 0)
@@ -86,15 +88,6 @@ namespace Dreamhearth
 				vk::DescriptorPoolSize{
 					.type = vk::DescriptorType::eUniformBuffer,
 					.descriptorCount = uniform_count * descriptor_set_count
-				});
-		}
-
-		if (has_texture)
-		{
-			pool_sizes.emplace_back(
-				vk::DescriptorPoolSize{
-					.type = vk::DescriptorType::eCombinedImageSampler,
-					.descriptorCount = descriptor_set_count
 				});
 		}
 
@@ -114,8 +107,7 @@ namespace Dreamhearth
 		vk::raii::DescriptorSetLayout const & layout,
 		vk::DescriptorPool pool,
 		std::array<std::vector<vk::Buffer>, count> uniform_buffers,
-		std::vector<vk::DeviceSize> uniform_sizes,
-		Texture const * texture)
+		std::vector<vk::DeviceSize> uniform_sizes)
 	{
 		std::array<vk::DescriptorSetLayout, count> layouts;
 		layouts.fill(layout);
@@ -140,15 +132,6 @@ namespace Dreamhearth
 					.range = uniform_sizes[binding] // or VK_WHOLE_SIZE
 					});
 			}
-
-			if (texture != nullptr && texture->IsValid())
-			{
-				image_infos.emplace_back(vk::DescriptorImageInfo{
-					.sampler = *texture->GetSampler(),
-					.imageView = *texture->GetImageView(),
-					.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal
-					});
-			}
 		}
 
 		std::vector<vk::WriteDescriptorSet> descriptor_writes;
@@ -164,22 +147,6 @@ namespace Dreamhearth
 					.descriptorType = vk::DescriptorType::eUniformBuffer,
 					.pImageInfo = nullptr,
 					.pBufferInfo = &buffer_infos[descriptor_writes.size()],
-					.pTexelBufferView = nullptr
-					});
-			}
-		}
-		if (texture != nullptr && texture->IsValid())
-		{
-			for (size_t frame = 0; frame < count; ++frame)
-			{
-				descriptor_writes.emplace_back(vk::WriteDescriptorSet{
-					.dstSet = descriptor_sets[frame],
-					.dstBinding = static_cast<std::uint32_t>(uniform_sizes.size()),
-					.dstArrayElement = 0,
-					.descriptorCount = 1,
-					.descriptorType = vk::DescriptorType::eCombinedImageSampler,
-					.pImageInfo = &image_infos[frame],
-					.pBufferInfo = nullptr,
 					.pTexelBufferView = nullptr
 					});
 			}
@@ -207,23 +174,21 @@ namespace Dreamhearth
 	void DescriptorSets::Create(
 		std::vector<vk::DeviceSize> const & vs_uniform_sizes,
 		std::vector<vk::DeviceSize> const & fs_uniform_sizes,
-		Texture const * texture)
+		bool has_texture)
 	{
 		vk::raii::Device const & device = m_render_context.get().GetDevice();
-		bool has_texture = texture != nullptr && texture->IsValid();
 
-		m_descriptor_set_layout = create_descriptor_set_layout(device,
+		m_uniform_layout = create_uniform_layout(device,
 			static_cast<std::uint32_t>(vs_uniform_sizes.size()),
-			static_cast<std::uint32_t>(fs_uniform_sizes.size()),
-			has_texture);
+			static_cast<std::uint32_t>(fs_uniform_sizes.size()));
+		m_texture_layout = create_texture_layout(device);
 
 		std::vector<VkDeviceSize> uniform_sizes{ vs_uniform_sizes };
 		uniform_sizes.insert(uniform_sizes.end(), fs_uniform_sizes.begin(), fs_uniform_sizes.end());
 
 		m_descriptor_pool = create_descriptor_pool(device,
 			static_cast<std::uint32_t>(uniform_sizes.size()) /*descriptor_count*/,
-			RenderContext::m_max_frames_in_flight /*descriptor_set_count*/,
-			has_texture);
+			RenderContext::m_max_frames_in_flight /*descriptor_set_count*/);
 
 		std::array<std::vector<vk::Buffer>, RenderContext::m_max_frames_in_flight> uniform_buffers;
 		for (size_t frame = 0; frame < RenderContext::m_max_frames_in_flight; ++frame)
@@ -238,7 +203,7 @@ namespace Dreamhearth
 		}
 
 		std::vector<vk::raii::DescriptorSet> descriptor_sets = create_descriptor_sets<RenderContext::m_max_frames_in_flight>(
-			device, m_descriptor_set_layout, m_descriptor_pool, uniform_buffers, uniform_sizes, texture);
+			device, m_uniform_layout, m_descriptor_pool, uniform_buffers, uniform_sizes);
 
 		for (size_t frame = 0; frame < RenderContext::m_max_frames_in_flight; ++frame)
 			m_descriptor_sets[frame].descriptor_set = std::move(descriptor_sets[frame]);
@@ -246,12 +211,17 @@ namespace Dreamhearth
 
 	vk::raii::PipelineLayout create_pipeline_layout(
 		vk::raii::Device const & device,
-		vk::DescriptorSetLayout descriptor_set_layout,
+		vk::DescriptorSetLayout uniform_layout,
+		vk::DescriptorSetLayout texture_layout,
 		std::vector<vk::PushConstantRange> const & push_constant_ranges)
 	{
+		std::vector<vk::DescriptorSetLayout> layouts{ uniform_layout };
+		if (texture_layout != nullptr)
+			layouts.push_back(texture_layout);
+
 		vk::PipelineLayoutCreateInfo pipeline_layout_info{
-			.setLayoutCount = 1,
-			.pSetLayouts = &descriptor_set_layout,
+			.setLayoutCount = static_cast<std::uint32_t>(layouts.size()),
+			.pSetLayouts = layouts.data(),
 			.pushConstantRangeCount = static_cast<std::uint32_t>(push_constant_ranges.size()),
 			.pPushConstantRanges = push_constant_ranges.data(),
 		};
@@ -380,18 +350,19 @@ namespace Dreamhearth
 		std::vector<vk::PushConstantRange> const & push_constants_ranges,
 		std::vector<vk::DeviceSize> const & vs_uniform_sizes,
 		std::vector<vk::DeviceSize> const & fs_uniform_sizes,
-		Texture const * texture,
+		bool has_texture,
 		DepthTestOptions const & depth_options,
 		BlendOptions const & blend_options,
 		CullMode cull_mode)
 	{
 		try
 		{
-			m_descriptor_sets.Create(vs_uniform_sizes, fs_uniform_sizes, texture);
+			m_descriptor_sets.Create(vs_uniform_sizes, fs_uniform_sizes, has_texture);
 
 			m_pipeline_layout = create_pipeline_layout(
 				m_render_context.get().GetDevice(),
-				m_descriptor_sets.GetLayout(),
+				m_descriptor_sets.GetUniformLayout(),
+				m_descriptor_sets.GetTextureLayout(),
 				push_constants_ranges);
 
 			m_pipeline = create_pipeline(
@@ -442,5 +413,29 @@ namespace Dreamhearth
 	{
 		if (m_per_object_constants_callback)
 			m_per_object_constants_callback(*this, object_data);
+	}
+
+	void Pipeline::BindTexture(Texture const & texture) const
+	{
+		vk::raii::CommandBuffer const & command_buffer = m_render_context.get().GetCurCommandBuffer();
+
+		vk::DescriptorImageInfo image_info{
+			.sampler = *texture.GetSampler(),
+			.imageView = *texture.GetImageView(),
+			.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal,
+		};
+		vk::WriteDescriptorSet write{
+			.dstSet = nullptr, // ignored for push descriptors
+			.dstBinding = 0,
+			.dstArrayElement = 0,
+			.descriptorCount = 1,
+			.descriptorType = vk::DescriptorType::eCombinedImageSampler,
+			.pImageInfo = &image_info,
+		};
+		command_buffer.pushDescriptorSet(
+			vk::PipelineBindPoint::eGraphics,
+			*m_pipeline_layout,
+			1, // set index 1
+			write);
 	}
 } // namespace Dreamhearth

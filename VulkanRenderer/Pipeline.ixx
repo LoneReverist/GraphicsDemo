@@ -46,16 +46,18 @@ namespace Dreamhearth
 		void Create(
 			std::vector<VkDeviceSize> const & vs_uniform_sizes,
 			std::vector<VkDeviceSize> const & fs_uniform_sizes,
-			Texture const * texture);
+			bool has_texture);
 
 		DescriptorSet const & GetCurrent() const { return m_descriptor_sets[m_render_context.get().GetCurFrameIndex()]; }
-		vk::raii::DescriptorSetLayout const & GetLayout() const { return m_descriptor_set_layout; }
+		vk::raii::DescriptorSetLayout const & GetUniformLayout() const { return m_uniform_layout; }
+		vk::raii::DescriptorSetLayout const & GetTextureLayout() const { return m_texture_layout; }
 		vk::raii::DescriptorPool const & GetPool() const { return m_descriptor_pool; }
 
 	private:
 		std::reference_wrapper<RenderContext const> m_render_context;
 
-		vk::raii::DescriptorSetLayout m_descriptor_set_layout = nullptr;
+		vk::raii::DescriptorSetLayout m_uniform_layout = nullptr;
+		vk::raii::DescriptorSetLayout m_texture_layout = nullptr;
 		vk::raii::DescriptorPool m_descriptor_pool = nullptr;
 
 		std::array<DescriptorSet, RenderContext::m_max_frames_in_flight> m_descriptor_sets;
@@ -139,7 +141,7 @@ namespace Dreamhearth
 			std::vector<vk::PushConstantRange> const & push_constants_ranges,
 			std::vector<vk::DeviceSize> const & vs_uniform_sizes,
 			std::vector<vk::DeviceSize> const & fs_uniform_sizes,
-			Texture const * texture,
+			bool has_texture,
 			DepthTestOptions const & depth_options,
 			BlendOptions const & blend_options,
 			CullMode cull_mode);
@@ -147,6 +149,7 @@ namespace Dreamhearth
 		void Activate() const;
 		void UpdatePerFrameConstants() const;
 		void UpdatePerObjectConstants(void const * object_data) const;
+		void BindTexture(Texture const & texture) const;
 
 		template <typename UniformData>
 		void SetUniform(std::uint32_t binding, UniformData const & data) const;

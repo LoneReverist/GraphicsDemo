@@ -27,8 +27,6 @@ namespace Dreamhearth
 	struct DescriptorSet
 	{
 		std::vector<UniformBuffer> uniform_buffers;
-		unsigned int texture_binding = 0;
-		unsigned int texture_id = 0;
 	};
 
 	export enum class DepthCompareOp
@@ -127,7 +125,7 @@ namespace Dreamhearth
 			size_t fs_object_uniform_size,
 			std::vector<size_t> vs_uniform_sizes,
 			std::vector<size_t> fs_uniform_sizes,
-			Texture const * texture,
+			bool has_texture,
 			DepthTestOptions const & depth_options,
 			BlendOptions const & blend_options,
 			CullMode cull_mode);
@@ -137,6 +135,7 @@ namespace Dreamhearth
 		void Activate() const;
 		void UpdatePerFrameConstants() const;
 		void UpdatePerObjectConstants(void const * object_data) const;
+		void BindTexture(Texture const & texture) const;
 
 		template <typename UniformData>
 		void SetUniform(std::uint32_t binding, UniformData const & data) const;

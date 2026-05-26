@@ -1,4 +1,5 @@
 #version 450
+#extension GL_KHR_vulkan_glsl : enable
 
 struct PointLight
 {
@@ -30,7 +31,7 @@ layout(std140, binding = 2) uniform CameraUniform {
 	vec3 pos_world;
 } camera;
 
-layout(binding = 3) uniform samplerCube cube_map_sampler;
+layout(set = 1, binding = 0) uniform samplerCube cube_map_sampler;
 
 layout(location = 0) in vec3 in_pos_world;
 layout(location = 1) in vec3 in_normal_world;

@@ -55,7 +55,7 @@ if(BUILD_VULKAN)
             ${SHARED_SOURCE_FILES}
             ${SHADER_FILES}
     )
-    source_group("Demo/Shaders" FILES ${SHADER_FILES})
+    source_group("Shaders" FILES ${SHADER_FILES})
 
     target_link_libraries(VulkanDemo PRIVATE
 	    glm::glm
@@ -99,7 +99,7 @@ if(BUILD_OPENGL)
             ${SHARED_SOURCE_FILES}
             ${SHADER_FILES}
     )
-    source_group("Demo/Shaders" FILES ${SHADER_FILES})
+    source_group("Shaders" FILES ${SHADER_FILES})
 
     target_link_libraries(OpenGLDemo PRIVATE
 	    glm::glm

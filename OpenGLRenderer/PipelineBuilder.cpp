@@ -109,7 +109,7 @@ namespace Dreamhearth
 			m_fs_object_uniform_size,
 			m_vs_uniform_sizes,
 			m_fs_uniform_sizes,
-			m_texture,
+			m_has_texture,
 			m_depth_test_options,
 			m_blend_options,
 			m_cull_mode.value());

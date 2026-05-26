@@ -337,18 +337,18 @@ Scene::Scene(RenderContext const & render_context, std::string const & title, fl
 	m_arial_font = std::make_unique<FontAtlas>(arial_tex_id, fonts_path / "ArialAtlas.json");
 
 	ColorPipeline color_pipeline = create_pipeline<ColorPipeline>(m_camera, m_lights);
-	TexturePipeline ground_pipeline = create_pipeline<TexturePipeline>(m_camera, m_lights, m_texture_pool, ground_tex_id);
-	SkyboxPipeline skybox_pipeline = create_pipeline<SkyboxPipeline>(m_camera, m_texture_pool, skybox_tex_id);
+	TexturePipeline ground_pipeline = create_pipeline<TexturePipeline>(m_camera, m_lights);
+	SkyboxPipeline skybox_pipeline = create_pipeline<SkyboxPipeline>(m_camera);
 	LightSourcePipeline light_source_pipeline = create_pipeline<LightSourcePipeline>(m_camera);
-	ReflectionPipeline reflection_pipeline = create_pipeline<ReflectionPipeline>(m_camera, m_lights, m_texture_pool, skybox_tex_id);
-	TextPipeline text_pipeline = create_pipeline<TextPipeline>(m_texture_pool, arial_tex_id);
-	RainbowTextPipeline rainbow_text_pipeline = create_pipeline<RainbowTextPipeline>(m_texture_pool, arial_tex_id);
+	ReflectionPipeline reflection_pipeline = create_pipeline<ReflectionPipeline>(m_camera, m_lights);
+	TextPipeline text_pipeline = create_pipeline<TextPipeline>();
+	RainbowTextPipeline rainbow_text_pipeline = create_pipeline<RainbowTextPipeline>();
 
 	MeshId<NormalVertex> sword_mesh = create_mesh<NormalVertex>(objects_path / "skullsword.obj");
 	init_sword_transform(0, m_sword0.model);
 	init_sword_transform(1, m_sword1.model);
-	create_render_object("sword0", sword_mesh, reflection_pipeline, m_sword0);
-	create_render_object("sword1", sword_mesh, reflection_pipeline, m_sword1);
+	create_render_object("sword0", sword_mesh, skybox_tex_id, reflection_pipeline, m_sword0);
+	create_render_object("sword1", sword_mesh, skybox_tex_id, reflection_pipeline, m_sword1);
 
 	MeshId<NormalVertex> red_gem_mesh = create_mesh<NormalVertex>(objects_path / "redgem.obj");
 	MeshId<NormalVertex> green_gem_mesh = create_mesh<NormalVertex>(objects_path / "greengem.obj");
@@ -359,21 +359,21 @@ Scene::Scene(RenderContext const & render_context, std::string const & title, fl
 	init_gem_transform(0, m_red_gem.model);
 	init_gem_transform(1, m_green_gem.model);
 	init_gem_transform(2, m_blue_gem.model);
-	create_render_object("red gem", red_gem_mesh, light_source_pipeline, m_red_gem);
-	create_render_object("green gem", green_gem_mesh, light_source_pipeline, m_green_gem);
-	create_render_object("blue gem", blue_gem_mesh, light_source_pipeline, m_blue_gem);
+	create_render_object("red gem", red_gem_mesh, AssetId{}, light_source_pipeline, m_red_gem);
+	create_render_object("green gem", green_gem_mesh, AssetId{}, light_source_pipeline, m_green_gem);
+	create_render_object("blue gem", blue_gem_mesh, AssetId{}, light_source_pipeline, m_blue_gem);
 
 	MeshId<TextureVertex> ground_mesh = create_ground_mesh();
-	create_render_object("ground", ground_mesh, ground_pipeline, m_ground);
+	create_render_object("ground", ground_mesh, ground_tex_id, ground_pipeline, m_ground);
 
 	MeshId<PositionVertex> skybox_mesh = create_skybox_mesh();
-	create_render_object("skybox", skybox_mesh, skybox_pipeline, std::nullopt); // don't have to provide nullopt here, but intellisense complains if we don't
+	create_render_object("skybox", skybox_mesh, skybox_tex_id, skybox_pipeline, std::nullopt); // don't have to provide nullopt here, but intellisense complains if we don't
 
 	std::vector<MeshId<ColorVertex>> tree_meshes = create_tree_meshes();
 	m_tree.model = glm::scale(m_tree.model, glm::vec3(3.281, 3.281, 3.281)); // meters to feet
 	m_tree.model = glm::translate(m_tree.model, glm::vec3(-3.0f, 5.0f, 0.0f));
 	for (auto const & mesh : tree_meshes)
-		create_render_object("tree", mesh, color_pipeline, m_tree);
+		create_render_object("tree", mesh, AssetId{}, color_pipeline, m_tree);
 
 	m_fps_mesh = create_text_mesh("FPS: ", *m_arial_font, label_font_size, glm::vec2{ -0.9, -0.9 } /*origin*/,
 		0 /*viewport_width*/, 0 /*viewport_height*/);
@@ -382,7 +382,7 @@ Scene::Scene(RenderContext const & render_context, std::string const & title, fl
 		.bg_color = { 0.0f, 0.0f, 0.0f, 0.0f },
 		.text_color = { 1.0f, 1.0f, 0.0f, 1.0 },
 	};
-	create_render_object("fps label", m_fps_mesh->GetMeshId(), text_pipeline, m_fps_label);
+	create_render_object("fps label", m_fps_mesh->GetMeshId(), arial_tex_id, text_pipeline, m_fps_label);
 
 	m_title_mesh = create_text_mesh(m_title, *m_arial_font, title_font_size, glm::vec2{ -0.9, 0.8 } /*origin*/,
 		0 /*viewport_width*/, 0 /*viewport_height*/);
@@ -392,7 +392,7 @@ Scene::Scene(RenderContext const & render_context, std::string const & title, fl
 		.rainbow_width = 200.0f * dpi_scale_factor,
 		.slant_factor = -1.0f
 	};
-	create_render_object("title", m_title_mesh->GetMeshId(), rainbow_text_pipeline, m_title_label);
+	create_render_object("title", m_title_mesh->GetMeshId(), arial_tex_id, rainbow_text_pipeline, m_title_label);
 
 	m_lights.SetAmbientLight(AmbientLight{ glm::vec3{ 0.3, 0.3, 0.3 } });
 
@@ -518,6 +518,17 @@ void Scene::Render() const
 			{
 				std::cout << "Scene::Render: No mesh found in pool for AssetId: " << obj->GetMeshId().GetIndex() << std::endl;
 				continue;
+			}
+
+			if (obj->GetTextureId().IsValid())
+			{
+				Texture const * texture = m_texture_pool.Get(obj->GetTextureId());
+				if (!texture)
+				{
+					std::cout << "Scene::Render: No texture found in pool for AssetId: " << obj->GetTextureId().GetIndex() << std::endl;
+					continue;
+				}
+				pipeline->BindTexture(*texture);
 			}
 
 			pipeline->UpdatePerObjectConstants(obj->GetObjectData());

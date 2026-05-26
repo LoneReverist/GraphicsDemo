@@ -1,4 +1,5 @@
 #version 450
+#extension GL_KHR_vulkan_glsl : enable
 
 struct PointLight
 {
@@ -26,7 +27,7 @@ layout(std140, binding = 1) uniform LightsUniform {
 	SpotLight spotlight_1;
 } lights;
 
-layout(binding = 2) uniform sampler2D tex_sampler;
+layout(set = 1, binding = 0) uniform sampler2D tex_sampler;
 
 layout(location = 0) in vec3 in_pos_world;
 layout(location = 1) in vec3 in_normal_world;

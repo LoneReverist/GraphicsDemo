@@ -1,6 +1,7 @@
 #version 450 core
+#extension GL_KHR_vulkan_glsl : enable
 
-layout(binding = 0) uniform sampler2D msdf_texture;
+layout(set = 1, binding = 0) uniform sampler2D msdf_texture;
 
 #ifdef BUILD_VULKAN
 layout(push_constant) uniform ObjectData {

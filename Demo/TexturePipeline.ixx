@@ -35,9 +35,7 @@ public:
 		RenderContext const & render_context,
 		std::filesystem::path const & shaders_path,
 		Camera const & camera,
-		LightsManager const & lights,
-		AssetPool<Texture> const & texture_pool,
-		AssetId texture_id);
+		LightsManager const & lights);
 
 	TexturePipeline() = default;
 	explicit TexturePipeline(AssetId asset_id) : m_asset_id(asset_id) {}
@@ -52,18 +50,12 @@ std::expected<Pipeline, GraphicsError> TexturePipeline::CreatePipeline(
 	RenderContext const & render_context,
 	std::filesystem::path const & shaders_path,
 	Camera const & camera,
-	LightsManager const & lights,
-	AssetPool<Texture> const & texture_pool,
-	AssetId texture_id)
+	LightsManager const & lights)
 {
 	struct ObjectDataVS
 	{
 		alignas(16) glm::mat4 model;
 	};
-
-	Texture const * texture = texture_pool.Get(texture_id);
-	if (!texture)
-		return std::unexpected{ GraphicsError{ "TexturePipeline::CreatePipeline: invalid texture" } };
 
 	PipelineBuilder builder{ render_context };
 
@@ -77,7 +69,7 @@ std::expected<Pipeline, GraphicsError> TexturePipeline::CreatePipeline(
 	builder.SetObjectDataTypes<ObjectDataVS, std::nullopt_t>();
 	builder.SetVSUniformTypes<ViewProjUniform>();
 	builder.SetFSUniformTypes<LightsUniform>();
-	builder.SetTexture(*texture);
+	builder.SetHasTexture(true);
 	builder.SetCullMode(CullMode::BACK);
 
 	builder.SetPerFrameConstantsCallback(
