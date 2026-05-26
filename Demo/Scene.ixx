@@ -188,7 +188,7 @@ AssetId Scene::create_render_object(
 		return AssetId{};
 	}
 
-	RenderObject obj{ name, mesh_id, pipeline.GetAssetId(), texture_id };
+	RenderObject obj{ name, mesh_id, texture_id, pipeline.GetAssetId() };
 	if constexpr (!std::same_as<ObjectDataT, std::nullopt_t>)
 		obj.SetObjectData(&object_data);
 

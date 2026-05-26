@@ -501,8 +501,8 @@ void Scene::Render() const
 			continue;
 		}
 
-		pipeline->Activate();
 		pipeline->UpdatePerFrameConstants();
+		pipeline->Activate();
 
 		for (AssetId obj_id : pipeline_r_objs.render_object_ids)
 		{

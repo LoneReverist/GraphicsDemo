@@ -1,5 +1,8 @@
 #version 450
+
+#ifndef BUILD_VULKAN
 #extension GL_KHR_vulkan_glsl : enable
+#endif
 
 struct PointLight
 {

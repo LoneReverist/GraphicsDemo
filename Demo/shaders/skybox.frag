@@ -1,5 +1,8 @@
 #version 450
+
+#ifndef BUILD_VULKAN
 #extension GL_KHR_vulkan_glsl : enable
+#endif
 
 layout(set = 1, binding = 0) uniform samplerCube cube_map_sampler;
 

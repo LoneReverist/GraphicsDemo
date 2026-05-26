@@ -1,5 +1,8 @@
 #version 420 core
+
+#ifndef BUILD_VULKAN
 #extension GL_KHR_vulkan_glsl : enable
+#endif
 
 layout(set = 1, binding = 0) uniform sampler2D msdf_texture;
 
