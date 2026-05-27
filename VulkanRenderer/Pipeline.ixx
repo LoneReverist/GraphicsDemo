@@ -149,7 +149,7 @@ namespace Dreamhearth
 		void Activate() const;
 		void UpdatePerFrameConstants() const;
 		void UpdatePerObjectConstants(void const * object_data) const;
-		void BindTexture(Texture const & texture) const;
+		void BindTexture(std::uint32_t binding, Texture const & texture) const;
 
 		template <typename UniformData>
 		void SetUniform(std::uint32_t binding, UniformData const & data) const;

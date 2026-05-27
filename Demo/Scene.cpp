@@ -528,7 +528,7 @@ void Scene::Render() const
 					std::cout << "Scene::Render: No texture found in pool for AssetId: " << obj->GetTextureId().GetIndex() << std::endl;
 					continue;
 				}
-				pipeline->BindTexture(*texture);
+				pipeline->BindTexture(0, *texture);
 			}
 
 			pipeline->UpdatePerObjectConstants(obj->GetObjectData());

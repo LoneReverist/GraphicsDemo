@@ -166,9 +166,9 @@ namespace Dreamhearth
 			m_per_object_constants_callback(*this, object_data);
 	}
 
-	void Pipeline::BindTexture(Texture const & texture) const
+	void Pipeline::BindTexture(std::uint32_t binding, Texture const & texture) const
 	{
 		if (texture.GetId() != 0)
-			glBindTextureUnit(0, texture.GetId());
+			glBindTextureUnit(binding, texture.GetId());
 	}
 } // namespace Dreamhearth

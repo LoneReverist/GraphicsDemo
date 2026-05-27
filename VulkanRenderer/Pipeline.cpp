@@ -415,7 +415,7 @@ namespace Dreamhearth
 			m_per_object_constants_callback(*this, object_data);
 	}
 
-	void Pipeline::BindTexture(Texture const & texture) const
+	void Pipeline::BindTexture(std::uint32_t binding, Texture const & texture) const
 	{
 		vk::raii::CommandBuffer const & command_buffer = m_render_context.get().GetCurCommandBuffer();
 
@@ -426,7 +426,7 @@ namespace Dreamhearth
 		};
 		vk::WriteDescriptorSet write{
 			.dstSet = nullptr, // ignored for push descriptors
-			.dstBinding = 0,
+			.dstBinding = binding,
 			.dstArrayElement = 0,
 			.descriptorCount = 1,
 			.descriptorType = vk::DescriptorType::eCombinedImageSampler,
