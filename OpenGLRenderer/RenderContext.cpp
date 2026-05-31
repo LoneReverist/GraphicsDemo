@@ -69,16 +69,9 @@ namespace Dreamhearth
 		glDebugMessageCallback(debug_message_callback, 0);
 	
 		glEnable(GL_FRAMEBUFFER_SRGB);
-
-		SetViewportSize(width_pixels, height_pixels);
 	}
 	
 	RenderContext::~RenderContext()
 	{
-	}
-	
-	void RenderContext::SetViewportSize(int width_pixels, int height_pixels) const
-	{
-		glViewport(0, 0, width_pixels, height_pixels);
 	}
 } // namespace Dreamhearth

@@ -15,6 +15,11 @@ namespace Dreamhearth
 	{
 	}
 
+	void Renderer::SetViewport(int x, int y, int width, int height)
+	{
+		m_viewport = vk::Rect2D(vk::Offset2D(x, y), vk::Extent2D(width, height));
+	}
+
 	void transition_image_layout(
 		vk::raii::CommandBuffer const & commandBuffer,
 		vk::Image const & image,
@@ -82,7 +87,7 @@ namespace Dreamhearth
 			vk::PipelineStageFlagBits2::eEarlyFragmentTests | vk::PipelineStageFlagBits2::eLateFragmentTests,
 			vk::ImageAspectFlagBits::eDepth);
 
-		vk::RenderingAttachmentInfo attachment_info = {
+		vk::RenderingAttachmentInfo color_attachment = {
 			.imageView = m_render_context.GetCurSwapChainImageView(),
 			.imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
 			.loadOp = vk::AttachmentLoadOp::eClear,
@@ -90,7 +95,7 @@ namespace Dreamhearth
 			.clearValue = vk::ClearColorValue(m_clear_color.r, m_clear_color.g, m_clear_color.b, 1.0f)
 		};
 
-		vk::RenderingAttachmentInfo depth_attachment_info = {
+		vk::RenderingAttachmentInfo depth_attachment = {
 			.imageView = m_render_context.GetDepthImageView(),
 			.imageLayout = vk::ImageLayout::eDepthAttachmentOptimal,
 			.loadOp = vk::AttachmentLoadOp::eClear,
@@ -103,15 +108,27 @@ namespace Dreamhearth
 			.renderArea = { .offset = { 0, 0 }, .extent = swap_chain_extent },
 			.layerCount = 1,
 			.colorAttachmentCount = 1,
-			.pColorAttachments = &attachment_info,
-			.pDepthAttachment = &depth_attachment_info
+			.pColorAttachments = &color_attachment,
+			.pDepthAttachment = &depth_attachment
 		};
 
 		command_buffer.beginRendering(rendering_info);
 
-		command_buffer.setViewport(0, vk::Viewport(0.0f, 0.0f,
-			static_cast<float>(swap_chain_extent.width), static_cast<float>(swap_chain_extent.height), 0.0f, 1.0f));
-		command_buffer.setScissor(0, vk::Rect2D(vk::Offset2D(0, 0), swap_chain_extent));
+		// if viewport is not set, default to entire framebuffer
+		vk::Rect2D viewport = m_viewport;
+		if (viewport.extent.width == 0 || viewport.extent.height == 0)
+			viewport = vk::Rect2D(vk::Offset2D(0, 0), swap_chain_extent);
+		vk::Rect2D scissor{
+			.offset = { std::max(0, viewport.offset.x), std::max(0, viewport.offset.y) },
+			.extent = { std::min(static_cast<uint32_t>(viewport.extent.width), swap_chain_extent.width),
+				 std::min(static_cast<uint32_t>(viewport.extent.height), swap_chain_extent.height) }
+		};
+
+		command_buffer.setViewport(0, vk::Viewport{
+			static_cast<float>(viewport.offset.x), static_cast<float>(viewport.offset.y),
+			static_cast<float>(viewport.extent.width), static_cast<float>(viewport.extent.height),
+			0.0f, 1.0f });
+		command_buffer.setScissor(0, scissor);
 	}
 
 	void Renderer::EndDraw() const

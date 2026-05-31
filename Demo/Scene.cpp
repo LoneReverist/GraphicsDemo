@@ -409,13 +409,14 @@ Scene::Scene(RenderContext const & render_context, std::string const & title, fl
 	m_camera.Init(camera_pos, camera_dir);
 }
 
-void Scene::OnViewportResized(int width, int height)
+void Scene::OnWindowResized(int width, int height)
 {
-	m_camera.OnViewportResized(width, height);
+	m_renderer.SetViewport(0, 0, width, height);
+	m_camera.SetViewportSize(width, height);
 	if (m_fps_mesh)
-		m_fps_mesh->OnViewportResized(width, height);
+		m_fps_mesh->OnWindowResized(width, height);
 	if (m_title_mesh)
-		m_title_mesh->OnViewportResized(width, height);
+		m_title_mesh->OnWindowResized(width, height);
 }
 
 void Scene::OnDPIScalingFactorChanged(float dpi_scale_factor)

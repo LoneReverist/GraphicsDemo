@@ -29,7 +29,7 @@ public:
 	explicit Camera(bool flip_proj_y = false) : m_flip_proj_y(flip_proj_y) {}
 
 	void Init(glm::vec3 const & pos, glm::vec3 const & dir);
-	void OnViewportResized(int width, int height);
+	void SetViewportSize(int width, int height);
 
 	void Update(float dt, Input const & input);
 
@@ -57,7 +57,7 @@ void Camera::Init(glm::vec3 const & pos, glm::vec3 const & dir)
 	m_view_proj_uniform.view = glm::lookAt(m_pos_uniform.pos, m_pos_uniform.pos + m_dir, m_up_dir);
 }
 
-void Camera::OnViewportResized(int width, int height)
+void Camera::SetViewportSize(int width, int height)
 {
 	if (height == 0)
 		return;

@@ -25,9 +25,9 @@ namespace Dreamhearth
 			LoadProcFn * load_proc_fn);
 		~RenderContext();
 
-		void SetViewportSize(int width_pixels, int height_pixels) const;
 
 		// For compatibility with Vulkan implementation
+		void RecreateSwapChain(int width_pixels, int height_pixels) const {}
 		void WaitForLastFrame() const {}
 		bool ShouldFlipScreenY() const { return false; } // glm expects opengl style screen coordinates
 	};

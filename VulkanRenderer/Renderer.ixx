@@ -16,14 +16,16 @@ namespace Dreamhearth
 	public:
 		explicit Renderer(RenderContext const & render_context);
 
+		void SetViewport(int x, int y, int width, int height);
+		void SetClearColor(glm::vec3 const & color) { m_clear_color = color; }
+
 		void BeginDraw() const;
 		void EndDraw() const;
-
-		void SetClearColor(glm::vec3 const & color) { m_clear_color = color; }
 
 	private:
 		RenderContext const & m_render_context;
 
+		vk::Rect2D m_viewport{ { 0, 0 }, { 0, 0 } };
 		glm::vec3 m_clear_color;
 	};
 } // namespace Dreamhearth

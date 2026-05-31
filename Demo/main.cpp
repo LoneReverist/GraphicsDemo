@@ -65,7 +65,7 @@ int main()
 			dh::RenderContext render_context = window.CreateRenderContext(size);
 
 			Scene scene{ render_context, AppName, scale_factor };
-			scene.OnViewportResized(size.width, size.height);
+			scene.OnWindowResized(size.width, size.height);
 
 			auto last_update_time = std::chrono::steady_clock::now();
 
@@ -86,8 +86,8 @@ int main()
 				dh::WindowSize new_size = window_size_pixels.load();
 				if (draw_result == dh::DrawFrameResult::SwapChainOutOfDate || new_size != size)
 				{
-					render_context.SetViewportSize(new_size.width, new_size.height);
-					scene.OnViewportResized(new_size.width, new_size.height);
+					render_context.RecreateSwapChain(new_size.width, new_size.height);
+					scene.OnWindowResized(new_size.width, new_size.height);
 					size = new_size;
 				}
 

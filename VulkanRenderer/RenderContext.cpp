@@ -489,7 +489,7 @@ namespace Dreamhearth
 		return *m_swap_chain != VK_NULL_HANDLE && !m_swap_chain_image_views.empty();
 	}
 
-	void RenderContext::SetViewportSize(int width_pixels, int height_pixels)
+	void RenderContext::RecreateSwapChain(int width_pixels, int height_pixels)
 	{
 		WaitForLastFrame();
 

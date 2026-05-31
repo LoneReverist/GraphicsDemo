@@ -57,7 +57,7 @@ export class Scene
 public:
 	explicit Scene(RenderContext const & render_context, std::string const & title, float dpi_scale_factor);
 
-	void OnViewportResized(int width, int height);
+	void OnWindowResized(int width, int height);
 	void OnDPIScalingFactorChanged(float dpi_scale_factor);
 
 	bool Update(float dt, Input const & input);

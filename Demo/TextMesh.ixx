@@ -41,7 +41,7 @@ public:
 
 	std::expected<Mesh, GraphicsError> CreateMesh() const;
 
-	void OnViewportResized(int width, int height);
+	void OnWindowResized(int width, int height);
 
 	void SetText(std::string const & text);
 	void SetFontSize(float font_size);
@@ -170,7 +170,7 @@ std::expected<Mesh, GraphicsError> TextMesh::CreateMesh() const
 	return mesh;
 }
 
-void TextMesh::OnViewportResized(int width, int height)
+void TextMesh::OnWindowResized(int width, int height)
 {
 	if (width == m_viewport_width && height == m_viewport_height)
 		return; // no change
@@ -183,7 +183,7 @@ void TextMesh::OnViewportResized(int width, int height)
 		std::expected<Mesh, GraphicsError> mesh = CreateMesh();
 		if (!mesh.has_value())
 		{
-			std::cout << "TextMesh::OnViewportResized: Failed to create mesh: " << mesh.error().GetMessage() << std::endl;
+			std::cout << "TextMesh::OnWindowResized: Failed to create mesh: " << mesh.error().GetMessage() << std::endl;
 			return;
 		}
 

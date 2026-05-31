@@ -17,6 +17,11 @@ namespace Dreamhearth
 	{
 	}
 
+	void Renderer::SetViewport(int x, int y, int width, int height)
+	{
+		glViewport(x, y, width, height);
+	}
+
 	void Renderer::BeginDraw() const
 	{
 		glEnable(GL_DEPTH_TEST);

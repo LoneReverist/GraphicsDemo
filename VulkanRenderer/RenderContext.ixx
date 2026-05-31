@@ -57,7 +57,7 @@ namespace Dreamhearth
 			CreateSurfaceFn create_surface_fn);
 
 		bool SwapChainIsValid() const;
-		void SetViewportSize(int width_pixels, int height_pixels);
+		void RecreateSwapChain(int width_pixels, int height_pixels);
 
 		DrawFrameResult DrawFrame(std::function<void()> render_fn);
 		void WaitForLastFrame() const;
