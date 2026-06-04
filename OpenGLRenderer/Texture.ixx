@@ -79,6 +79,7 @@ namespace Dreamhearth
 
 		std::expected<void, GraphicsError> Create(RenderContext const & render_context, ImageData const & image_data, bool use_mip_map = true);
 		std::expected<void, GraphicsError> Create(RenderContext const & render_context, CubeImageData const & image_data);
+		std::expected<void, GraphicsError> CreateRenderTarget(RenderContext const & render_context, std::uint32_t width, std::uint32_t height);
 
 		bool IsValid() const;
 

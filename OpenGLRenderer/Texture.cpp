@@ -176,6 +176,39 @@ namespace Dreamhearth
 		return {};
 	}
 
+	std::expected<void, GraphicsError> Texture::CreateRenderTarget(RenderContext const & /*render_context*/, std::uint32_t width, std::uint32_t height)
+	{
+		if (width == 0 || height == 0)
+			return std::unexpected{ GraphicsError{ "Texture::CreateRenderTarget: width and height must be non-zero" } };
+
+		m_width = width;
+		m_height = height;
+
+		m_type = GL_TEXTURE_2D;
+		m_image.Create();
+		glBindTexture(m_type, m_image.GetId());
+
+		glTexParameteri(m_type, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(m_type, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(m_type, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(m_type, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		glTexImage2D(
+			m_type,
+			0 /*level*/,
+			GL_RGBA8,
+			m_width,
+			m_height,
+			0 /*border*/,
+			GL_RGBA,
+			GL_UNSIGNED_BYTE,
+			nullptr);
+
+		glBindTexture(m_type, 0);
+
+		return {};
+	}
+
 	bool Texture::IsValid() const
 	{
 		return m_image.GetId() != 0 && m_type != 0 && m_width != 0 && m_height != 0;
