@@ -178,6 +178,7 @@ namespace Dreamhearth
 			render_context.TransitionImageLayout(*m_image, layers, format, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
 			render_context.CopyBufferToImage(*staging_buffer.Get(), *m_image, image_data.width, image_data.height, layers);
 			render_context.TransitionImageLayout(*m_image, layers, format, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
+			m_layout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
 			m_image_view = render_context.CreateImageView(
 				*m_image,
@@ -228,6 +229,7 @@ namespace Dreamhearth
 			render_context.TransitionImageLayout(*m_image, layers, format, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
 			render_context.CopyBufferToImage(*staging_buffer.Get(), *m_image, image_data.width, image_data.height, layers);
 			render_context.TransitionImageLayout(*m_image, layers, format, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
+			m_layout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
 			m_image_view = render_context.CreateImageView(
 				*m_image,
@@ -245,6 +247,46 @@ namespace Dreamhearth
 
 		m_width = image_data.width;
 		m_height = image_data.height;
+
+		return {};
+	}
+
+	std::expected<void, GraphicsError> Texture::CreateRenderTarget(RenderContext const & render_context, std::uint32_t width, std::uint32_t height)
+	{
+		if (width == 0 || height == 0)
+			return std::unexpected{ GraphicsError{ "Texture::CreateRenderTarget: width and height must be non-zero" } };
+
+		try
+		{
+			constexpr std::uint32_t layers = 1;
+			vk::Format format = render_context.GetSwapChainImageFormat();
+
+			m_image = render_context.Create2dImage(
+				width,
+				height,
+				layers,
+				format,
+				vk::ImageTiling::eOptimal,
+				vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled,
+				vk::ImageCreateFlags{});
+
+			m_image_memory = render_context.CreateImageMemory(m_image, vk::MemoryPropertyFlagBits::eDeviceLocal);
+			m_image_view = render_context.CreateImageView(
+				*m_image,
+				vk::ImageViewType::e2D,
+				format,
+				vk::ImageAspectFlagBits::eColor,
+				layers);
+			m_sampler = create_sampler(render_context);
+		}
+		catch (vk::SystemError & err)
+		{
+			return std::unexpected{ GraphicsError{ "Texture::CreateRenderTarget: Failed to create render target. " + std::string(err.what()) } };
+		}
+
+		m_layout = vk::ImageLayout::eUndefined;
+		m_width = width;
+		m_height = height;
 
 		return {};
 	}

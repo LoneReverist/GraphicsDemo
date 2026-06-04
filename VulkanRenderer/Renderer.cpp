@@ -4,6 +4,8 @@ module;
 
 #include <vulkan/vulkan_raii.hpp>
 
+#include <glm/vec4.hpp>
+
 module Dreamhearth;
 
 import :Renderer;
@@ -62,8 +64,6 @@ namespace Dreamhearth
 	void Renderer::BeginDraw() const
 	{
 		vk::raii::CommandBuffer const & command_buffer = m_render_context.GetCurCommandBuffer();
-
-		command_buffer.begin({});
 
 		transition_image_layout(
 			command_buffer,
@@ -149,5 +149,65 @@ namespace Dreamhearth
 			vk::ImageAspectFlagBits::eColor);
 
 		command_buffer.end();
+	}
+
+	void Renderer::BeginTextureDraw(Texture const & target, glm::vec4 const & clear_color) const
+	{
+		vk::raii::CommandBuffer const & command_buffer = m_render_context.GetCurCommandBuffer();
+
+		transition_image_layout(
+			command_buffer,
+			target.GetImage(),
+			target.GetLayout(),
+			vk::ImageLayout::eColorAttachmentOptimal,
+			target.GetLayout() == vk::ImageLayout::eShaderReadOnlyOptimal ? vk::AccessFlagBits2::eShaderSampledRead : vk::AccessFlags2{},
+			vk::AccessFlagBits2::eColorAttachmentWrite,
+			target.GetLayout() == vk::ImageLayout::eShaderReadOnlyOptimal ? vk::PipelineStageFlagBits2::eFragmentShader : vk::PipelineStageFlagBits2::eTopOfPipe,
+			vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+			vk::ImageAspectFlagBits::eColor);
+		target.SetLayout(vk::ImageLayout::eColorAttachmentOptimal);
+
+		vk::RenderingAttachmentInfo color_attachment = {
+			.imageView = target.GetImageView(),
+			.imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
+			.loadOp = vk::AttachmentLoadOp::eClear,
+			.storeOp = vk::AttachmentStoreOp::eStore,
+			.clearValue = vk::ClearColorValue(clear_color.r, clear_color.g, clear_color.b, clear_color.a)
+		};
+
+		vk::RenderingInfo rendering_info = {
+			.renderArea = { .offset = { 0, 0 }, .extent = { target.GetWidth(), target.GetHeight() } },
+			.layerCount = 1,
+			.colorAttachmentCount = 1,
+			.pColorAttachments = &color_attachment,
+		};
+
+		command_buffer.beginRendering(rendering_info);
+
+		vk::Rect2D viewport{ { 0, 0 }, { target.GetWidth(), target.GetHeight() } };
+		command_buffer.setViewport(0, vk::Viewport{
+			0.0f, 0.0f,
+			static_cast<float>(target.GetWidth()), static_cast<float>(target.GetHeight()),
+			0.0f, 1.0f });
+		command_buffer.setScissor(0, viewport);
+	}
+
+	void Renderer::EndTextureDraw(Texture const & target) const
+	{
+		vk::raii::CommandBuffer const & command_buffer = m_render_context.GetCurCommandBuffer();
+
+		command_buffer.endRendering();
+
+		transition_image_layout(
+			command_buffer,
+			target.GetImage(),
+			vk::ImageLayout::eColorAttachmentOptimal,
+			vk::ImageLayout::eShaderReadOnlyOptimal,
+			vk::AccessFlagBits2::eColorAttachmentWrite,
+			vk::AccessFlagBits2::eShaderSampledRead,
+			vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+			vk::PipelineStageFlagBits2::eFragmentShader,
+			vk::ImageAspectFlagBits::eColor);
+		target.SetLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
 	}
 } // namespace Dreamhearth

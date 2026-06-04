@@ -3,11 +3,13 @@
 module;
 
 #include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
 
 export module Dreamhearth:Renderer;
 
 import :RenderContext;
 import :GraphicsError;
+import :Texture;
 
 namespace Dreamhearth
 {
@@ -21,6 +23,8 @@ namespace Dreamhearth
 
 		void BeginDraw() const;
 		void EndDraw() const;
+		void BeginTextureDraw(Texture const & target, glm::vec4 const & clear_color) const;
+		void EndTextureDraw(Texture const & target) const;
 
 	private:
 		RenderContext const & m_render_context;

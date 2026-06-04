@@ -550,6 +550,7 @@ namespace Dreamhearth
 		m_logical_device.resetFences(*m_draw_fences[m_current_frame]);
 
 		m_command_buffers[m_current_frame].reset();
+		m_command_buffers[m_current_frame].begin({});
 
 		render_fn();
 

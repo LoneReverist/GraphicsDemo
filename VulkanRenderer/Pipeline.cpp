@@ -326,7 +326,7 @@ namespace Dreamhearth
 			{
 				.colorAttachmentCount = 1,
 				.pColorAttachmentFormats = &swapchain_image_format,
-				.depthAttachmentFormat = depth_image_format
+				.depthAttachmentFormat = depth_options.uses_depth_attachment ? depth_image_format : vk::Format::eUndefined
 			}
 		};
 		

@@ -77,6 +77,7 @@ namespace Dreamhearth
 
 	export struct DepthTestOptions
 	{
+		bool uses_depth_attachment{ true }; // This specifies whether the render target has a depth buffer or not.
 		bool enable_depth_test{ true };
 		bool enable_depth_write{ true };
 		DepthCompareOp depth_compare_op{ DepthCompareOp::LESS };
