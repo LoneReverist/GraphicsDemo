@@ -260,6 +260,8 @@ namespace Dreamhearth
 		{
 			constexpr std::uint32_t layers = 1;
 			vk::Format format = render_context.GetSwapChainImageFormat();
+			if (format == vk::Format::eUndefined)
+				return std::unexpected{ GraphicsError{ "Texture::CreateRenderTarget: render target format is undefined" } };
 
 			m_image = render_context.Create2dImage(
 				width,

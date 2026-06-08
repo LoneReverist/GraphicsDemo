@@ -480,7 +480,6 @@ namespace Dreamhearth
 		m_swap_chain_image_views.clear();
 		m_swap_chain_images.clear();
 		m_swap_chain.clear();
-		m_swap_chain_image_format = vk::Format::eUndefined;
 		m_swap_chain_extent = vk::Extent2D{ 0, 0 };
 	}
 
