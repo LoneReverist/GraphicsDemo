@@ -43,7 +43,7 @@ namespace Dreamhearth
 	export class RenderContext
 	{
 	public:
-		constexpr static std::uint32_t m_max_frames_in_flight = 2;
+		constexpr static std::uint32_t MaxFramesInFlight = 2;
 
 		using CreateSurfaceFn = std::function<VkSurfaceKHR(VkInstance)>;
 

@@ -60,7 +60,7 @@ namespace Dreamhearth
 		vk::raii::DescriptorSetLayout m_texture_layout = nullptr;
 		vk::raii::DescriptorPool m_descriptor_pool = nullptr;
 
-		std::array<DescriptorSet, RenderContext::m_max_frames_in_flight> m_descriptor_sets;
+		std::array<DescriptorSet, RenderContext::MaxFramesInFlight> m_descriptor_sets;
 	};
 
 	export enum class DepthCompareOp : std::uint8_t

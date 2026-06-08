@@ -188,10 +188,10 @@ namespace Dreamhearth
 
 		m_descriptor_pool = create_descriptor_pool(device,
 			static_cast<std::uint32_t>(uniform_sizes.size()) /*descriptor_count*/,
-			RenderContext::m_max_frames_in_flight /*descriptor_set_count*/);
+			RenderContext::MaxFramesInFlight /*descriptor_set_count*/);
 
-		std::array<std::vector<vk::Buffer>, RenderContext::m_max_frames_in_flight> uniform_buffers;
-		for (size_t frame = 0; frame < RenderContext::m_max_frames_in_flight; ++frame)
+		std::array<std::vector<vk::Buffer>, RenderContext::MaxFramesInFlight> uniform_buffers;
+		for (size_t frame = 0; frame < RenderContext::MaxFramesInFlight; ++frame)
 		{
 			m_descriptor_sets[frame].uniform_buffers.reserve(uniform_sizes.size());
 			for (int binding = 0; binding < uniform_sizes.size(); ++binding)
@@ -202,10 +202,10 @@ namespace Dreamhearth
 			}
 		}
 
-		std::vector<vk::raii::DescriptorSet> descriptor_sets = create_descriptor_sets<RenderContext::m_max_frames_in_flight>(
+		std::vector<vk::raii::DescriptorSet> descriptor_sets = create_descriptor_sets<RenderContext::MaxFramesInFlight>(
 			device, m_uniform_layout, m_descriptor_pool, uniform_buffers, uniform_sizes);
 
-		for (size_t frame = 0; frame < RenderContext::m_max_frames_in_flight; ++frame)
+		for (size_t frame = 0; frame < RenderContext::MaxFramesInFlight; ++frame)
 			m_descriptor_sets[frame].descriptor_set = std::move(descriptor_sets[frame]);
 	}
 

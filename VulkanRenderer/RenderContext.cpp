@@ -427,12 +427,12 @@ namespace Dreamhearth
 			create_depth_resources();
 
 			m_command_pool = create_command_pool(m_phys_device_info, m_logical_device);
-			m_command_buffers = create_command_buffers(m_logical_device, m_command_pool, m_max_frames_in_flight);
+			m_command_buffers = create_command_buffers(m_logical_device, m_command_pool, MaxFramesInFlight);
 
 			for (size_t i = 0; i < m_swap_chain_images.size(); ++i)
 				m_render_finished_semaphores.emplace_back(m_logical_device, vk::SemaphoreCreateInfo{});
 
-			for (size_t i = 0; i < m_max_frames_in_flight; ++i)
+			for (size_t i = 0; i < MaxFramesInFlight; ++i)
 			{
 				m_present_complete_semaphores.emplace_back(m_logical_device, vk::SemaphoreCreateInfo{});
 				m_draw_fences.emplace_back(m_logical_device, vk::FenceCreateInfo{ .flags = vk::FenceCreateFlagBits::eSignaled });
@@ -590,7 +590,7 @@ namespace Dreamhearth
 			result = DrawFrameResult::SurfaceLost;
 		}
 
-		m_current_frame = (m_current_frame + 1) % m_max_frames_in_flight;
+		m_current_frame = (m_current_frame + 1) % MaxFramesInFlight;
 		return result;
 	}
 
