@@ -143,7 +143,8 @@ namespace Dreamhearth
 		std::uint32_t m_current_frame = 0;
 
 		std::vector<const char *> const m_device_extensions = {
-			vk::KHRSwapchainExtensionName
+			vk::KHRSwapchainExtensionName,
+			vk::KHRPushDescriptorExtensionName
 		};
 
 		std::vector<char const *> m_validation_layers = {

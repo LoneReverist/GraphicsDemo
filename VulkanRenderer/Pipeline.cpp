@@ -2,6 +2,7 @@
 
 module;
 
+#include <array>
 #include <cstdint>
 #include <expected>
 #include <string>
@@ -425,14 +426,14 @@ namespace Dreamhearth
 			.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal,
 		};
 		vk::WriteDescriptorSet write{
-			.dstSet = nullptr, // ignored for push descriptors
-			.dstBinding = binding,
-			.dstArrayElement = 0,
-			.descriptorCount = 1,
-			.descriptorType = vk::DescriptorType::eCombinedImageSampler,
-			.pImageInfo = &image_info,
+				.dstSet = nullptr, // ignored for push descriptors
+				.dstBinding = binding,
+				.dstArrayElement = 0,
+				.descriptorCount = 1,
+				.descriptorType = vk::DescriptorType::eCombinedImageSampler,
+				.pImageInfo = &image_info,
 		};
-		command_buffer.pushDescriptorSet(
+		command_buffer.pushDescriptorSetKHR(
 			vk::PipelineBindPoint::eGraphics,
 			*m_pipeline_layout,
 			1, // set index 1
