@@ -5,6 +5,8 @@ module;
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 
+#include <vulkan/vulkan.hpp>
+
 export module Dreamhearth:Renderer;
 
 import :RenderContext;
