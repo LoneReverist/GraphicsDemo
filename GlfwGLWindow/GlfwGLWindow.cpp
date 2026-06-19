@@ -4,6 +4,7 @@ module;
 
 #include <functional>
 #include <string>
+#include <utility>
 
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -12,6 +13,25 @@ module DreamhearthWindow;
 
 namespace Dreamhearth
 {
+	namespace
+	{
+		std::pair<float, float> cursor_pos_to_framebuffer_pixels(GLFWwindow * window, double x, double y)
+		{
+			int window_width = 0, window_height = 0;
+			int framebuffer_width = 0, framebuffer_height = 0;
+			glfwGetWindowSize(window, &window_width, &window_height);
+			glfwGetFramebufferSize(window, &framebuffer_width, &framebuffer_height);
+
+			if (window_width <= 0 || window_height <= 0)
+				return { static_cast<float>(x), static_cast<float>(y) };
+
+			return {
+				static_cast<float>(x) * static_cast<float>(framebuffer_width) / static_cast<float>(window_width),
+				static_cast<float>(y) * static_cast<float>(framebuffer_height) / static_cast<float>(window_height)
+			};
+		}
+	}
+
 	Window::Window(WindowSize window_size_screen_coords, std::string const & title, OnErrorFn on_error)
 		: m_title(title)
 	{
@@ -114,6 +134,27 @@ namespace Dreamhearth
 
 				if (key == GLFW_KEY_ENTER && mods & GLFW_MOD_ALT && action == GLFW_PRESS)
 					self->ToggleFullscreen();
+			});
+	}
+
+	void Window::SetOnMouseButtonEvent(OnMouseButtonEventFn on_mouse_button_event)
+	{
+		m_on_mouse_button_event = std::move(on_mouse_button_event);
+		glfwSetMouseButtonCallback(m_window, [](GLFWwindow * window, int button, int action, int mods)
+			{
+				Window * self = static_cast<Window *>(glfwGetWindowUserPointer(window));
+				self->on_mouse_button_event(button, action, mods);
+			});
+	}
+
+	void Window::SetOnCursorPos(OnCursorPosFn on_cursor_pos)
+	{
+		m_on_cursor_pos = std::move(on_cursor_pos);
+		glfwSetCursorPosCallback(m_window, [](GLFWwindow * window, double x, double y)
+			{
+				Window * self = static_cast<Window *>(glfwGetWindowUserPointer(window));
+				auto const [x_pixels, y_pixels] = cursor_pos_to_framebuffer_pixels(window, x, y);
+				self->on_cursor_pos(x_pixels, y_pixels);
 			});
 	}
 
