@@ -15,7 +15,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 if(MSVC)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-else() # GCC/Clang
+elseif(NOT WIN32) # GCC/Clang on Unix-like platforms
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libstdc++ -static-libgcc")
 endif()
 
