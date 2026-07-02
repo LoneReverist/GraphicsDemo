@@ -111,9 +111,7 @@ namespace Dreamhearth
 	{
 		auto properties = device.getProperties();
 
-		// Just find a dedicated gpu for now
-		if (properties.deviceType != vk::PhysicalDeviceType::eDiscreteGpu
-			|| properties.apiVersion < vk::ApiVersion13)
+		if (properties.apiVersion < vk::ApiVersion13)
 			return false;
 
 		std::uint32_t queue_index = find_queue_family(device, surface);
@@ -155,12 +153,20 @@ namespace Dreamhearth
 			throw GraphicsException("Failed to find GPUs with Vulkan support!");
 
 		PhysicalDeviceInfo phys_device_info;
-		auto iter = std::ranges::find_if(devices,
-			[&device_extensions, &surface, &phys_device_info](vk::raii::PhysicalDevice const & device)
+		auto find_suitable_device =
+			[&devices, &device_extensions, &surface, &phys_device_info](vk::PhysicalDeviceType device_type)
 			{
-				return device_is_suitable(device, device_extensions, surface, phys_device_info);
-			});
-		if (iter == devices.end())
+				return std::ranges::any_of(devices,
+					[device_type, &device_extensions, &surface, &phys_device_info](vk::raii::PhysicalDevice const & device)
+					{
+						return device.getProperties().deviceType == device_type
+							&& device_is_suitable(device, device_extensions, surface, phys_device_info);
+					});
+			};
+
+		bool found_device = find_suitable_device(vk::PhysicalDeviceType::eDiscreteGpu)
+			|| find_suitable_device(vk::PhysicalDeviceType::eIntegratedGpu);
+		if (!found_device)
 			throw GraphicsException("Failed to find a suitable GPU!");
 
 		return phys_device_info;
