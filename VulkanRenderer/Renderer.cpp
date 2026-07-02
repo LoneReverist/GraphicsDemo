@@ -2,6 +2,9 @@
 
 module;
 
+#include <algorithm>
+#include <cstdint>
+
 #include <vulkan/vulkan_raii.hpp>
 
 #include <glm/vec4.hpp>
@@ -19,7 +22,11 @@ namespace Dreamhearth
 
 	void Renderer::SetViewport(int x, int y, int width, int height)
 	{
-		m_viewport = vk::Rect2D(vk::Offset2D(x, y), vk::Extent2D(width, height));
+		m_viewport = vk::Rect2D(
+			vk::Offset2D(x, y),
+			vk::Extent2D(
+				static_cast<std::uint32_t>(std::max(0, width)),
+				static_cast<std::uint32_t>(std::max(0, height))));
 	}
 
 	void transition_image_layout(
@@ -118,10 +125,23 @@ namespace Dreamhearth
 		vk::Rect2D viewport = m_viewport;
 		if (viewport.extent.width == 0 || viewport.extent.height == 0)
 			viewport = vk::Rect2D(vk::Offset2D(0, 0), swap_chain_extent);
+			
+		const std::int64_t scissor_left = std::clamp<std::int64_t>(viewport.offset.x, 0, swap_chain_extent.width);
+		const std::int64_t scissor_top = std::clamp<std::int64_t>(viewport.offset.y, 0, swap_chain_extent.height);
+		const std::int64_t scissor_right = std::clamp<std::int64_t>(
+			static_cast<std::int64_t>(viewport.offset.x) + viewport.extent.width,
+			scissor_left,
+			swap_chain_extent.width);
+		const std::int64_t scissor_bottom = std::clamp<std::int64_t>(
+			static_cast<std::int64_t>(viewport.offset.y) + viewport.extent.height,
+			scissor_top,
+			swap_chain_extent.height);
 		vk::Rect2D scissor{
-			.offset = { std::max(0, viewport.offset.x), std::max(0, viewport.offset.y) },
-			.extent = { std::min(static_cast<uint32_t>(viewport.extent.width), swap_chain_extent.width),
-				 std::min(static_cast<uint32_t>(viewport.extent.height), swap_chain_extent.height) }
+			.offset = { static_cast<std::int32_t>(scissor_left), static_cast<std::int32_t>(scissor_top) },
+			.extent = {
+				static_cast<std::uint32_t>(scissor_right - scissor_left),
+				static_cast<std::uint32_t>(scissor_bottom - scissor_top),
+			},
 		};
 
 		command_buffer.setViewport(0, vk::Viewport{
