@@ -23,7 +23,7 @@ namespace Dreamhearth
 		using PerFrameConstantsCallback = Pipeline::PerFrameConstantsCallback;
 		using PerObjectConstantsCallback = Pipeline::PerObjectConstantsCallback;
 
-		explicit PipelineBuilder(RenderContext const & /*render_context*/) {}
+		explicit PipelineBuilder(RenderContext const & render_context) : m_render_context(render_context) {}
 		~PipelineBuilder();
 
 		std::expected<void, GraphicsError> LoadShaders(std::filesystem::path const & vs_path, std::filesystem::path const & fs_path);
@@ -54,6 +54,8 @@ namespace Dreamhearth
 		std::expected<Pipeline, GraphicsError> CreatePipeline() const;
 
 	private:
+		RenderContext const & m_render_context;
+
 		unsigned int m_vert_shader_id = 0;
 		unsigned int m_frag_shader_id = 0;
 

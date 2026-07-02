@@ -3,13 +3,17 @@
 module;
 
 #include <cstdint>
+#include <expected>
 #include <functional>
+#include <memory>
 #include <string>
 #include <vector>
 
 #include <vulkan/vulkan_raii.hpp>
 
 export module Dreamhearth:RenderContext;
+
+import :GraphicsError;
 
 namespace Dreamhearth
 {
@@ -40,6 +44,12 @@ namespace Dreamhearth
 		SurfaceLost
 	};
 
+	export struct RenderExtent
+	{
+		std::uint32_t width = 0;
+		std::uint32_t height = 0;
+	};
+
 	export class RenderContext
 	{
 	public:
@@ -48,16 +58,23 @@ namespace Dreamhearth
 		using CreateSurfaceFn = std::function<VkSurfaceKHR(VkInstance)>;
 
 	public:
-		explicit RenderContext(
+		static std::expected<RenderContext, GraphicsError> Create(
 			int width_pixels,
 			int height_pixels,
 			std::string const & app_title,
 			std::uint32_t extension_count,
 			char const ** extensions,
-			CreateSurfaceFn create_surface_fn);
+			CreateSurfaceFn create_surface_fn,
+			GraphicsDiagnosticFn on_diagnostic = {});
+
+		RenderContext(RenderContext &&) noexcept = default;
+		RenderContext & operator=(RenderContext &&) noexcept = delete;
+		RenderContext(RenderContext const &) = delete;
+		RenderContext & operator=(RenderContext const &) = delete;
 
 		bool SwapChainIsValid() const;
-		void RecreateSwapChain(int width_pixels, int height_pixels);
+		std::expected<void, GraphicsError> RecreateSwapChain(int width_pixels, int height_pixels);
+		void ReportDiagnostic(GraphicsDiagnostic diagnostic) const noexcept;
 
 		DrawFrameResult DrawFrame(std::function<void()> render_fn);
 		void WaitForLastFrame() const;
@@ -93,7 +110,10 @@ namespace Dreamhearth
 		bool ShouldFlipScreenY() const { return true; }
 
 		vk::raii::Device const & GetDevice() const { return m_logical_device; }
-		vk::Extent2D GetSwapChainExtent() const { return m_swap_chain_extent; }
+		RenderExtent GetSwapChainExtent() const
+		{
+			return { m_swap_chain_extent.width, m_swap_chain_extent.height };
+		}
 		vk::Format GetSwapChainImageFormat() const { return m_swap_chain_image_format; }
 		vk::Image const & GetCurSwapChainImage() const { return m_swap_chain_images[m_current_image_index]; }
 		vk::raii::ImageView const & GetCurSwapChainImageView() const { return m_swap_chain_image_views[m_current_image_index]; }
@@ -106,6 +126,15 @@ namespace Dreamhearth
 		PhysicalDeviceInfo const & GetPhysicalDeviceInfo() const { return m_phys_device_info; }
 
 	private:
+		explicit RenderContext(
+			int width_pixels,
+			int height_pixels,
+			std::string const & app_title,
+			std::uint32_t extension_count,
+			char const ** extensions,
+			CreateSurfaceFn create_surface_fn,
+			GraphicsDiagnosticFn on_diagnostic);
+
 		void create_depth_resources();
 		void destroy_swap_chain();
 
@@ -141,6 +170,7 @@ namespace Dreamhearth
 		std::vector<vk::raii::Fence> m_draw_fences;
 
 		std::uint32_t m_current_frame = 0;
+		std::shared_ptr<GraphicsDiagnosticFn> m_on_diagnostic;
 
 		std::vector<const char *> const m_device_extensions = {
 			vk::KHRSwapchainExtensionName,

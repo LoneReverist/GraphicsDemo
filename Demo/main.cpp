@@ -3,6 +3,7 @@
 #include <atomic>
 #include <iostream>
 #include <thread>
+#include <utility>
 
 import Dreamhearth;
 import DreamhearthWindow;
@@ -23,6 +24,11 @@ namespace dh = Dreamhearth;
 void on_error(std::string msg)
 {
 	std::cout << msg << std::endl;
+}
+
+void on_graphics_diagnostic(dh::GraphicsDiagnostic const & diagnostic)
+{
+	on_error(diagnostic.message);
 }
 
 int main()
@@ -59,18 +65,57 @@ int main()
 	std::jthread update_render_loop(
 		[&window, &input, &window_size_pixels, &window_scale_factor](std::stop_token s_token)
 		{
-			dh::WindowSize size = window_size_pixels.load();
+			dh::WindowSize last_window_size = window_size_pixels.load();
 			float scale_factor = window_scale_factor.load();
 
-			dh::RenderContext render_context = window.CreateRenderContext(size);
+			auto render_context_result = window.CreateRenderContext(last_window_size, on_graphics_diagnostic);
+			if (!render_context_result)
+			{
+				on_error(render_context_result.error().GetMessage());
+				window.SetShouldClose(true);
+				return;
+			}
+			dh::RenderContext render_context = std::move(render_context_result).value();
 
 			Scene scene{ render_context, AppName, scale_factor };
-			scene.OnWindowResized(size.width, size.height);
+			dh::RenderExtent render_extent = render_context.GetSwapChainExtent();
+			scene.OnWindowResized(render_extent.width, render_extent.height);
 
 			auto last_update_time = std::chrono::steady_clock::now();
+			bool swap_chain_needs_recreation = false;
 
 			while (!s_token.stop_requested())
 			{
+				dh::WindowSize const window_size = window_size_pixels.load();
+				if (swap_chain_needs_recreation || window_size != last_window_size)
+				{
+					last_window_size = window_size;
+					auto recreate_result = render_context.RecreateSwapChain(window_size.width, window_size.height);
+					if (!recreate_result)
+					{
+						on_error(recreate_result.error().GetMessage());
+						break;
+					}
+
+					render_extent = render_context.GetSwapChainExtent();
+					if (render_extent.width > 0 && render_extent.height > 0)
+					{
+						scene.OnWindowResized(render_extent.width, render_extent.height);
+						swap_chain_needs_recreation = false;
+					}
+					else
+					{
+						swap_chain_needs_recreation = true;
+					}
+				}
+
+				if (render_extent.width == 0 || render_extent.height == 0)
+				{
+					std::this_thread::sleep_for(std::chrono::milliseconds{ 16 });
+					last_update_time = std::chrono::steady_clock::now();
+					continue;
+				}
+
 				auto cur_time = std::chrono::steady_clock::now();
 				float dt = std::chrono::duration<float>(cur_time - last_update_time).count(); // seconds
 				last_update_time = cur_time;
@@ -83,13 +128,8 @@ int main()
 				if (draw_result == dh::DrawFrameResult::SurfaceLost)
 					break; // The Cosmic compositor has issues
 
-				dh::WindowSize new_size = window_size_pixels.load();
-				if (draw_result == dh::DrawFrameResult::SwapChainOutOfDate || new_size != size)
-				{
-					render_context.RecreateSwapChain(new_size.width, new_size.height);
-					scene.OnWindowResized(new_size.width, new_size.height);
-					size = new_size;
-				}
+				if (draw_result == dh::DrawFrameResult::SwapChainOutOfDate)
+					swap_chain_needs_recreation = true;
 
 				float new_scale_factor = window_scale_factor.load();
 				if (new_scale_factor != scale_factor)

@@ -5,8 +5,8 @@ module;
 #include <expected>
 #include <filesystem>
 #include <functional>
-#include <iostream>
 #include <optional>
+#include <string>
 
 #include <glad/glad.h>
 
@@ -109,6 +109,7 @@ namespace Dreamhearth
 		using PerObjectConstantsCallback = std::function<void(Pipeline const & pipeline, void const * object_data)>;
 
 		explicit Pipeline(
+			RenderContext const & render_context,
 			PerFrameConstantsCallback per_frame_constants_callback,
 			PerObjectConstantsCallback per_object_constants_callback);
 		~Pipeline() = default;
@@ -145,6 +146,8 @@ namespace Dreamhearth
 		void SetObjectData(ObjectDataVS const & vs_data, ObjectDataFS const & fs_data) const;
 
 	private:
+		std::reference_wrapper<RenderContext const> m_render_context;
+
 		Program m_program;
 
 		DescriptorSet m_descriptor_set;
@@ -160,16 +163,26 @@ namespace Dreamhearth
 	};
 
 	template <typename UniformData>
-	void set_uniform(std::uint32_t binding, UniformBuffer const & uniform, UniformData const & data)
+	void set_uniform(
+		RenderContext const & render_context,
+		std::uint32_t binding,
+		UniformBuffer const & uniform,
+		UniformData const & data)
 	{
 		if (uniform.buffer.GetId() == 0)
 		{
-			std::cout << "Uniform buffer not initialized for binding: " << binding << std::endl;
+			render_context.ReportDiagnostic({
+				.severity = GraphicsDiagnosticSeverity::Error,
+				.message = "Uniform buffer not initialized for binding: " + std::to_string(binding)
+			});
 			return;
 		}
 		if (uniform.size != sizeof(data))
 		{
-			std::cout << "Uniform buffer size is different from data size: " << binding << std::endl;
+			render_context.ReportDiagnostic({
+				.severity = GraphicsDiagnosticSeverity::Error,
+				.message = "Uniform buffer size differs from data size for binding: " + std::to_string(binding)
+			});
 			return;
 		}
 
@@ -184,12 +197,15 @@ namespace Dreamhearth
 	{
 		if (binding >= m_descriptor_set.uniform_buffers.size())
 		{
-			std::cout << "Invalid uniform binding: " << binding << std::endl;
+			m_render_context.get().ReportDiagnostic({
+				.severity = GraphicsDiagnosticSeverity::Error,
+				.message = "Invalid uniform binding: " + std::to_string(binding)
+			});
 			return;
 		}
 
 		UniformBuffer const & uniform = m_descriptor_set.uniform_buffers[binding];
-		set_uniform(binding, uniform, data);
+		set_uniform(m_render_context.get(), binding, uniform, data);
 	}
 
 	template <typename ObjectDataVS /*= std::nullopt_t*/, typename ObjectDataFS /*= std::nullopt_t*/>
@@ -203,7 +219,7 @@ namespace Dreamhearth
 			GLuint blockIndex = glGetUniformBlockIndex(m_program.GetId(), "ObjectDataVS");
 			GLint binding = 0;
 			glGetActiveUniformBlockiv(m_program.GetId(), blockIndex, GL_UNIFORM_BLOCK_BINDING, &binding);
-			set_uniform(binding, m_vs_object_uniform, vs_data);
+			set_uniform(m_render_context.get(), binding, m_vs_object_uniform, vs_data);
 		}
 
 		if constexpr (!std::same_as<ObjectDataFS, std::nullopt_t>)
@@ -211,7 +227,7 @@ namespace Dreamhearth
 			GLuint blockIndex = glGetUniformBlockIndex(m_program.GetId(), "ObjectDataFS");
 			GLint binding = 0;
 			glGetActiveUniformBlockiv(m_program.GetId(), blockIndex, GL_UNIFORM_BLOCK_BINDING, &binding);
-			set_uniform(binding, m_fs_object_uniform, fs_data);
+			set_uniform(m_render_context.get(), binding, m_fs_object_uniform, fs_data);
 		}
 	}
 } // namespace Dreamhearth

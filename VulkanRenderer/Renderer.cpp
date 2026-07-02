@@ -110,7 +110,8 @@ namespace Dreamhearth
 			.clearValue = vk::ClearDepthStencilValue(1.0f, 0)
 		};
 
-		vk::Extent2D swap_chain_extent = m_render_context.GetSwapChainExtent();
+		RenderExtent const render_extent = m_render_context.GetSwapChainExtent();
+		vk::Extent2D const swap_chain_extent{ render_extent.width, render_extent.height };
 		vk::RenderingInfo rendering_info = {
 			.renderArea = { .offset = { 0, 0 }, .extent = swap_chain_extent },
 			.layerCount = 1,

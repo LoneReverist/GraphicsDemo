@@ -46,9 +46,11 @@ namespace Dreamhearth
 	}
 
 	Pipeline::Pipeline(
+		RenderContext const & render_context,
 		PerFrameConstantsCallback per_frame_constants_callback,
 		PerObjectConstantsCallback per_object_constants_callback)
-		: m_per_frame_constants_callback(per_frame_constants_callback)
+		: m_render_context(render_context)
+		, m_per_frame_constants_callback(per_frame_constants_callback)
 		, m_per_object_constants_callback(per_object_constants_callback)
 	{
 	}

@@ -2,8 +2,13 @@
 
 module;
 
+#include <cstddef>
+#include <expected>
 #include <format>
-#include <iostream>
+#include <memory>
+#include <string>
+#include <string_view>
+#include <utility>
 
 #include <glad/glad.h>
 
@@ -13,6 +18,35 @@ import :RenderContext;
 
 namespace Dreamhearth
 {
+	namespace
+	{
+		GraphicsDiagnosticSeverity to_diagnostic_severity(GLenum type, GLenum severity)
+		{
+			if (type == GL_DEBUG_TYPE_ERROR || severity == GL_DEBUG_SEVERITY_HIGH)
+				return GraphicsDiagnosticSeverity::Error;
+			if (severity == GL_DEBUG_SEVERITY_MEDIUM || severity == GL_DEBUG_SEVERITY_LOW)
+				return GraphicsDiagnosticSeverity::Warning;
+			return GraphicsDiagnosticSeverity::Info;
+		}
+
+		void report_diagnostic(
+			GraphicsDiagnosticFn const * callback,
+			GraphicsDiagnostic diagnostic) noexcept
+		{
+			if (!callback || !*callback)
+				return;
+
+			try
+			{
+				(*callback)(diagnostic);
+			}
+			catch (...)
+			{
+				// Application callbacks must not throw through the OpenGL C API.
+			}
+		}
+	}
+
 	std::string type_to_string(GLenum type)
 	{
 		switch (type) {
@@ -49,29 +83,51 @@ namespace Dreamhearth
 		if (id == 131185) // ignore notification about using GL_STATIC_DRAW
 			return;
 
-		// TODO: don't call std::cout here, pass the message to the main application
-		std::cout << std::format("OpenGL {3}: type - {1}, id - {2}\nMessage: {0}\n\n",
-			message, type_to_string(type), id, severity_to_string(severity));
+		auto const * callback = static_cast<GraphicsDiagnosticFn const *>(userParam);
+		report_diagnostic(callback, {
+			.severity = to_diagnostic_severity(type, severity),
+			.message = std::format("OpenGL {}: type - {}, id - {}\nMessage: {}",
+				severity_to_string(severity), type_to_string(type), id,
+				std::string_view{ message, static_cast<std::size_t>(length) })
+		});
 	}
 
-	RenderContext::RenderContext(
-			int width_pixels,
-			int height_pixels,
-			LoadProcFn * load_proc_fn)
+	std::expected<RenderContext, GraphicsError> RenderContext::Create(
+		int width_pixels,
+		int height_pixels,
+		LoadProcFn * load_proc_fn,
+		GraphicsDiagnosticFn on_diagnostic)
 	{
 		if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(load_proc_fn)))
-		{
-			std::cout << "Failed to initialize OpenGL context" << std::endl;
-			return;
-		}
+			return std::unexpected{ GraphicsError{ "Failed to initialize OpenGL context" } };
+
+		RenderContext render_context{ width_pixels, height_pixels, std::move(on_diagnostic) };
 	
 		glEnable(GL_DEBUG_OUTPUT);
-		glDebugMessageCallback(debug_message_callback, 0);
+		glDebugMessageCallback(debug_message_callback, render_context.m_on_diagnostic.get());
 	
 		glEnable(GL_FRAMEBUFFER_SRGB);
+
+		return render_context;
+	}
+
+	RenderContext::RenderContext(int width_pixels, int height_pixels, GraphicsDiagnosticFn on_diagnostic)
+		: m_on_diagnostic(std::make_shared<GraphicsDiagnosticFn>(std::move(on_diagnostic)))
+		, m_swap_chain_extent{
+			width_pixels > 0 ? static_cast<std::uint32_t>(width_pixels) : 0,
+			height_pixels > 0 ? static_cast<std::uint32_t>(height_pixels) : 0
+		}
+	{
+	}
+
+	void RenderContext::ReportDiagnostic(GraphicsDiagnostic diagnostic) const noexcept
+	{
+		report_diagnostic(m_on_diagnostic.get(), std::move(diagnostic));
 	}
 	
 	RenderContext::~RenderContext()
 	{
+		if (m_on_diagnostic)
+			glDebugMessageCallback(nullptr, nullptr);
 	}
 } // namespace Dreamhearth

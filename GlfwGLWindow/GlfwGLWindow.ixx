@@ -2,6 +2,7 @@
 
 module;
 
+#include <expected>
 #include <functional>
 #include <string>
 
@@ -58,7 +59,9 @@ namespace Dreamhearth
 
 		void ToggleFullscreen(); // must only be called from main thread
 
-		RenderContext CreateRenderContext(WindowSize size) const;
+		std::expected<RenderContext, GraphicsError> CreateRenderContext(
+			WindowSize size,
+			GraphicsDiagnosticFn on_diagnostic = {}) const;
 
 		DrawFrameResult DrawFrame(RenderContext & render_context, std::function<void()> render_fn) const;
 

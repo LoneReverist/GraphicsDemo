@@ -3,6 +3,7 @@
 module;
 
 #include <cstdint>
+#include <expected>
 #include <functional>
 #include <string>
 #include <utility>
@@ -185,7 +186,9 @@ namespace Dreamhearth
 		}
 	}
 
-	RenderContext Window::CreateRenderContext(WindowSize size) const
+	std::expected<RenderContext, GraphicsError> Window::CreateRenderContext(
+		WindowSize size,
+		GraphicsDiagnosticFn on_diagnostic) const
 	{
 		std::uint32_t extension_count = 0;
 		const char ** extensions = glfwGetRequiredInstanceExtensions(&extension_count);
@@ -199,8 +202,8 @@ namespace Dreamhearth
 			return surface;
 		};
 
-		return RenderContext{ size.width, size.height, m_title,
-			 extension_count, extensions, create_surface_fn };
+		return RenderContext::Create(size.width, size.height, m_title,
+			extension_count, extensions, create_surface_fn, std::move(on_diagnostic));
 	}
 
 	DrawFrameResult Window::DrawFrame(RenderContext & render_context, std::function<void()> render_fn) const

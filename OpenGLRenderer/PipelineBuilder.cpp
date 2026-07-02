@@ -98,6 +98,7 @@ namespace Dreamhearth
 			return std::unexpected{ GraphicsError{ "Cull mode not set" } };
 
 		Pipeline pipeline{
+			m_render_context,
 			m_per_frame_constants_callback,
 			m_per_object_constants_callback
 		};

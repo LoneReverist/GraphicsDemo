@@ -4,10 +4,13 @@ module;
 
 #include <algorithm>
 #include <cstdint>
+#include <expected>
 #include <functional>
-#include <iostream>
 #include <limits>
+#include <memory>
 #include <ranges>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include <vulkan/vulkan_raii.hpp>
@@ -386,71 +389,110 @@ namespace Dreamhearth
 		return vk::raii::CommandBuffers{ device, alloc_info };
 	}
 
+	std::expected<RenderContext, GraphicsError> RenderContext::Create(
+		int width_pixels,
+		int height_pixels,
+		std::string const & app_title,
+		std::uint32_t extension_count,
+		char const ** extensions,
+		CreateSurfaceFn create_surface_fn,
+		GraphicsDiagnosticFn on_diagnostic)
+	{
+		try
+		{
+			return RenderContext{
+				width_pixels,
+				height_pixels,
+				app_title,
+				extension_count,
+				extensions,
+				std::move(create_surface_fn),
+				std::move(on_diagnostic)
+			};
+		}
+		catch (vk::SystemError const & err)
+		{
+			return std::unexpected{ GraphicsError{ "Vulkan error: " + std::string(err.what()) } };
+		}
+		catch (GraphicsException const & err)
+		{
+			return std::unexpected{ GraphicsError{ "Graphics error: " + std::string(err.what()) } };
+		}
+	}
+
 	RenderContext::RenderContext(
 		int width_pixels,
 		int height_pixels,
 		std::string const & app_title,
 		std::uint32_t extension_count,
 		char const ** extensions,
-		CreateSurfaceFn create_surface_fn)
+		CreateSurfaceFn create_surface_fn,
+		GraphicsDiagnosticFn on_diagnostic)
+		: m_on_diagnostic(std::make_shared<GraphicsDiagnosticFn>(std::move(on_diagnostic)))
 	{
+		if (m_enable_validation_layers && !validation_layers_are_supported(m_context, m_validation_layers))
+		{
+			ReportDiagnostic({
+				.severity = GraphicsDiagnosticSeverity::Warning,
+				.message = "Vulkan validation layers requested, but not available; continuing without validation."
+			});
+			m_enable_validation_layers = false;
+			m_validation_layers.clear();
+		}
+
+		auto extension_props = m_context.enumerateInstanceExtensionProperties();
+		for (std::uint32_t i = 0; i < extension_count; ++i)
+		{
+			if (std::ranges::none_of(extension_props,
+				[extension = extensions[i]](auto const & extensionProperty)
+				{ return strcmp(extensionProperty.extensionName, extension) == 0; }))
+			{
+				throw GraphicsException("Required Vulkan extension not supported: " + std::string(extensions[i]));
+			}
+		}
+
+		m_instance = create_instance(m_context, app_title, extension_count, extensions, m_enable_validation_layers, m_validation_layers);
+
+		VkSurfaceKHR raw_surface = create_surface_fn(*m_instance);
+		m_surface = vk::raii::SurfaceKHR{ m_instance, raw_surface };
+
+		m_phys_device_info = pick_physical_device(m_instance, m_surface, m_device_extensions);
+		m_logical_device = create_logical_device(m_phys_device_info, m_device_extensions);
+		m_queue = m_logical_device.getQueue(m_phys_device_info.queue_index, 0);
+
+		m_swap_chain = create_swap_chain(m_phys_device_info, width_pixels, height_pixels,
+			m_surface, m_logical_device, m_swap_chain_image_format, m_swap_chain_extent);
+		m_swap_chain_images = m_swap_chain.getImages();
+		m_swap_chain_image_views = create_swap_chain_image_views(m_logical_device, m_swap_chain_images, m_swap_chain_image_format);
+
+		m_depth_image_format = find_depth_image_format(m_phys_device_info.device);
+		create_depth_resources();
+
+		m_command_pool = create_command_pool(m_phys_device_info, m_logical_device);
+		m_command_buffers = create_command_buffers(m_logical_device, m_command_pool, MaxFramesInFlight);
+
+		for (size_t i = 0; i < m_swap_chain_images.size(); ++i)
+			m_render_finished_semaphores.emplace_back(m_logical_device, vk::SemaphoreCreateInfo{});
+
+		for (size_t i = 0; i < MaxFramesInFlight; ++i)
+		{
+			m_present_complete_semaphores.emplace_back(m_logical_device, vk::SemaphoreCreateInfo{});
+			m_draw_fences.emplace_back(m_logical_device, vk::FenceCreateInfo{ .flags = vk::FenceCreateFlagBits::eSignaled });
+		}
+	}
+
+	void RenderContext::ReportDiagnostic(GraphicsDiagnostic diagnostic) const noexcept
+	{
+		if (!m_on_diagnostic || !*m_on_diagnostic)
+			return;
+
 		try
 		{
-			if (m_enable_validation_layers && !validation_layers_are_supported(m_context, m_validation_layers))
-			{
-				std::cout << "Validation layers requested, but not available!" << std::endl;
-				m_enable_validation_layers = false;
-				m_validation_layers.clear();
-			}
-
-			auto extension_props = m_context.enumerateInstanceExtensionProperties();
-			for (std::uint32_t i = 0; i < extension_count; ++i)
-			{
-				if (std::ranges::none_of(extension_props,
-					[extension = extensions[i]](auto const & extensionProperty)
-					{ return strcmp(extensionProperty.extensionName, extension) == 0; }))
-				{
-					std::cout << "Required extension not supported: " << extensions[i] << std::endl;
-					return;
-				}
-			}
-
-			m_instance = create_instance(m_context, app_title, extension_count, extensions, m_enable_validation_layers, m_validation_layers);
-
-			VkSurfaceKHR raw_surface = create_surface_fn(*m_instance);
-			m_surface = vk::raii::SurfaceKHR{ m_instance, raw_surface };
-
-			m_phys_device_info = pick_physical_device(m_instance, m_surface, m_device_extensions);
-			m_logical_device = create_logical_device(m_phys_device_info, m_device_extensions);
-			m_queue = m_logical_device.getQueue(m_phys_device_info.queue_index, 0);
-
-			m_swap_chain = create_swap_chain(m_phys_device_info, width_pixels, height_pixels,
-				m_surface, m_logical_device, m_swap_chain_image_format, m_swap_chain_extent);
-			m_swap_chain_images = m_swap_chain.getImages();
-			m_swap_chain_image_views = create_swap_chain_image_views(m_logical_device, m_swap_chain_images, m_swap_chain_image_format);
-
-			m_depth_image_format = find_depth_image_format(m_phys_device_info.device);
-			create_depth_resources();
-
-			m_command_pool = create_command_pool(m_phys_device_info, m_logical_device);
-			m_command_buffers = create_command_buffers(m_logical_device, m_command_pool, MaxFramesInFlight);
-
-			for (size_t i = 0; i < m_swap_chain_images.size(); ++i)
-				m_render_finished_semaphores.emplace_back(m_logical_device, vk::SemaphoreCreateInfo{});
-
-			for (size_t i = 0; i < MaxFramesInFlight; ++i)
-			{
-				m_present_complete_semaphores.emplace_back(m_logical_device, vk::SemaphoreCreateInfo{});
-				m_draw_fences.emplace_back(m_logical_device, vk::FenceCreateInfo{ .flags = vk::FenceCreateFlagBits::eSignaled });
-			}
+			(*m_on_diagnostic)(diagnostic);
 		}
-		catch (vk::SystemError const & err)
+		catch (...)
 		{
-			std::cout << "Vulkan error: " << err.what() << std::endl;
-		}
-		catch (GraphicsException const & err)
-		{
-			std::cout << "Graphics error: " << err.what() << std::endl;
+			// Application callbacks must not disrupt renderer control flow.
 		}
 	}
 
@@ -494,18 +536,26 @@ namespace Dreamhearth
 		return *m_swap_chain != VK_NULL_HANDLE && !m_swap_chain_image_views.empty();
 	}
 
-	void RenderContext::RecreateSwapChain(int width_pixels, int height_pixels)
+	std::expected<void, GraphicsError> RenderContext::RecreateSwapChain(
+		int width_pixels,
+		int height_pixels)
 	{
 		WaitForLastFrame();
 
 		destroy_swap_chain();
 
-		if (width_pixels == 0 || height_pixels == 0)
-			return;
+		if (width_pixels <= 0 || height_pixels <= 0)
+			return {};
 
 		try
 		{
 			m_phys_device_info.sws_details = query_swap_chain_support(m_phys_device_info.device, m_surface);
+			vk::Extent2D const extent = choose_swap_extent(
+				m_phys_device_info.sws_details.capabilities,
+				width_pixels,
+				height_pixels);
+			if (extent.width == 0 || extent.height == 0)
+				return {};
 
 			m_swap_chain = create_swap_chain(m_phys_device_info, width_pixels, height_pixels, m_surface, m_logical_device,
 				m_swap_chain_image_format, m_swap_chain_extent);
@@ -516,12 +566,14 @@ namespace Dreamhearth
 		}
 		catch (vk::SystemError const & err)
 		{
-			std::cout << "Vulkan error: " << err.what() << std::endl;
+			return std::unexpected{ GraphicsError{ "Vulkan error: " + std::string(err.what()) } };
 		}
 		catch (GraphicsException const & err)
 		{
-			std::cout << "Graphics error: " << err.what() << std::endl;
+			return std::unexpected{ GraphicsError{ "Graphics error: " + std::string(err.what()) } };
 		}
+
+		return {};
 	}
 
 	DrawFrameResult RenderContext::DrawFrame(std::function<void()> render_fn)

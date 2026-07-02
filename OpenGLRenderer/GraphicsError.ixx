@@ -2,6 +2,7 @@
 
 module;
 
+#include <functional>
 #include <string>
 #include <stdexcept>
 //#include <source_location>
@@ -11,6 +12,21 @@ export module Dreamhearth:GraphicsError;
 
 namespace Dreamhearth
 {
+	export enum class GraphicsDiagnosticSeverity
+	{
+		Info,
+		Warning,
+		Error
+	};
+
+	export struct GraphicsDiagnostic
+	{
+		GraphicsDiagnosticSeverity severity;
+		std::string message;
+	};
+
+	export using GraphicsDiagnosticFn = std::function<void(GraphicsDiagnostic const &)>;
+
 	export class GraphicsError
 	{
 	public:

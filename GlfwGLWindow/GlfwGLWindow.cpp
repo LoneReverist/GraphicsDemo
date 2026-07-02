@@ -2,6 +2,7 @@
 
 module;
 
+#include <expected>
 #include <functional>
 #include <string>
 #include <utility>
@@ -183,12 +184,18 @@ namespace Dreamhearth
 		}
 	}
 
-	RenderContext Window::CreateRenderContext(WindowSize size) const
+	std::expected<RenderContext, GraphicsError> Window::CreateRenderContext(
+		WindowSize size,
+		GraphicsDiagnosticFn on_diagnostic) const
 	{
 		glfwMakeContextCurrent(m_window);
 		glfwSwapInterval(0); // vsync is sometimes on by default, disable it for more accurate timing measurements
 
-		return RenderContext{ size.width, size.height, reinterpret_cast<RenderContext::LoadProcFn *>(glfwGetProcAddress) };
+		return RenderContext::Create(
+			size.width,
+			size.height,
+			reinterpret_cast<RenderContext::LoadProcFn *>(glfwGetProcAddress),
+			std::move(on_diagnostic));
 	}
 
 	DrawFrameResult Window::DrawFrame(RenderContext & /*render_context*/, std::function<void()> render_fn) const
