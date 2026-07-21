@@ -194,6 +194,16 @@ namespace Dreamhearth
 			});
 	}
 
+	void Window::SetOnFocusChanged(OnFocusChangedFn on_focus_changed)
+	{
+		m_on_focus_changed = std::move(on_focus_changed);
+		glfwSetWindowFocusCallback(m_window, [](GLFWwindow * window, int focused)
+			{
+				Window * self = static_cast<Window *>(glfwGetWindowUserPointer(window));
+				self->on_focus_changed(focused == GLFW_TRUE);
+			});
+	}
+
 	void Window::ToggleFullscreen()
 	{
 		if (m_is_fullscreen)
@@ -253,5 +263,15 @@ namespace Dreamhearth
 	void Window::PollEvents() const
 	{
 		glfwPollEvents(); // must only be called from main thread
+	}
+
+	void Window::WaitEvents(double timeout_seconds) const
+	{
+		glfwWaitEventsTimeout(timeout_seconds); // must only be called from main thread
+	}
+
+	void Window::WakeEventLoop() const
+	{
+		glfwPostEmptyEvent(); // may be called from any thread
 	}
 } // namespace Dreamhearth

@@ -230,14 +230,15 @@ namespace Dreamhearth
 		return available_formats[0];
 	}
 
-	vk::PresentModeKHR choose_swap_present_mode(std::vector<vk::PresentModeKHR> const & available_present_modes)
+	vk::PresentModeKHR choose_swap_present_mode(std::vector<vk::PresentModeKHR> const &)
 	{
-		constexpr vk::PresentModeKHR desired_mode = vk::PresentModeKHR::eMailbox;
+//		constexpr vk::PresentModeKHR desired_mode = vk::PresentModeKHR::eMailbox;
+//
+//		auto iter = std::ranges::find(available_present_modes, desired_mode);
+//		if (iter != available_present_modes.end())
+//			return *iter;
 
-		auto iter = std::ranges::find(available_present_modes, desired_mode);
-		if (iter != available_present_modes.end())
-			return *iter;
-
+		// FIFO is guaranteed by Vulkan and paces rendering to the display refresh.
 		return vk::PresentModeKHR::eFifo;
 	}
 

@@ -40,6 +40,7 @@ namespace Dreamhearth
 		using OnKeyEventFn = std::function<void(int, int, int, int)>;
 		using OnMouseButtonEventFn = std::function<void(int, int, int)>;
 		using OnCursorPosFn = std::function<void(float, float)>;
+		using OnFocusChangedFn = std::function<void(bool)>;
 
 	public:
 		explicit Window(WindowSize window_size_screen_coords, std::string const & title, OnErrorFn on_error);
@@ -56,6 +57,7 @@ namespace Dreamhearth
 		void SetOnKeyEvent(OnKeyEventFn on_key_event);
 		void SetOnMouseButtonEvent(OnMouseButtonEventFn on_mouse_button_event);
 		void SetOnCursorPos(OnCursorPosFn on_cursor_pos);
+		void SetOnFocusChanged(OnFocusChangedFn on_focus_changed);
 
 		void ToggleFullscreen(); // must only be called from main thread
 
@@ -68,6 +70,8 @@ namespace Dreamhearth
 		void SetShouldClose(bool should_close) const;
 		bool ShouldClose() const;
 		void PollEvents() const;
+		void WaitEvents(double timeout_seconds) const;
+		void WakeEventLoop() const;
 
 	private:
 		void on_size_changed(int width_pixels, int height_pixels) { m_on_size_changed(width_pixels, height_pixels); }
@@ -75,6 +79,7 @@ namespace Dreamhearth
 		void on_key_event(int key, int scan_code, int action, int mods) { m_on_key_event(key, scan_code, action, mods); }
 		void on_mouse_button_event(int button, int action, int mods) { m_on_mouse_button_event(button, action, mods); }
 		void on_cursor_pos(float x_pixels, float y_pixels) { m_on_cursor_pos(x_pixels, y_pixels); }
+		void on_focus_changed(bool focused) { m_on_focus_changed(focused); }
 
 	private:
 		bool m_glfw_initialized = false;
@@ -89,5 +94,6 @@ namespace Dreamhearth
 		OnKeyEventFn m_on_key_event;
 		OnMouseButtonEventFn m_on_mouse_button_event;
 		OnCursorPosFn m_on_cursor_pos;
+		OnFocusChangedFn m_on_focus_changed;
 	};
 } // namespace Dreamhearth
