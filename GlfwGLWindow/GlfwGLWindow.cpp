@@ -2,6 +2,7 @@
 
 module;
 
+#include <algorithm>
 #include <expected>
 #include <functional>
 #include <string>
@@ -16,6 +17,40 @@ namespace Dreamhearth
 {
 	namespace
 	{
+		GLFWmonitor * get_window_monitor(GLFWwindow * window)
+		{
+			int window_x = 0, window_y = 0;
+			int window_width = 0, window_height = 0;
+			glfwGetWindowPos(window, &window_x, &window_y);
+			glfwGetWindowSize(window, &window_width, &window_height);
+
+			GLFWmonitor * best_monitor = glfwGetPrimaryMonitor();
+			long long best_overlap_area = 0;
+			int monitor_count = 0;
+			GLFWmonitor ** monitors = glfwGetMonitors(&monitor_count);
+			for (int i = 0; i < monitor_count; ++i)
+			{
+				int monitor_x = 0, monitor_y = 0;
+				glfwGetMonitorPos(monitors[i], &monitor_x, &monitor_y);
+				const GLFWvidmode * mode = glfwGetVideoMode(monitors[i]);
+				if (!mode)
+					continue;
+
+				const int overlap_width = std::max(0,
+					std::min(window_x + window_width, monitor_x + mode->width) - std::max(window_x, monitor_x));
+				const int overlap_height = std::max(0,
+					std::min(window_y + window_height, monitor_y + mode->height) - std::max(window_y, monitor_y));
+				const long long overlap_area = static_cast<long long>(overlap_width) * overlap_height;
+				if (overlap_area > best_overlap_area)
+				{
+					best_overlap_area = overlap_area;
+					best_monitor = monitors[i];
+				}
+			}
+
+			return best_monitor;
+		}
+
 		std::pair<float, float> cursor_pos_to_framebuffer_pixels(GLFWwindow * window, double x, double y)
 		{
 			int window_width = 0, window_height = 0;
@@ -178,7 +213,7 @@ namespace Dreamhearth
 			if (r.w > 0 && r.h > 0)
 				m_stored_win_rect = r;
 
-			GLFWmonitor * monitor = glfwGetPrimaryMonitor();
+			GLFWmonitor * monitor = get_window_monitor(m_window);
 			const GLFWvidmode * mode = glfwGetVideoMode(monitor);
 			glfwSetWindowMonitor(m_window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate); // must only be called from main thread
 		}
