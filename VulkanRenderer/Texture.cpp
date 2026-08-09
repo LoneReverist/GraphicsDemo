@@ -126,8 +126,6 @@ namespace Dreamhearth
 
 	vk::raii::Sampler create_sampler(RenderContext const & render_context)
 	{
-		vk::PhysicalDeviceProperties const & props = render_context.GetPhysicalDeviceInfo().properties;
-
 		vk::SamplerCreateInfo sampler_info{
 			.magFilter = vk::Filter::eLinear,
 			.minFilter = vk::Filter::eLinear,
@@ -137,7 +135,7 @@ namespace Dreamhearth
 			.addressModeW = vk::SamplerAddressMode::eRepeat,
 			.mipLodBias = 0.0f,
 			.anisotropyEnable = vk::True,
-			.maxAnisotropy = props.limits.maxSamplerAnisotropy,
+			.maxAnisotropy = render_context.GetMaxSamplerAnisotropy(),
 			.compareEnable = vk::False,
 			.compareOp = vk::CompareOp::eAlways,
 			.minLod = 0.0f,

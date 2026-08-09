@@ -14,29 +14,10 @@ module;
 export module Dreamhearth:RenderContext;
 
 import :GraphicsError;
+import :PhysicalDevice;
 
 namespace Dreamhearth
 {
-	struct SwapChainSupportDetails
-	{
-		vk::SurfaceCapabilitiesKHR capabilities;
-		std::vector<vk::SurfaceFormatKHR> formats;
-		std::vector<vk::PresentModeKHR> present_modes;
-	};
-
-	constexpr std::uint32_t InvalidQueueIndex = ~0;
-
-	struct PhysicalDeviceInfo
-	{
-		vk::raii::PhysicalDevice device = nullptr;
-
-		std::uint32_t queue_index = ~0;
-		SwapChainSupportDetails sws_details;
-
-		vk::PhysicalDeviceMemoryProperties mem_properties;
-		vk::PhysicalDeviceProperties properties;
-	};
-
 	export enum class DrawFrameResult
 	{
 		Success,
@@ -123,7 +104,7 @@ namespace Dreamhearth
 		vk::raii::CommandBuffer const & GetCurCommandBuffer() const { return m_command_buffers[m_current_frame]; }
 		std::uint32_t GetCurFrameIndex() const { return m_current_frame; }
 
-		PhysicalDeviceInfo const & GetPhysicalDeviceInfo() const { return m_phys_device_info; }
+		float GetMaxSamplerAnisotropy() const { return m_phys_device_info.properties.limits.maxSamplerAnisotropy; }
 
 	private:
 		explicit RenderContext(

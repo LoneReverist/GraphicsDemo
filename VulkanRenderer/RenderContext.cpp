@@ -19,6 +19,7 @@ module Dreamhearth;
 
 import :RenderContext;
 import :GraphicsError;
+import :PhysicalDevice;
 
 namespace Dreamhearth
 {
@@ -69,108 +70,6 @@ namespace Dreamhearth
 		}
 
 		return vk::raii::Instance{ context, create_info };
-	}
-
-	std::uint32_t find_queue_family(vk::raii::PhysicalDevice const & device, vk::raii::SurfaceKHR const & surface)
-	{
-		auto queue_families = device.getQueueFamilyProperties();
-		for (std::uint32_t i = 0; i < static_cast<std::uint32_t>(queue_families.size()); ++i)
-		{
-			if (queue_families[i].queueFlags & vk::QueueFlagBits::eGraphics
-				&& device.getSurfaceSupportKHR(i, surface))
-				return i;
-		}
-		return InvalidQueueIndex;
-	}
-
-	SwapChainSupportDetails query_swap_chain_support(vk::raii::PhysicalDevice const & device, vk::raii::SurfaceKHR const & surface)
-	{
-		return SwapChainSupportDetails{
-			.capabilities = device.getSurfaceCapabilitiesKHR(*surface),
-			.formats = device.getSurfaceFormatsKHR(*surface),
-			.present_modes = device.getSurfacePresentModesKHR(*surface)
-		};
-	}
-
-	bool device_supports_extensions(vk::raii::PhysicalDevice const & device, std::vector<const char *> const & required_extensions)
-	{
-		auto available_extensions = device.enumerateDeviceExtensionProperties();
-		return std::ranges::all_of(required_extensions,
-			[&available_extensions](auto const & required_extension)
-			{
-				return std::ranges::any_of(available_extensions,
-					[required_extension](auto const & available_extension)
-					{
-						return strcmp(available_extension.extensionName, required_extension) == 0;
-					});
-			});
-	}
-
-	bool device_is_suitable(
-		vk::raii::PhysicalDevice const & device,
-		std::vector<const char *> const & device_extensions,
-		vk::raii::SurfaceKHR const & surface,
-		PhysicalDeviceInfo & out_device_info)
-	{
-		auto properties = device.getProperties();
-
-		if (properties.apiVersion < vk::ApiVersion13)
-			return false;
-
-		std::uint32_t queue_index = find_queue_family(device, surface);
-		if (queue_index == InvalidQueueIndex)
-			return false;
-
-		if (!device_supports_extensions(device, device_extensions))
-			return false;
-
-		SwapChainSupportDetails swap_chain_support = query_swap_chain_support(device, surface);
-		if (swap_chain_support.formats.empty() || swap_chain_support.present_modes.empty())
-			return false;
-
-		auto features = device.getFeatures();
-		if (!features.samplerAnisotropy)
-			return false;
-
-		auto features2 = device.template getFeatures2<
-			vk::PhysicalDeviceFeatures2,
-			vk::PhysicalDeviceVulkan13Features>();
-
-		if (!features2.template get<vk::PhysicalDeviceVulkan13Features>().dynamicRendering)
-			return false;
-
-		auto mem_properties = device.getMemoryProperties();
-		out_device_info = PhysicalDeviceInfo{ device, queue_index, swap_chain_support, mem_properties, properties };
-		return true;
-	}
-
-	PhysicalDeviceInfo pick_physical_device(
-		vk::raii::Instance const & instance,
-		vk::raii::SurfaceKHR const & surface,
-		std::vector<const char *> const & device_extensions)
-	{
-		auto devices = instance.enumeratePhysicalDevices();
-		if (devices.empty())
-			throw GraphicsException("Failed to find GPUs with Vulkan support!");
-
-		PhysicalDeviceInfo phys_device_info;
-		auto find_suitable_device =
-			[&devices, &device_extensions, &surface, &phys_device_info](vk::PhysicalDeviceType device_type)
-			{
-				return std::ranges::any_of(devices,
-					[device_type, &device_extensions, &surface, &phys_device_info](vk::raii::PhysicalDevice const & device)
-					{
-						return device.getProperties().deviceType == device_type
-							&& device_is_suitable(device, device_extensions, surface, phys_device_info);
-					});
-			};
-
-		bool found_device = find_suitable_device(vk::PhysicalDeviceType::eDiscreteGpu)
-			|| find_suitable_device(vk::PhysicalDeviceType::eIntegratedGpu);
-		if (!found_device)
-			throw GraphicsException("Failed to find a suitable GPU!");
-
-		return phys_device_info;
 	}
 
 	vk::raii::Device create_logical_device(
@@ -451,7 +350,19 @@ namespace Dreamhearth
 		VkSurfaceKHR raw_surface = create_surface_fn(*m_instance);
 		m_surface = vk::raii::SurfaceKHR{ m_instance, raw_surface };
 
-		m_phys_device_info = pick_physical_device(m_instance, m_surface, m_device_extensions);
+		PhysicalDeviceRequirements const device_requirements{
+			.min_api_version = vk::ApiVersion13,
+			.required_extensions = m_device_extensions,
+			.require_sampler_anisotropy = true,
+			.require_dynamic_rendering = true,
+			.require_synchronization2 = true,
+			.allow_cpu_devices = false
+		};
+		auto physical_device_result = SelectPhysicalDevice(m_instance, m_surface, device_requirements);
+		if (!physical_device_result)
+			throw GraphicsException(physical_device_result.error().GetMessage());
+		m_phys_device_info = std::move(physical_device_result).value();
+		
 		m_logical_device = create_logical_device(m_phys_device_info, m_device_extensions);
 		m_queue = m_logical_device.getQueue(m_phys_device_info.queue_index, 0);
 
@@ -544,7 +455,7 @@ namespace Dreamhearth
 
 		try
 		{
-			m_phys_device_info.sws_details = query_swap_chain_support(m_phys_device_info.device, m_surface);
+			m_phys_device_info.sws_details = QuerySwapChainSupport(m_phys_device_info.device, m_surface);
 			vk::Extent2D const extent = choose_swap_extent(
 				m_phys_device_info.sws_details.capabilities,
 				width_pixels,
