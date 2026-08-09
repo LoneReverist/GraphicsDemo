@@ -134,11 +134,9 @@ namespace Dreamhearth
 
 		auto features2 = device.template getFeatures2<
 			vk::PhysicalDeviceFeatures2,
-			vk::PhysicalDeviceVulkan13Features,
-			vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>();
+			vk::PhysicalDeviceVulkan13Features>();
 
-		if (!features2.template get<vk::PhysicalDeviceVulkan13Features>().dynamicRendering ||
-			!features2.template get<vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>().extendedDynamicState)
+		if (!features2.template get<vk::PhysicalDeviceVulkan13Features>().dynamicRendering)
 			return false;
 
 		auto mem_properties = device.getMemoryProperties();
@@ -188,8 +186,7 @@ namespace Dreamhearth
 
 		vk::StructureChain<
 			vk::PhysicalDeviceFeatures2,
-			vk::PhysicalDeviceVulkan13Features,
-			vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>
+			vk::PhysicalDeviceVulkan13Features>
 			feature_chain =
 		{
 			{
@@ -198,9 +195,6 @@ namespace Dreamhearth
 			{
 				.synchronization2 = true,
 				.dynamicRendering = true,      // Enable dynamic rendering from Vulkan 1.3
-			},
-			{
-				.extendedDynamicState = true   // Enable extended dynamic state from the extension
 			}
 		};
 
