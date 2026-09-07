@@ -108,6 +108,15 @@ namespace Dreamhearth
 			glfwTerminate();
 	}
 
+	void Window::SetIcon(int width, int height, unsigned char * rgba_pixels)
+	{
+		if (!IsValid() || width <= 0 || height <= 0 || !rgba_pixels)
+			return;
+
+		GLFWimage icon{ width, height, rgba_pixels };
+		glfwSetWindowIcon(m_window, 1, &icon);
+	}
+
 	WindowSize Window::GetWindowSizePixels() const
 	{
 		int width_pixels = 0, height_pixels = 0;

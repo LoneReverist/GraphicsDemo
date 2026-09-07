@@ -48,6 +48,9 @@ namespace Dreamhearth
 
 		bool IsValid() const { return m_glfw_initialized && m_window != nullptr; }
 
+		// Packed RGBA pixels, top-left origin; copied before return. Main thread only.
+		void SetIcon(int width, int height, unsigned char * rgba_pixels);
+
 		WindowSize GetWindowSizePixels() const; // must only be called from main thread
 		float GetWindowScaleFactor() const; // must only be called from main thread
 
